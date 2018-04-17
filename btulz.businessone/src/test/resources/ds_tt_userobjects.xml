@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE Domain>
+<Domain Name="TrainingTesting" ShortName="TT">
+  <Model Name="SalesOrder" Description="销售订单" ModelType="Document" Mapped="CC_TT_ORDR">
+    <Property Name="DocEntry" Description="凭证编号" DataType="Numeric" DataSubType="Default" EditSize="8" Mapped="DocEntry" PrimaryKey="Yes" System="true"/>
+    <Property Name="CustomerCode" Description="客户代码" DataType="Alphanumeric" DataSubType="Default" EditSize="20" Mapped="CardCode"/>
+    <Property Name="CustomerName" Description="客户名称" DataType="Alphanumeric" DataSubType="Default" EditSize="100" Mapped="CardName"/>
+    <Property Name="DiscountTotal" Description="折扣后总计" DataType="Decimal" DataSubType="Sum" EditSize="8" Mapped="DiscSum"/>
+    <Property Name="DocumentCurrency" Description="单据货币" DataType="Alphanumeric" DataSubType="Default" EditSize="8" Mapped="DocCur"/>
+    <Property Name="DocumentRate" Description="单据汇率" DataType="Decimal" DataSubType="Rate" EditSize="8" Mapped="DocRate"/>
+    <Property Name="DocumentTotal" Description="单据总计" DataType="Decimal" DataSubType="Sum" EditSize="8" Mapped="DocTotal"/>
+    <Property Name="PaidTotal" Description="已付款总计" DataType="Decimal" DataSubType="Sum" EditSize="8" Mapped="PaidTotal"/>
+    <Property Name="Rounding" Description="舍入" DataType="Alphanumeric" DataSubType="Default" EditSize="1" DeclaredType="emYesNo" Mapped="Rounding">
+        <ValidValue Value="YES" Description="是" />
+        <ValidValue Value="NO" Description="否" />
+    </Property>
+    <Property Name="Project" Description="项目代码" DataType="Alphanumeric" DataSubType="Default" EditSize="8" Mapped="Project"/>
+  </Model>
+  <Model Name="SalesOrderItem" Description="销售订单-行" ModelType="DocumentLine" Mapped="CC_TT_RDR1">
+    <Property Name="DocEntry" Description="凭证编号" DataType="Numeric" DataSubType="Default" EditSize="8" Mapped="DocEntry" PrimaryKey="Yes" System="true"/>
+    <Property Name="LineId" Description="行号" DataType="Numeric" DataSubType="Default" EditSize="8" Mapped="LineId" PrimaryKey="Yes" System="true"/>
+    <Property Name="ItemCode" Description="产品编号" DataType="Alphanumeric" DataSubType="Default" EditSize="20" Mapped="ItemCode"/>
+    <Property Name="ItemDescription" Description="产品/服务描述" DataType="Alphanumeric" DataSubType="Default" EditSize="100" Mapped="Dscription"/>
+    <Property Name="Quantity" Description="数量" DataType="Decimal" DataSubType="Quantity" EditSize="8" Mapped="Quantity"/>
+    <Property Name="UOM" Description="单位" DataType="Alphanumeric" DataSubType="Default" EditSize="8" Mapped="UOM"/>
+    <Property Name="Warehouse" Description="仓库" DataType="Alphanumeric" DataSubType="Default" EditSize="8" Mapped="WhsCode"/>
+    <Property Name="Price" Description="价格" DataType="Decimal" DataSubType="Price" EditSize="8" Mapped="Price"/>
+    <Property Name="Currency" Description="货币" DataType="Alphanumeric" DataSubType="Default" EditSize="8" Mapped="Currency"/>
+    <Property Name="Rate" Description="汇率" DataType="Decimal" DataSubType="Rate" EditSize="8" Mapped="Rate"/>
+    <Property Name="LineTotal" Description="行总计" DataType="Decimal" DataSubType="Sum" EditSize="8" Mapped="LineTotal"/>
+  </Model>
+  <Model Name="ProductionOrder" Description="生产订单" ModelType="Document" Mapped="OWOR" System="true">
+    <Property Name="Routing" Description="工艺路线" DataType="Alphanumeric" DataSubType="Default" EditSize="8" Mapped="Routing"/>
+    <Property Name="Scheduled" Description="已排程" DataType="Alphanumeric" DataSubType="Default" EditSize="1" DeclaredType="emYesNo" Mapped="Scheduled">
+        <ValidValue Value="YES" Description="是" />
+        <ValidValue Value="NO" Description="否" />
+    </Property>
+  </Model>
+  <Model Name="ProductionOrderLine" Description="生产订单-行" ModelType="Document" Mapped="WOR1" System="true">
+    <Property Name="WorkCenter" Description="工作中心" DataType="Alphanumeric" DataSubType="Default" EditSize="8" Mapped="WorkCenter"/>
+  </Model>
+  <BusinessObject MappedModel="SalesOrder" ShortName="CC_TT_SALESORDER">
+    <RelatedBO Relation="OneToMany" MappedModel="SalesOrderItem"/>
+  </BusinessObject>
+</Domain>

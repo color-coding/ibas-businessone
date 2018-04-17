@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!DOCTYPE configuration>
+<ns2:configuration xmlns:ns2="http://colorcoding.org/ibas/bobas/configuration">
+    <appSettings>
+        <!-- 配置项目-公司标记 -->
+        <add key="Company" value="CC" />
+        <!-- 配置项目-是否开启调试模式 -->
+        <add key="DebugMode" value="true" />
+        <!-- 配置项目-B1账套类型 -->
+        <add key="MasterB1Type" value="MSSQL" />
+        <!-- 配置项目-B1账套地址 -->
+        <add key="MasterB1Server" value="ibas-db-mssql" />
+        <!-- 配置项目-B1账套名称 -->
+        <add key="MasterB1Name" value="ibas_demo" />
+        <!-- 配置项目-B1账套用户名称 -->
+        <add key="MasterB1UserID" value="sa" />
+        <!-- 配置项目-B1账套用户密码 -->
+        <add key="MasterB1UserPassword" value="1q2w3e" />
+    </appSettings>
+</ns2:configuration>

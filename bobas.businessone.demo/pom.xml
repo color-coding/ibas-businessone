@@ -1,0 +1,50 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.colorcoding.ibas</groupId>
+	<artifactId>bobas.businessone.demo</artifactId>
+	<version>0.1.0</version>
+	<packaging>war</packaging>
+	<name>bobas.businessone.demo</name>
+	<url>https://colorcoding.org/bobas/b1</url>
+	<organization>
+		<url>https://colorcoding.org</url>
+		<name>Color-Coding Studio</name>
+	</organization>
+	<developers>
+		<developer>
+			<name>Niuren Zhu</name>
+			<organization>Color-Coding Studio</organization>
+			<organizationUrl>https://colorcoding.org/</organizationUrl>
+			<url>https://colorcoding.org/niurenzhu</url>
+		</developer>
+	</developers>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<b1.version>9.2</b1.version>
+	</properties>
+	<repositories>
+		<repository>
+			<id>ibas-maven</id>
+			<name>ibas maven repository</name>
+			<url>http://maven.colorcoding.org/repository/maven-public/</url>
+			<layout>default</layout>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.colorcoding.ibas</groupId>
+			<artifactId>bobas.businessone</artifactId>
+			<version>0.1.0</version>
+		</dependency>
+	</dependencies>
+</project>
