@@ -12,8 +12,6 @@ import org.colorcoding.tools.btulz.businessone.model.ValidValue;
 import org.colorcoding.tools.btulz.model.IBusinessObject;
 import org.colorcoding.tools.btulz.model.IBusinessObjectItem;
 import org.colorcoding.tools.btulz.model.IDomain;
-import org.colorcoding.tools.btulz.model.IModel;
-import org.colorcoding.tools.btulz.model.IProperty;
 import org.colorcoding.tools.btulz.model.data.emDataSubType;
 import org.colorcoding.tools.btulz.model.data.emDataType;
 import org.colorcoding.tools.btulz.model.data.emModelType;
@@ -75,16 +73,16 @@ public class DsTransformer extends Transformer {
 		this.password = password;
 	}
 
-	private Integer language;
+	private int language;
 
-	public Integer getLanguage() {
+	public int getLanguage() {
 		if (this.language <= 0) {
 			this.language = SBOCOMConstants.BoSuppLangs_ln_English;
 		}
 		return language;
 	}
 
-	public void setLanguage(Integer language) {
+	public void setLanguage(int language) {
 		this.language = language;
 	}
 
@@ -101,16 +99,29 @@ public class DsTransformer extends Transformer {
 		this.licenseServer = licenseServer;
 	}
 
-	private Integer dbServerType;
+	private String sldServer;
 
-	public Integer getDbServerType() {
+	public String getSLDServer() {
+		if (this.sldServer == null) {
+			this.sldServer = String.format("%s:40000", this.getServer());
+		}
+		return sldServer;
+	}
+
+	public void setSLDServer(String sldServer) {
+		this.sldServer = sldServer;
+	}
+
+	private int dbServerType;
+
+	public int getDbServerType() {
 		if (this.dbServerType <= 0) {
-			this.dbServerType = SBOCOMConstants.BoDataServerTypes_dst_MSSQL2012;
+			this.dbServerType = SBOCOMConstants.BoDataServerTypes_dst_MSSQL2014;
 		}
 		return dbServerType;
 	}
 
-	public void setDbServerType(Integer dbServerType) {
+	public void setDbServerType(int dbServerType) {
 		this.dbServerType = dbServerType;
 	}
 
@@ -178,214 +189,272 @@ public class DsTransformer extends Transformer {
 		company.setDbUserName(this.getDbUserName());
 		company.setDbPassword(this.getDbPassword());
 		company.setLicenseServer(this.getLicenseServer());
+		company.setSLDServer(this.getSLDServer());
+
+		Environment.getLogger().info(
+				String.format("b1 company [%s | %s] is connecting.", company.getServer(), company.getCompanyDB()));
 		int error = company.connect();
 		if (error != 0) {
 			throw new TransformException(
 					String.format("%s - %s", company.getLastErrorCode(), company.getLastErrorDescription()));
 		} else {
 			Environment.getLogger().info(
-					String.format("b1 company [%s-%s] was connected.", company.getServer(), company.getCompanyDB()));
+					String.format("b1 company [%s | %s] was connected.", company.getServer(), company.getCompanyDB()));
 		}
 		return company;
 	}
 
 	public void transform() throws Exception {
 		ICompany b1Company = this.getCompany();
-		long startTime = System.currentTimeMillis();
-		Environment.getLogger().info(String.format("begin transform data structures."));
-		for (Domain domain : this.getDomains()) {
-			for (Model model : domain.getModels().ofType()) {
-				// 处理表
-				Environment.getLogger()
-						.info(String.format("transform model [%s - %s]", model.getName(), model.getDescription()));
-				String tableName = model.getMapped();
-				if (!model.isSystem()) {
-					// 非系统，创建表
-					IUserTablesMD userTable = SBOCOMUtil.newUserTablesMD(b1Company);
-					if (userTable.getByKey(tableName)) {
-						// 表存在
-						userTable.setTableDescription(model.getDescription());
-						if (userTable.update() != 0) {
-							throw new TransformException(String.format("%s - %s", b1Company.getLastErrorCode(),
-									b1Company.getLastErrorDescription()));
+		try {
+			long startTime = System.currentTimeMillis();
+			Environment.getLogger().info(String.format("begin transform data structures."));
+			for (Domain domain : this.getDomains()) {
+				for (Model model : domain.getModels().ofType()) {
+					// 处理表
+					Environment.getLogger().info(
+							String.format("transform model [%s - %s]", model.getMapped(), model.getDescription()));
+					String tableName = model.getMapped();
+					if (!model.isSystem()) {
+						// 非系统，创建表
+						IUserTablesMD userTable = SBOCOMUtil.newUserTablesMD(b1Company);
+						if (userTable.getByKey(tableName)) {
+							// 表存在
+							userTable.setTableDescription(model.getDescription());
+							if (userTable.update() != 0) {
+								throw new TransformException(String.format("%s - %s", b1Company.getLastErrorCode(),
+										b1Company.getLastErrorDescription()));
+							}
+							userTable.release();
+							System.gc();
+						} else {
+							// 表不存在
+							userTable.release();
+							System.gc();
+							userTable = SBOCOMUtil.newUserTablesMD(b1Company);
+							userTable.setTableName(tableName);
+							userTable.setTableDescription(model.getDescription());
+							userTable.setTableType(this.convert(model.getModelType()));
+							if (userTable.add() != 0) {
+								throw new TransformException(String.format("%s - %s", b1Company.getLastErrorCode(),
+										b1Company.getLastErrorDescription()));
+							}
+							userTable.release();
+							System.gc();
 						}
-					} else {
-						// 表不存在
-						userTable = SBOCOMUtil.newUserTablesMD(b1Company);
-						userTable.setTableName(tableName);
-						userTable.setTableDescription(model.getDescription());
-						userTable.setTableType(this.convert(model.getModelType()));
-						if (userTable.add() != 0) {
-							throw new TransformException(String.format("%s - %s", b1Company.getLastErrorCode(),
-									b1Company.getLastErrorDescription()));
-						}
+						tableName = String.format(TEMPLATE_USER_TABLE, tableName);
 					}
-					tableName = String.format(TEMPLATE_USER_TABLE, tableName);
-				}
-				// 处理字段
-				for (Property property : model.getProperties().ofType()) {
-					Environment.getLogger().info(String.format("transform property [%s - %s]", property.getName(),
-							property.getDescription()));
-					Integer fieldId = this.getUserFiledId(b1Company, tableName, property.getMapped());
-					if (fieldId < 0) {
-						// 字段不存在
-						IUserFieldsMD userField = SBOCOMUtil.newUserFieldsMD(b1Company);
-						userField.setTableName(tableName);
-						userField.setName(property.getMapped());
-						userField.setDescription(property.getDescription());
-						userField.setType(this.convert(property.getDataType()));
-						userField.setSubType(this.convert(property.getDataSubType()));
-						userField.setEditSize(property.getEditSize());
-						if (property.getDefaultValue() != null && !property.getDefaultValue().isEmpty()) {
-							userField.setDefaultValue(property.getDefaultValue());
+					// 处理字段
+					for (Property property : model.getProperties().ofType()) {
+						if (property.isSystem()) {
+							continue;
 						}
-						// 处理可选值
-						for (ValidValue validValue : property.getValidValues()) {
-							userField.getValidValues().setValue(validValue.getValue());
-							userField.getValidValues().setDescription(validValue.getDescription());
-							userField.getValidValues().add();
-						}
-						if (userField.add() != 0) {
-							throw new TransformException(String.format("%s - %s", b1Company.getLastErrorCode(),
-									b1Company.getLastErrorDescription()));
-						}
-					} else {
-						// 字段存在
-						IUserFieldsMD userField = SBOCOMUtil.newUserFieldsMD(b1Company);
-						if (userField.getByKey(tableName, fieldId)) {
+						Environment.getLogger().info(String.format("transform property [%s - %s]", property.getMapped(),
+								property.getDescription()));
+						int fieldId = this.getUserFiledId(b1Company, tableName, property.getMapped());
+						if (fieldId < 0) {
+							// 字段不存在
+							IUserFieldsMD userField = SBOCOMUtil.newUserFieldsMD(b1Company);
+							userField.setTableName(tableName);
+							userField.setName(property.getMapped());
 							userField.setDescription(property.getDescription());
+							userField.setType(this.convert(property.getDataType()));
+							userField.setSubType(this.convert(property.getDataSubType()));
 							userField.setEditSize(property.getEditSize());
 							if (property.getDefaultValue() != null && !property.getDefaultValue().isEmpty()) {
 								userField.setDefaultValue(property.getDefaultValue());
 							}
 							// 处理可选值
 							for (ValidValue validValue : property.getValidValues()) {
-								boolean done = true;
-								for (int i = 0; i < userField.getValidValues().getCount(); i++) {
-									userField.getValidValues().setCurrentLine(i);
-									if (validValue.getValue().equalsIgnoreCase(userField.getValidValues().getValue())) {
-										done = false;
-									}
-								}
-								if (done) {
-									userField.getValidValues().setValue(validValue.getValue());
-									userField.getValidValues().setDescription(validValue.getDescription());
-									userField.getValidValues().add();
-								}
+								userField.getValidValues().setValue(validValue.getValue());
+								userField.getValidValues().setDescription(validValue.getDescription());
+								userField.getValidValues().add();
 							}
-							if (userField.update() != 0) {
+							if (userField.add() != 0) {
 								throw new TransformException(String.format("%s - %s", b1Company.getLastErrorCode(),
 										b1Company.getLastErrorDescription()));
 							}
+							userField.release();
+							System.gc();
+						} else {
+							// 字段存在
+							System.gc();
+							IUserFieldsMD userField = SBOCOMUtil.newUserFieldsMD(b1Company);
+							if (userField.getByKey(tableName, fieldId)) {
+								userField.setDescription(property.getDescription());
+								userField.setEditSize(property.getEditSize());
+								if (property.getDefaultValue() != null && !property.getDefaultValue().isEmpty()) {
+									userField.setDefaultValue(property.getDefaultValue());
+								}
+								// 处理可选值
+								for (ValidValue validValue : property.getValidValues()) {
+									boolean done = true;
+									for (int i = 0; i < userField.getValidValues().getCount(); i++) {
+										userField.getValidValues().setCurrentLine(i);
+										if (validValue.getValue()
+												.equalsIgnoreCase(userField.getValidValues().getValue())) {
+											done = false;
+										}
+									}
+									if (done) {
+										userField.getValidValues().setValue(validValue.getValue());
+										userField.getValidValues().setDescription(validValue.getDescription());
+										userField.getValidValues().add();
+									}
+								}
+								if (userField.update() != 0) {
+									throw new TransformException(String.format("%s - %s", b1Company.getLastErrorCode(),
+											b1Company.getLastErrorDescription()));
+								}
+								userField.release();
+								System.gc();
+							}
 						}
 					}
 				}
 			}
-		}
-		for (Domain domain : this.getDomains()) {
-			for (IBusinessObject businessObject : domain.getBusinessObjects()) {
-				IModel model = domain.getModels()
-						.firstOrDefault(c -> c.getName().equals(businessObject.getMappedModel()));
-				if (model == null) {
-					continue;
-				}
-				// 处理业务对象
-				Environment.getLogger().info(String.format("transform business object [%s - %s]",
-						businessObject.getName(), businessObject.getDescription()));
-				IUserObjectsMD userObject = SBOCOMUtil.newUserObjectsMD(b1Company);
-				if (userObject.getByKey(businessObject.getShortName())) {
-					// 对象存在
-					userObject.setName(businessObject.getDescription());
-					// 处理查询列
-					for (IProperty property : model.getProperties()) {
-						boolean done = true;
-						for (int i = 0; i < userObject.getFindColumns().getCount(); i++) {
-							userObject.getFindColumns().setCurrentLine(i);
-							if (property.getMapped().equalsIgnoreCase(userObject.getFindColumns().getColumnAlias())) {
-								done = false;
+			for (Domain domain : this.getDomains()) {
+				for (IBusinessObject businessObject : domain.getBusinessObjects()) {
+					Model model = (Model) domain.getModels()
+							.firstOrDefault(c -> c.getName().equals(businessObject.getMappedModel()));
+					if (model == null) {
+						continue;
+					}
+					// 处理业务对象
+					Environment.getLogger().info(String.format("transform business object [%s - %s]",
+							businessObject.getShortName(), model.getDescription()));
+					IUserObjectsMD userObject = SBOCOMUtil.newUserObjectsMD(b1Company);
+					if (userObject.getByKey(businessObject.getShortName())) {
+						// 对象存在
+						userObject.setName(model.getDescription());
+						// 处理查询列
+						for (Property property : model.getProperties().ofType()) {
+							if (property.isSystem()) {
+								continue;
+							}
+							if (property.getDataType() == emDataType.Memo
+									|| property.getDataType() == emDataType.Bytes) {
+								continue;
+							}
+							boolean done = true;
+							for (int i = 0; i < userObject.getFindColumns().getCount(); i++) {
+								userObject.getFindColumns().setCurrentLine(i);
+								if (String.format(TEMPLATE_USER_FIELD, property.getMapped())
+										.equalsIgnoreCase(userObject.getFindColumns().getColumnAlias())) {
+									done = false;
+								}
+							}
+							if (done) {
+								userObject.getFindColumns()
+										.setColumnAlias(String.format(TEMPLATE_USER_FIELD, property.getMapped()));
+								userObject.getFindColumns().setColumnDescription(property.getDescription());
+								userObject.getFindColumns().add();
 							}
 						}
-						if (done) {
-							userObject.getFindColumns().setColumnAlias(property.getMapped());
+						if (userObject.getFindColumns().getCount() > 0) {
+							userObject.setCanFind(SBOCOMConstants.BoYesNoEnum_tYES);// 可查询
+						}
+						// 处理子项，仅第一层
+						for (IBusinessObjectItem businessObjectItem : businessObject.getRelatedBOs()) {
+							model = (Model) domain.getModels()
+									.firstOrDefault(c -> c.getName().equals(businessObjectItem.getMappedModel()));
+							if (model == null) {
+								continue;
+							}
+							boolean done = true;
+							for (int i = 0; i < userObject.getChildTables().getCount(); i++) {
+								userObject.getChildTables().setCurrentLine(i);
+								if (model.getMapped().equalsIgnoreCase(userObject.getChildTables().getTableName())) {
+									done = false;
+								}
+							}
+							if (done) {
+								userObject.getChildTables().setTableName(model.getMapped());
+								userObject.getChildTables().add();
+							}
+						}
+						if (userObject.update() != 0) {
+							throw new TransformException(String.format("%s - %s", b1Company.getLastErrorCode(),
+									b1Company.getLastErrorDescription()));
+						}
+						userObject.release();
+						System.gc();
+					} else {
+						// 对象不存在
+						userObject.release();
+						System.gc();
+						userObject = SBOCOMUtil.newUserObjectsMD(b1Company);
+						userObject.setCode(businessObject.getShortName());
+						userObject.setName(model.getDescription());
+						userObject.setTableName(model.getMapped());
+						userObject.setObjectType(this.convert(model.getModelType()));
+						userObject.setCanDelete(SBOCOMConstants.BoYesNoEnum_tYES);// 删除
+						userObject.setCanClose(SBOCOMConstants.BoYesNoEnum_tYES);// 关闭
+						userObject.setCanCancel(SBOCOMConstants.BoYesNoEnum_tYES);// 取消
+						// 处理查询列
+						for (Property property : model.getProperties().ofType()) {
+							if (property.isSystem()) {
+								continue;
+							}
+							if (property.getDataType() == emDataType.Memo
+									|| property.getDataType() == emDataType.Bytes) {
+								continue;
+							}
+							userObject.getFindColumns()
+									.setColumnAlias(String.format(TEMPLATE_USER_FIELD, property.getMapped()));
 							userObject.getFindColumns().setColumnDescription(property.getDescription());
 							userObject.getFindColumns().add();
 						}
-					}
-					if (userObject.getFindColumns().getCount() > 0) {
-						userObject.setCanFind(SBOCOMConstants.BoYesNoEnum_tYES);// 可查询
-					}
-					// 处理子项，仅第一层
-					for (IBusinessObjectItem businessObjectItem : businessObject.getRelatedBOs()) {
-						model = domain.getModels()
-								.firstOrDefault(c -> c.getName().equals(businessObjectItem.getMappedModel()));
-						if (model == null) {
-							continue;
+						if (userObject.getFindColumns().getCount() > 0) {
+							userObject.setCanFind(SBOCOMConstants.BoYesNoEnum_tYES);// 可查询
 						}
-						boolean done = true;
-						for (int i = 0; i < userObject.getChildTables().getCount(); i++) {
-							userObject.getChildTables().setCurrentLine(i);
-							if (model.getMapped().equalsIgnoreCase(userObject.getChildTables().getTableName())) {
-								done = false;
+						// 处理子项，仅第一层
+						for (IBusinessObjectItem businessObjectItem : businessObject.getRelatedBOs()) {
+							model = (Model) domain.getModels()
+									.firstOrDefault(c -> c.getName().equals(businessObjectItem.getMappedModel()));
+							if (model == null) {
+								continue;
 							}
-						}
-						if (done) {
 							userObject.getChildTables().setTableName(model.getMapped());
 							userObject.getChildTables().add();
 						}
-					}
-					if (userObject.update() != 0) {
-						throw new TransformException(String.format("%s - %s", b1Company.getLastErrorCode(),
-								b1Company.getLastErrorDescription()));
-					}
-				} else {
-					// 对象不存在
-					userObject = SBOCOMUtil.newUserObjectsMD(b1Company);
-					userObject.setCode(businessObject.getShortName());
-					userObject.setName(businessObject.getDescription());
-					userObject.setTableName(model.getMapped());
-					userObject.setCanDelete(SBOCOMConstants.BoYesNoEnum_tYES);// 删除
-					userObject.setCanClose(SBOCOMConstants.BoYesNoEnum_tYES);// 关闭
-					userObject.setCanCancel(SBOCOMConstants.BoYesNoEnum_tYES);// 取消
-					// 处理查询列
-					for (IProperty property : model.getProperties()) {
-						userObject.getFindColumns().setColumnAlias(property.getMapped());
-						userObject.getFindColumns().setColumnDescription(property.getDescription());
-						userObject.getFindColumns().add();
-					}
-					if (userObject.getFindColumns().getCount() > 0) {
-						userObject.setCanFind(SBOCOMConstants.BoYesNoEnum_tYES);// 可查询
-					}
-					// 处理子项，仅第一层
-					for (IBusinessObjectItem businessObjectItem : businessObject.getRelatedBOs()) {
-						model = domain.getModels()
-								.firstOrDefault(c -> c.getName().equals(businessObjectItem.getMappedModel()));
-						if (model == null) {
-							continue;
+						if (userObject.add() != 0) {
+							throw new TransformException(String.format("%s - %s", b1Company.getLastErrorCode(),
+									b1Company.getLastErrorDescription()));
 						}
-						userObject.getChildTables().setTableName(model.getMapped());
-						userObject.getChildTables().add();
-					}
-					if (userObject.add() != 0) {
-						throw new TransformException(String.format("%s - %s", b1Company.getLastErrorCode(),
-								b1Company.getLastErrorDescription()));
+						userObject.release();
+						System.gc();
 					}
 				}
 			}
+			long endTime = System.currentTimeMillis();
+			float excTime = (float) (endTime - startTime) / 1000;
+			Environment.getLogger().info(String.format("end transform data structures, used %s second.", excTime));
+		} finally {
+			b1Company.disconnect();
+			b1Company.release();
+			SBOCOMUtil.release();
+			System.gc();
 		}
-		long endTime = System.currentTimeMillis();
-		float excTime = (float) (endTime - startTime) / 1000;
-		Environment.getLogger().info(String.format("end transform data structures, used %s second.", excTime));
 	}
 
 	public static final String SQL_GET_USER_FIELD_ID = "SELECT \"FieldID\" FROM \"CUFD\" WHERE \"TableID\" = '%s' AND \"AliasID\" = '%s'";
 
-	protected Integer getUserFiledId(ICompany b1Company, String table, String field) throws SBOCOMException {
-		IRecordset recordset = SBOCOMUtil.newRecordset(b1Company);
-		recordset.doQuery(String.format(SQL_GET_USER_FIELD_ID, table, field));
-		if (recordset.getRecordCount() > 0) {
-			return Integer.valueOf(recordset.getFields().item(0).getValue().toString());
+	protected int getUserFiledId(ICompany b1Company, String table, String field) throws SBOCOMException {
+		IRecordset recordset = null;
+		try {
+			recordset = SBOCOMUtil.newRecordset(b1Company);
+			recordset.doQuery(String.format(SQL_GET_USER_FIELD_ID, table, field));
+			if (recordset.getRecordCount() > 0) {
+				return Integer.valueOf(recordset.getFields().item(0).getValue().toString());
+			}
+			return -1;
+		} finally {
+			if (recordset != null) {
+				recordset.release();
+			}
+			System.gc();
 		}
-		return -1;
 	}
 
 	protected Integer convert(emModelType value) {

@@ -6,6 +6,8 @@ import org.colorcoding.tools.btulz.Environment;
 import org.colorcoding.tools.btulz.businessone.transformer.DsTransformer;
 
 import com.sap.smb.sbo.api.ICompany;
+import com.sap.smb.sbo.api.IField;
+import com.sap.smb.sbo.api.IRecordset;
 import com.sap.smb.sbo.api.SBOCOMConstants;
 import com.sap.smb.sbo.api.SBOCOMUtil;
 
@@ -14,20 +16,32 @@ import junit.framework.TestCase;
 public class testDsTransformer extends TestCase {
 
 	public void testB1() {
-		int error = SBOCOMConstants.BoDataServerTypes_dst_MSSQL2016;
 		ICompany company = SBOCOMUtil.newCompany();
+		company.setDbServerType(SBOCOMConstants.BoDataServerTypes_dst_MSSQL2014);
 		company.setServer("ibas-demo-b1");
 		company.setCompanyDB("SBODemoCN");
 		company.setUserName("manager");
 		company.setPassword("manager");
 		company.setDbUserName("sa");
-		company.setDbPassword("avatech");
-		error = company.connect();
-		if (error != 0) {
-			System.err.println(String.format("Company is not connected![%s]-[%s]", company.getLastErrorCode(),
+		company.setDbPassword("Aa123456");
+		company.setLicenseServer("ibas-demo-b1:30000");
+		company.setSLDServer("ibas-demo-b1:40000");
+		company.setLanguage(SBOCOMConstants.BoSuppLangs_ln_English);
+		IRecordset recordset = company.getCompanyList();
+		while (!recordset.isEoF()) {
+			for (int i = 0; i < recordset.getFields().getCount(); i++) {
+				IField field = recordset.getFields().item(i);
+				System.out.print(field.getValue());
+				System.out.print(" ");
+			}
+			System.out.println();
+			recordset.moveNext();
+		}
+		if (company.connect() != 0) {
+			System.err.println(String.format("company is not connected, [%s %s]", company.getLastErrorCode(),
 					company.getLastErrorDescription()));
 		} else {
-			System.out.println(String.format("Company [%s] is connected!", company.getCompanyDB()));
+			System.out.println(String.format("company [%s] is connected.", company.getCompanyDB()));
 		}
 	}
 
@@ -39,8 +53,9 @@ public class testDsTransformer extends TestCase {
 		dsTransformer.setCompanyDB("SBODemoCN");
 		dsTransformer.setUserName("manager");
 		dsTransformer.setPassword("manager");
+		dsTransformer.setDbServerType(SBOCOMConstants.BoDataServerTypes_dst_MSSQL2014);
 		dsTransformer.setDbUserName("sa");
-		dsTransformer.setDbPassword("avatech");
+		dsTransformer.setDbPassword("Aa123456");
 		dsTransformer.transform();
 	}
 }

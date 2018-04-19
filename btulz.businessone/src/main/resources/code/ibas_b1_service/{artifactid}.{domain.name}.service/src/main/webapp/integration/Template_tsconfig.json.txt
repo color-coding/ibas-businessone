@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "module": "umd",
+    "noImplicitAny": false,
+    "removeComments": true,
+    "target": "es6",
+    "preserveConstEnums": true
+  },
+  "files": [
+  ]
+}

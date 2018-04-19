@@ -11,8 +11,8 @@
     <Property Name="DocumentTotal" Description="单据总计" DataType="Decimal" DataSubType="Sum" EditSize="8" Mapped="DocTotal"/>
     <Property Name="PaidTotal" Description="已付款总计" DataType="Decimal" DataSubType="Sum" EditSize="8" Mapped="PaidTotal"/>
     <Property Name="Rounding" Description="舍入" DataType="Alphanumeric" DataSubType="Default" EditSize="1" DeclaredType="emYesNo" Mapped="Rounding">
-        <ValidValue Value="YES" Description="是" />
-        <ValidValue Value="NO" Description="否" />
+        <ValidValue Value="Y" Description="是" />
+        <ValidValue Value="N" Description="否" />
     </Property>
     <Property Name="Project" Description="项目代码" DataType="Alphanumeric" DataSubType="Default" EditSize="8" Mapped="Project"/>
   </Model>
@@ -32,8 +32,8 @@
   <Model Name="ProductionOrder" Description="生产订单" ModelType="Document" Mapped="OWOR" System="true">
     <Property Name="Routing" Description="工艺路线" DataType="Alphanumeric" DataSubType="Default" EditSize="8" Mapped="Routing"/>
     <Property Name="Scheduled" Description="已排程" DataType="Alphanumeric" DataSubType="Default" EditSize="1" DeclaredType="emYesNo" Mapped="Scheduled">
-        <ValidValue Value="YES" Description="是" />
-        <ValidValue Value="NO" Description="否" />
+        <ValidValue Value="Y" Description="是" />
+        <ValidValue Value="N" Description="否" />
     </Property>
   </Model>
   <Model Name="ProductionOrderLine" Description="生产订单-行" ModelType="Document" Mapped="WOR1" System="true">

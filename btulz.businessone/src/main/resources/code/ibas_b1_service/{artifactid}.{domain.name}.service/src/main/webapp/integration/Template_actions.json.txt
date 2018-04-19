@@ -1,0 +1,14 @@
+[
+  {
+    "type": "Action",
+    "name": " - ",
+    "activated": true,
+    "path": " - .ts",
+    "configs": [
+      {
+        "key": "REP_TOKEN",
+        "value": "${userToken}"
+      }
+    ]
+  }
+]

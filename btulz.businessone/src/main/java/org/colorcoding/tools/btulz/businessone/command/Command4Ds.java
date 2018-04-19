@@ -23,6 +23,7 @@ public class Command4Ds extends Command<Command4Ds> {
 		arguments.add(new Argument("-DbUser", "数据库用户"));
 		arguments.add(new Argument("-DbPassword", "数据库密码"));
 		arguments.add(new Argument("-LicenseServer", "B1许可证地址"));
+		arguments.add(new Argument("-SLDServer", "SLD架构地址"));
 		arguments.add(new Argument("-Language", "B1使用语言"));
 		arguments.add(new Argument("-Domains", "使用的模型目录或文件"));
 		return arguments.toArray(new Argument[] {});
@@ -58,6 +59,8 @@ public class Command4Ds extends Command<Command4Ds> {
 					dsTransformer.setDbPassword(argument.getValue());
 				} else if (argument.getName().equalsIgnoreCase("-LicenseServer")) {
 					dsTransformer.setLicenseServer(argument.getValue());
+				} else if (argument.getName().equalsIgnoreCase("-SLDServer")) {
+					dsTransformer.setSLDServer(argument.getValue());
 				} else if (argument.getName().equalsIgnoreCase("-Language")) {
 					dsTransformer.setLanguage(this.getLanguage(argument.getValue()));
 				} else if (argument.getName().equalsIgnoreCase("-Domains")) {

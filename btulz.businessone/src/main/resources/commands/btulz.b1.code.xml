@@ -5,18 +5,17 @@
     <Item Content="-jar btulz.businessone-0.1.0.jar" Description="使用jar包" Editable="false" />
     <Item Content="code" Description="子命令" Editable="false" />
     <Item Content="-TemplateFolder=${VALUE}" Description="使用的模板" >
-        <ValidValues ClassName="org.colorcoding.tools.btulz.shell.command.TemplateGetter" Definitions="Template=code/eclipse/ibas_b1_;WorkFile=btulz.businessone-0.1.0.jar;WorkFile=" />
+        <ValidValues ClassName="org.colorcoding.tools.btulz.shell.command.TemplateGetter" Definitions="Template=code;WorkFile=btulz.businessone-0.1.0.jar;WorkFile=" />
     </Item>
     <Item Content="-OutputFolder=${VALUE}" Description="输出目录" Value="${WORK_FOLDER}temp" >
         <ValidValues ClassName="javax.swing.JFileChooser"/>
     </Item>
     <Item Content="-GroupId=${VALUE}" Description="组标记" Value="org.colorcoding" />
-    <Item Content="-ArtifactId=${VALUE}" Description="项目标记" Value="ibas" />
+    <Item Content="-ArtifactId=${VALUE}" Description="项目标记" Value="b1" />
     <Item Content="-ProjectVersion=${VALUE}" Description="项目标记" Value="0.1.0" />
     <Item Content="-ProjectUrl=${VALUE}" Description="项目地址" Value="https://colorcoding.org" />
-    <Item Content="-Domains=${VALUE}" Description="模型文件" Value="${WORK_FOLDER}domains" >
-        <ValidValues ClassName="javax.swing.JFileChooser"/>
-    </Item>
+    <Item Content="-DomainName=${VALUE}" Description="项目名称" Value="interaction" />
+    <Item Content="-BusinessObjects=${VALUE}" Description="使用的业务对象（；分隔多个）" Value="Items;BusinessPartners;" />
     <Item Content="-Parameters=[${VALUE}]" Description="其他参数">
         <Items>
             <Item Content="{&quot;name&quot;:&quot;ibasVersion&quot;,&quot;value&quot;:&quot;${VALUE}&quot;}" Description="ibas版本" Value="0.1.2" />
