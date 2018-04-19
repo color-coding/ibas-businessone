@@ -89,7 +89,7 @@ public class DsTransformer extends Transformer {
 	private String licenseServer;
 
 	public String getLicenseServer() {
-		if (this.licenseServer == null) {
+		if (this.licenseServer == null && this.getServer() != null && !this.getServer().isEmpty()) {
 			this.licenseServer = String.format("%s:30000", this.getServer());
 		}
 		return licenseServer;
@@ -102,7 +102,7 @@ public class DsTransformer extends Transformer {
 	private String sldServer;
 
 	public String getSLDServer() {
-		if (this.sldServer == null) {
+		if (this.sldServer == null && this.getServer() != null && !this.getServer().isEmpty()) {
 			this.sldServer = String.format("%s:40000", this.getServer());
 		}
 		return sldServer;

@@ -3,7 +3,7 @@
     <Item Content="java" Editable="false" />
     <Item Content="-jar btulz.businessone-0.1.0.jar" Description="使用jar包" Editable="false" />
     <Item Content="ds" Description="子命令" Editable="false" />
-    <Item Content="-Server=${VALUE}" Description="B1服务地址" Value="ibas-demo-b1" />
+    <Item Content="-Server=${VALUE}" Description="服务地址" Value="ibas-demo-b1" />
     <Item Content="-CompanyDB=${VALUE}" Description="账套名称" Value="SBODemoCN" />
     <Item Content="-UserName=${VALUE}" Description="B1用户" Value="manager" />
     <Item Content="-Password=${VALUE}" Description="B1密码" Value="manager" />
@@ -18,9 +18,9 @@
     </Item>
     <Item Content="-DbUser=${VALUE}" Description="数据库用户" Value="sa" />
     <Item Content="-DbPassword=${VALUE}" Description="数据库密码" Value="1q2w3e" />
-    <Item Content="-LicenseServer=${VALUE}" Description="B1许可证地址" Value="" />
+    <Item Content="-LicenseServer=${VALUE}" Description="许可证地址" Value="" />
     <Item Content="-SLDServer=${VALUE}" Description="SLD架构地址" Value="" />
-    <Item Content="-Language=${VALUE}" Description="B1使用语言" Value="15" >
+    <Item Content="-Language=${VALUE}" Description="使用语言" Value="15" >
       <ValidValues>
         <ValidValue Description="ln_Chinese" Value="15" />
         <ValidValue Description="ln_English" Value="3" />

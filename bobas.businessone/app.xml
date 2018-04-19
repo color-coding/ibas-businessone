@@ -2,19 +2,27 @@
 <!DOCTYPE configuration>
 <ns2:configuration xmlns:ns2="http://colorcoding.org/ibas/bobas/configuration">
     <appSettings>
-        <!-- 配置项目-公司标记 -->
-        <add key="Company" value="CC" />
         <!-- 配置项目-是否开启调试模式 -->
         <add key="DebugMode" value="true" />
-        <!-- 配置项目-B1账套类型 -->
-        <add key="MasterB1Type" value="MSSQL" />
-        <!-- 配置项目-B1账套地址 -->
-        <add key="MasterB1Server" value="ibas-db-mssql" />
-        <!-- 配置项目-B1账套名称 -->
-        <add key="MasterB1Name" value="ibas_demo" />
-        <!-- 配置项目-B1账套用户名称 -->
-        <add key="MasterB1UserID" value="sa" />
-        <!-- 配置项目-B1账套用户密码 -->
-        <add key="MasterB1UserPassword" value="1q2w3e" />
+        <!-- 配置项目-B1-服务地址 -->
+        <add key="B1Server" value="ibas-demo-b1" />
+        <!-- 配置项目-B1-数据库名称 -->
+        <add key="B1Company" value="SBODemoCN" />
+        <!-- 配置项目-B1-用户 -->
+        <add key="B1User" value="manager" />
+        <!-- 配置项目-B1-密码 -->
+        <add key="B1Password" value="manager" />
+        <!-- 配置项目-B1-许可服务 -->
+        <add key="B1LicenseServer" value="ibas-demo-b1:30000" />
+        <!-- 配置项目-B1-架构服务 -->
+        <add key="B1SLDServer" value="ibas-demo-b1:40000" />
+        <!-- 配置项目-B1-数据库类型 -->
+        <add key="B1DbType" value="dst_MSSQL2014" />
+        <!-- 配置项目-B1-数据库用户 -->
+        <add key="B1DbUser" value="sa" />
+        <!-- 配置项目-B1-数据库密码 -->
+        <add key="B1DbPassword" value="1q2w3e" />
+        <!-- 配置项目-B1-数据库使用信任 -->
+        <add key="B1DbUseTrusted" value="false" />
     </appSettings>
 </ns2:configuration>
