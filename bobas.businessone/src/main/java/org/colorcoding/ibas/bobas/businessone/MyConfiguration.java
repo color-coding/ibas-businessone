@@ -2,6 +2,14 @@ package org.colorcoding.ibas.bobas.businessone;
 
 public class MyConfiguration extends org.colorcoding.ibas.bobas.MyConfiguration {
 	/**
+	 * 核心命名空间
+	 */
+	public static final String NAMESPACE_B1 = "http://colorcoding.org/ibas/b1";
+	/**
+	 * 数据命名空间
+	 */
+	public static final String NAMESPACE_B1_DATA = NAMESPACE_B1 + "/data";
+	/**
 	 * 配置项目-B1-服务地址
 	 */
 	public final static String CONFIG_ITEM_B1_SERVER = "B1Server";
@@ -41,4 +49,8 @@ public class MyConfiguration extends org.colorcoding.ibas.bobas.MyConfiguration 
 	 * 配置项目-B1-数据库使用信任
 	 */
 	public final static String CONFIG_ITEM_B1_DB_USE_TRUSTED = "B1DbUseTrusted";
+	/**
+	 * 配置项目-B1-口令
+	 */
+	public final static String CONFIG_ITEM_B1_TOKEN = "B1Token";
 }

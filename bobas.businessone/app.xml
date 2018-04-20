@@ -21,7 +21,7 @@
         <!-- 配置项目-B1-数据库用户 -->
         <add key="B1DbUser" value="sa" />
         <!-- 配置项目-B1-数据库密码 -->
-        <add key="B1DbPassword" value="1q2w3e" />
+        <add key="B1DbPassword" value="Aa123456" />
         <!-- 配置项目-B1-数据库使用信任 -->
         <add key="B1DbUseTrusted" value="false" />
     </appSettings>

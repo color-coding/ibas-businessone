@@ -2,13 +2,37 @@ package org.colorcoding.ibas.bobas.businessone.repository;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
+import org.colorcoding.ibas.bobas.businessone.db.B1AdapterFactory;
+import org.colorcoding.ibas.bobas.businessone.db.IB1Adapter;
+import org.colorcoding.ibas.bobas.common.ISqlQuery;
+import org.colorcoding.ibas.bobas.core.RepositoryException;
+import org.colorcoding.ibas.bobas.message.Logger;
+import org.colorcoding.ibas.bobas.message.MessageLevel;
+import org.colorcoding.ibas.bobas.repository.InvalidTokenException;
 
 import com.sap.smb.sbo.api.ICompany;
+import com.sap.smb.sbo.api.IRecordset;
+import com.sap.smb.sbo.api.SBOCOMConstants;
+import com.sap.smb.sbo.api.SBOCOMException;
 import com.sap.smb.sbo.api.SBOCOMUtil;
 
 public class BORepositoryBusinessOne {
 
-	public final static String MASTER_REPOSITORY_SIGN = "Master";
+	private String userToken = null;
+
+	public final String getUserToken() {
+		return userToken;
+	}
+
+	public final void setUserToken(String userToken) throws InvalidTokenException {
+		String token = MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_TOKEN);
+		if (token != null && !token.isEmpty()) {
+			if (!token.equals(userToken)) {
+				throw new InvalidTokenException();
+			}
+		}
+		this.userToken = userToken;
+	}
 
 	public String getServer() {
 		return this.getB1Company().getServer();
@@ -121,7 +145,79 @@ public class BORepositoryBusinessOne {
 			this.b1Company.setUseTrusted(
 					MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_USE_TRUSTED, false));
 		}
+		if (!this.b1Company.isConnected()) {
+			if (this.b1Company.connect() != 0) {
+				throw new RuntimeException(
+						this.b1Company.getLastErrorCode() + this.b1Company.getLastErrorDescription());
+			}
+		}
+		this.b1Adapter = B1AdapterFactory.create(this.b1Company);
 		return b1Company;
+	}
+
+	public void dispose() throws RepositoryException {
+		if (this.b1Company != null) {
+			this.b1Company.disconnect();
+			this.b1Company.release();
+			this.b1Adapter = null;
+			System.gc();
+		}
+	}
+
+	public boolean inTransaction() {
+		if (this.b1Company == null) {
+			return false;
+		}
+		return this.getB1Company().isInTransaction();
+	}
+
+	public boolean beginTransaction() throws RepositoryException {
+		if (this.b1Company == null) {
+			return false;
+		}
+		if (!this.getB1Company().isConnected()) {
+			return false;
+		}
+		if (this.getB1Company().isInTransaction()) {
+			return false;
+		}
+		this.getB1Company().startTransaction();
+		return true;
+	}
+
+	public void rollbackTransaction() throws RepositoryException {
+		if (this.b1Company == null) {
+			return;
+		}
+		this.getB1Company().endTransaction(SBOCOMConstants.BoWfTransOpt_wf_RollBack);
+	}
+
+	public void commitTransaction() throws RepositoryException {
+		if (this.b1Company == null) {
+			return;
+		}
+		this.getB1Company().endTransaction(SBOCOMConstants.BoWfTransOpt_wf_Commit);
+	}
+
+	private IB1Adapter b1Adapter;
+
+	protected IB1Adapter getB1Adapter() {
+		return b1Adapter;
+	}
+
+	protected static final String MSG_SQL_SCRIPTS = "sql: %s";
+
+	protected IRecordset query(String sql) throws SBOCOMException {
+		IRecordset recordset = SBOCOMUtil.newRecordset(this.getB1Company());
+		if (MyConfiguration.isDebugMode()) {
+			Logger.log(MessageLevel.DEBUG, MSG_SQL_SCRIPTS, sql);
+		}
+		recordset.doQuery(sql);
+		return recordset;
+	}
+
+	protected IRecordset query(ISqlQuery sqlQuery) throws SBOCOMException {
+		return this.query(sqlQuery.getQueryString());
 	}
 
 }
