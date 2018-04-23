@@ -13,8 +13,7 @@
     </organization>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <ibas.version>${ibasVersion}</ibas.version>
-        <ibas.if.version>${ibasIfVersion}</ibas.if.version>
+        <b1.version>${b1Version}</b1.version>
     </properties>
     <build>
         <plugins>
@@ -56,38 +55,8 @@
         </dependency>
         <dependency>
             <groupId>org.colorcoding.ibas</groupId>
-            <artifactId>bobas.businessobjectscommon</artifactId>
-            <version>${ibas.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.colorcoding.ibas</groupId>
-            <artifactId>bobas.businessobjectscommon.db.mssql</artifactId>
-            <version>${ibas.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.colorcoding.ibas</groupId>
-            <artifactId>bobas.businessobjectscommon.db.mysql</artifactId>
-            <version>${ibas.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.colorcoding.ibas</groupId>
-            <artifactId>bobas.businessobjectscommon.db.pgsql</artifactId>
-            <version>${ibas.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.colorcoding.ibas</groupId>
-            <artifactId>bobas.businessobjectscommon.db.hana</artifactId>
-            <version>${ibas.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.colorcoding.ibas</groupId>
-            <artifactId>bobas.businessobjectscommon.jersey</artifactId>
-            <version>${ibas.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.colorcoding.apps</groupId>
-            <artifactId>ibas.initialfantasy</artifactId>
-            <version>${ibas.if.version}</version>
+            <artifactId>bobas.businessone</artifactId>
+            <version>${b1.version}</version>
         </dependency>
     </dependencies>
 </project>

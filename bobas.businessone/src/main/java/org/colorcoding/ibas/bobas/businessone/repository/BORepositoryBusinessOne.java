@@ -4,6 +4,8 @@ import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
 import org.colorcoding.ibas.bobas.businessone.db.B1AdapterFactory;
 import org.colorcoding.ibas.bobas.businessone.db.IB1Adapter;
+import org.colorcoding.ibas.bobas.businessone.serialization.B1Serializer;
+import org.colorcoding.ibas.bobas.businessone.serialization.IB1Serializer;
 import org.colorcoding.ibas.bobas.common.ISqlQuery;
 import org.colorcoding.ibas.bobas.core.RepositoryException;
 import org.colorcoding.ibas.bobas.message.Logger;
@@ -17,6 +19,9 @@ import com.sap.smb.sbo.api.SBOCOMException;
 import com.sap.smb.sbo.api.SBOCOMUtil;
 
 public class BORepositoryBusinessOne {
+
+	protected static final String MSG_B1_COMPANY_CONNECTING = "b1 company: [%s | %s] is connecting.";
+	protected static final String MSG_B1_COMPANY_CONNECTED = "b1 company: [%s | %s] was connected.";
 
 	private String userToken = null;
 
@@ -34,11 +39,11 @@ public class BORepositoryBusinessOne {
 		this.userToken = userToken;
 	}
 
-	public String getServer() {
+	public final String getServer() {
 		return this.getB1Company().getServer();
 	}
 
-	public void setServer(String server) {
+	public final void setServer(String server) {
 		this.getB1Company().setServer(server);
 		if (server != null && !server.isEmpty()) {
 			this.getB1Company().setLicenseServer(String.format("%s:30000", server));
@@ -46,89 +51,89 @@ public class BORepositoryBusinessOne {
 		}
 	}
 
-	public String getCompanyDB() {
+	public final String getCompanyDB() {
 		return this.getB1Company().getCompanyDB();
 	}
 
-	public void setCompanyDB(String companyDB) {
+	public final void setCompanyDB(String companyDB) {
 		this.getB1Company().setCompanyDB(companyDB);
 	}
 
-	public String getUserName() {
+	public final String getUserName() {
 		return this.getB1Company().getUserName();
 	}
 
-	public void setUserName(String userName) {
+	public final void setUserName(String userName) {
 		this.getB1Company().setUserName(userName);
 	}
 
-	public String getPassword() {
+	public final String getPassword() {
 		return this.getB1Company().getPassword();
 	}
 
-	public void setPassword(String password) {
+	public final void setPassword(String password) {
 		this.getB1Company().setPassword(password);
 	}
 
-	public int getLanguage() {
+	public final int getLanguage() {
 		return this.getB1Company().getLanguage();
 	}
 
-	public void setLanguage(int language) {
+	public final void setLanguage(int language) {
 		this.getB1Company().setLanguage(language);
 	}
 
-	public String getLicenseServer() {
+	public final String getLicenseServer() {
 		return this.getB1Company().getLicenseServer();
 	}
 
-	public void setLicenseServer(String licenseServer) {
+	public final void setLicenseServer(String licenseServer) {
 		this.getB1Company().setLicenseServer(licenseServer);
 	}
 
-	public String getSLDServer() {
+	public final String getSLDServer() {
 		return this.getB1Company().getSLDServer();
 	}
 
-	public void setSLDServer(String sldServer) {
+	public final void setSLDServer(String sldServer) {
 		this.getB1Company().setSLDServer(sldServer);
 	}
 
-	public int getDbServerType() {
+	public final int getDbServerType() {
 		return this.getB1Company().getDbServerType();
 	}
 
-	public void setDbServerType(int dbServerType) {
+	public final void setDbServerType(int dbServerType) {
 		this.getB1Company().setDbServerType(dbServerType);
 	}
 
-	public String getDbUserName() {
+	public final String getDbUserName() {
 		return this.getB1Company().getDbUserName();
 	}
 
-	public void setDbUserName(String dbUserName) {
+	public final void setDbUserName(String dbUserName) {
 		this.getB1Company().setDbUserName(dbUserName);
 	}
 
-	public String getDbPassword() {
+	public final String getDbPassword() {
 		return this.getB1Company().getDbPassword();
 	}
 
-	public void setDbPassword(String dbPassword) {
+	public final void setDbPassword(String dbPassword) {
 		this.getB1Company().setDbPassword(dbPassword);
 	}
 
-	public boolean isUseTrusted() {
+	public final boolean isUseTrusted() {
 		return this.getB1Company().isUseTrusted();
 	}
 
-	public void setUseTrusted(boolean useTrusted) {
+	public final void setUseTrusted(boolean useTrusted) {
 		this.getB1Company().setUseTrusted(useTrusted);
 	}
 
-	private ICompany b1Company;
+	private volatile ICompany b1Company;
 
-	protected ICompany getB1Company() {
+	protected final synchronized ICompany getB1Company() {
 		if (this.b1Company == null) {
 			this.b1Company = SBOCOMUtil.newCompany();
 			this.b1Company.setServer(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_SERVER));
@@ -145,17 +150,10 @@ public class BORepositoryBusinessOne {
 			this.b1Company.setUseTrusted(
 					MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_USE_TRUSTED, false));
 		}
-		if (!this.b1Company.isConnected()) {
-			if (this.b1Company.connect() != 0) {
-				throw new RuntimeException(
-						this.b1Company.getLastErrorCode() + this.b1Company.getLastErrorDescription());
-			}
-		}
-		this.b1Adapter = B1AdapterFactory.create(this.b1Company);
 		return b1Company;
 	}
 
-	public void dispose() throws RepositoryException {
+	public final void dispose() throws RepositoryException {
 		if (this.b1Company != null) {
 			this.b1Company.disconnect();
 			this.b1Company.release();
@@ -164,14 +162,41 @@ public class BORepositoryBusinessOne {
 		}
 	}
 
-	public boolean inTransaction() {
+	protected final synchronized boolean openRepository() throws RepositoryException {
+		try {
+			if (!this.getB1Company().isConnected()) {
+				Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_CONNECTING, this.getServer(), this.getCompanyDB());
+				if (this.getB1Company().connect() != 0) {
+					throw new RuntimeException(this.getB1Company().getLastErrorCode() + " "
+							+ this.getB1Company().getLastErrorDescription());
+				}
+				Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_CONNECTED, this.getServer(), this.getCompanyDB());
+				this.b1Adapter = B1AdapterFactory.create(this.getB1Company());
+				return true;
+			} else {
+				return false;
+			}
+		} catch (Exception e) {
+			throw new RepositoryException(e);
+		}
+	}
+
+	protected final synchronized void closeRepository() {
+		if (this.b1Company != null) {
+			if (this.b1Company.isConnected()) {
+				this.b1Company.disconnect();
+			}
+		}
+	}
+
+	public final synchronized boolean inTransaction() {
 		if (this.b1Company == null) {
 			return false;
 		}
 		return this.getB1Company().isInTransaction();
 	}
 
-	public boolean beginTransaction() throws RepositoryException {
+	public final synchronized boolean beginTransaction() throws RepositoryException {
 		if (this.b1Company == null) {
 			return false;
 		}
@@ -185,14 +210,14 @@ public class BORepositoryBusinessOne {
 		return true;
 	}
 
-	public void rollbackTransaction() throws RepositoryException {
+	public final synchronized void rollbackTransaction() throws RepositoryException {
 		if (this.b1Company == null) {
 			return;
 		}
 		this.getB1Company().endTransaction(SBOCOMConstants.BoWfTransOpt_wf_RollBack);
 	}
 
-	public void commitTransaction() throws RepositoryException {
+	public final synchronized void commitTransaction() throws RepositoryException {
 		if (this.b1Company == null) {
 			return;
 		}
@@ -201,13 +226,13 @@ public class BORepositoryBusinessOne {
 
 	private IB1Adapter b1Adapter;
 
-	protected IB1Adapter getB1Adapter() {
+	protected final IB1Adapter getB1Adapter() {
 		return b1Adapter;
 	}
 
 	protected static final String MSG_SQL_SCRIPTS = "sql: %s";
 
-	protected IRecordset query(String sql) throws SBOCOMException {
+	protected final IRecordset query(String sql) throws SBOCOMException {
 		IRecordset recordset = SBOCOMUtil.newRecordset(this.getB1Company());
 		if (MyConfiguration.isDebugMode()) {
 			Logger.log(MessageLevel.DEBUG, MSG_SQL_SCRIPTS, sql);
@@ -216,8 +241,17 @@ public class BORepositoryBusinessOne {
 		return recordset;
 	}
 
-	protected IRecordset query(ISqlQuery sqlQuery) throws SBOCOMException {
+	protected final IRecordset query(ISqlQuery sqlQuery) throws SBOCOMException {
 		return this.query(sqlQuery.getQueryString());
+	}
+
+	private IB1Serializer b1Serializer;
+
+	public IB1Serializer getB1Serializer() {
+		if (b1Serializer == null) {
+			b1Serializer = B1Serializer.create();
+		}
+		return b1Serializer;
 	}
 
 }

@@ -4,11 +4,13 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.serialization.Serializable;
 
 @XmlAccessorType(XmlAccessType.NONE)
+@XmlType(name = "DataWrapping", namespace = MyConfiguration.NAMESPACE_B1_DATA)
 @XmlRootElement(name = "DataWrapping", namespace = MyConfiguration.NAMESPACE_B1_DATA)
 public class DataWrapping extends Serializable {
 

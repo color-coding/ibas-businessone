@@ -53,4 +53,8 @@ public class MyConfiguration extends org.colorcoding.ibas.bobas.MyConfiguration 
 	 * 配置项目-B1-口令
 	 */
 	public final static String CONFIG_ITEM_B1_TOKEN = "B1Token";
+	/**
+	 * 配置项目-B1-数据编码
+	 */
+	public final static String CONFIG_ITEM_B1_DATA_ENCODING = "utf-8";
 }

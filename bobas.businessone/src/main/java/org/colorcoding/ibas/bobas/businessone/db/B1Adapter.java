@@ -1,5 +1,15 @@
 package org.colorcoding.ibas.bobas.businessone.db;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.common.IConditions;
 import org.colorcoding.ibas.bobas.common.ICriteria;
 import org.colorcoding.ibas.bobas.common.ISorts;
@@ -9,10 +19,30 @@ import org.colorcoding.ibas.bobas.db.IBOAdapter4Db;
 import org.colorcoding.ibas.bobas.db.ISqlScripts;
 import org.colorcoding.ibas.bobas.db.ParsingException;
 import org.colorcoding.ibas.bobas.i18n.I18N;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import com.sap.smb.sbo.api.ICompany;
 
 public class B1Adapter implements IB1Adapter {
+	public static Document newDocument(String xmlData) throws SAXException, IOException, ParserConfigurationException {
+		return newDocument(new ByteArrayInputStream(xmlData.getBytes()));
+	}
+
+	public static Document newDocument(InputStream stream)
+			throws SAXException, IOException, ParserConfigurationException {
+		InputSource source = new InputSource(stream);
+		source.setEncoding(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DATA_ENCODING, "utf-8"));
+		return newDocument(source);
+	}
+
+	public static Document newDocument(InputSource source)
+			throws SAXException, IOException, ParserConfigurationException {
+		return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(source);
+	}
 
 	public B1Adapter(ICompany b1Company) {
 		this.setB1Company(b1Company);
@@ -60,12 +90,18 @@ public class B1Adapter implements IB1Adapter {
 
 	@Override
 	public ISqlQuery parseSqlQuery(ICriteria criteria, Integer boCode) throws ParsingException {
-		// 获取主表
-		String table = this.getMasterTable(boCode);
-		if (table == null || table.isEmpty()) {
-			throw new ParsingException(I18N.prop("msg_bobas_not_found_bo_table", boCode));
+		try {
+			// 获取主表
+			String table = this.getMasterTable(boCode);
+			if (table == null || table.isEmpty()) {
+				throw new ParsingException(I18N.prop("msg_bobas_not_found_bo_table", boCode));
+			}
+			return this.parseSqlQuery(criteria, table);
+		} catch (ParsingException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new ParsingException(e);
 		}
-		return this.parseSqlQuery(criteria, table);
 	}
 
 	@Override
@@ -77,7 +113,49 @@ public class B1Adapter implements IB1Adapter {
 		return new SqlQuery(sqlScripts.groupSelectQuery("*", table, where, order, criteria.getResultCount()));
 	}
 
-	protected String getMasterTable(Integer boCode) {
-		return "";
+	private Map<Integer, String> tableMap = new HashMap<>();
+
+	protected String getMasterTable(Integer boCode) throws SAXException, IOException, ParserConfigurationException {
+		String table = this.tableMap.get(boCode);
+		if (table != null) {
+			return table;
+		}
+		table = this.getMasterTable(newDocument(this.getB1Company().getBusinessObjectXmlSchema(boCode)));
+		if (table != null) {
+			this.tableMap.put(boCode, table);
+		}
+		return table;
+	}
+
+	protected String getMasterTable(Document document) throws SAXException, IOException, ParserConfigurationException {
+		Node node = document.getFirstChild();// schema
+		node = node.getFirstChild();// element name="BOM"
+		node = node.getFirstChild();// complexType
+		node = node.getFirstChild();// sequence
+		node = node.getFirstChild();// element name="BO"
+		node = node.getFirstChild();// complexType
+		node = node.getFirstChild();// all
+		NodeList nodes = node.getChildNodes();
+		for (int i = 0; i < nodes.getLength(); i++) {
+			node = nodes.item(i);
+			if (node.getNodeName().equals("element")) {
+				Node attrib = node.getAttributes().getNamedItem("name");
+				if (attrib == null) {
+					continue;
+				}
+				if (attrib.getNodeValue() == null) {
+					continue;
+				}
+				if (attrib.getNodeValue().equals("AdmInfo")) {
+					continue;
+				}
+				if (attrib.getNodeValue().equals("QueryParams")) {
+					continue;
+				}
+				// 第一个表，主表
+				return attrib.getNodeValue();
+			}
+		}
+		return null;
 	}
 }

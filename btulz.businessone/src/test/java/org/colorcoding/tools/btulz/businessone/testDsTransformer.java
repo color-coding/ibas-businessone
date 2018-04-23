@@ -23,7 +23,7 @@ public class testDsTransformer extends TestCase {
 		company.setUserName("manager");
 		company.setPassword("manager");
 		company.setDbUserName("sa");
-		company.setDbPassword("Aa123456");
+		company.setDbPassword("1q2w3e");
 		company.setLicenseServer("ibas-demo-b1:30000");
 		company.setSLDServer("ibas-demo-b1:40000");
 		company.setLanguage(SBOCOMConstants.BoSuppLangs_ln_English);
@@ -55,7 +55,7 @@ public class testDsTransformer extends TestCase {
 		dsTransformer.setPassword("manager");
 		dsTransformer.setDbServerType(SBOCOMConstants.BoDataServerTypes_dst_MSSQL2014);
 		dsTransformer.setDbUserName("sa");
-		dsTransformer.setDbPassword("Aa123456");
+		dsTransformer.setDbPassword("1q2w3e");
 		dsTransformer.transform();
 	}
 }
