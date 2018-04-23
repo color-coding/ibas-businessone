@@ -1,73 +1,95 @@
 package org.colorcoding.ibas.bobas.businessone.serialization;
 
-import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
+import org.colorcoding.ibas.bobas.serialization.ValidateException;
+import org.xml.sax.InputSource;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlFactory;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.sap.smb.sbo.api.ICompany;
 
-public class B1Serializer implements IB1Serializer {
+public abstract class B1Serializer<S> implements IB1Serializer<S> {
 
-	public static IB1Serializer create() {
-		return new B1Serializer();
+	public B1Serializer(ICompany b1Company) {
+		this.setB1Company(b1Company);
 	}
 
-	private XmlFactory xmlFactory;
+	private ICompany b1Company;
 
-	protected XmlFactory getXmlFactory() {
-		if (this.xmlFactory == null) {
-			this.xmlFactory = new XmlMapper().getFactory();
-		}
-		return xmlFactory;
+	protected ICompany getB1Company() {
+		return b1Company;
 	}
 
-	protected JsonFactory getJsonFactory() {
-		if (this.jsonFactory == null) {
-			this.jsonFactory = new ObjectMapper().getFactory();
-		}
-		return jsonFactory;
-	}
-
-	private JsonFactory jsonFactory;
-
-	@Override
-	public void serialize(String xmlData, OutputStream outputStream) throws SerializationException {
-		try {
-			JsonParser jsonParser = this.getXmlFactory().createParser(xmlData);
-			JsonGenerator jsonGenerator = this.getJsonFactory().createGenerator(outputStream);
-			while (jsonParser.nextToken() != null) {
-				jsonGenerator.copyCurrentEvent(jsonParser);
-			}
-			jsonParser.close();
-			jsonGenerator.close();
-		} catch (Exception e) {
-			throw new SerializationException(e);
-		}
+	private void setB1Company(ICompany b1Company) {
+		this.b1Company = b1Company;
 	}
 
 	@Override
-	public String serialize(String xmlData) throws SerializationException {
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		this.serialize(xmlData, outputStream);
-		return outputStream.toString();
-	}
-
-	@Override
-	public DataWrapping wrap(String xmlData) throws SerializationException {
-		return new DataWrapping(this.serialize(xmlData));
-	}
-
-	@Override
-	public <T> T deserialize(String data, Class<T> type) throws SerializationException {
+	public <T> T clone(T arg0, Class<?>... arg1) throws SerializationException {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
+	@Override
+	public void validate(Class<?> type, InputStream data) throws ValidateException {
+		this.validate(this.getSchema(type), data);
+	}
+
+	@Override
+	public void validate(S schema, String data) throws ValidateException {
+		this.validate(schema, new ByteArrayInputStream(data.getBytes()));
+	}
+
+	@Override
+	public void validate(Class<?> type, String data) throws ValidateException {
+		this.validate(type, new ByteArrayInputStream(data.getBytes()));
+	}
+
+	@Override
+	public void serialize(Object object, OutputStream outputStream, Class<?>... types) throws SerializationException {
+		this.serialize(object, outputStream,
+				MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_FORMATTED_OUTPUT, false), types);
+	}
+
+	@Override
+	public Object deserialize(String data, Class<?>... types) throws SerializationException {
+		return this.deserialize(new ByteArrayInputStream(data.getBytes()), types);
+	}
+
+	@Override
+	public Object deserialize(InputStream inputStream, Class<?>... types) throws SerializationException {
+		try {
+			return this.deserialize(new InputSource(inputStream), types);
+		} finally {
+			if (inputStream != null) {
+				try {
+					inputStream.close();
+				} catch (IOException e) {
+				}
+			}
+		}
+	}
+
+	@Override
+	public DataWrapping wrap(String xmlData) throws SerializationException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public abstract void serialize(Object object, OutputStream outputStream, boolean formated, Class<?>... types);
+
+	@Override
+	public abstract Object deserialize(InputSource inputSource, Class<?>... types) throws SerializationException;
+
+	@Override
+	public abstract void validate(S schema, InputStream data) throws ValidateException;
+
+	@Override
+	public abstract S getSchema(Class<?> type) throws SerializationException;
 }

@@ -2,10 +2,11 @@ package org.colorcoding.ibas.bobas.businessone.repository;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
-import org.colorcoding.ibas.bobas.businessone.db.B1AdapterFactory;
+import org.colorcoding.ibas.bobas.businessone.db.B1Adapter;
 import org.colorcoding.ibas.bobas.businessone.db.IB1Adapter;
-import org.colorcoding.ibas.bobas.businessone.serialization.B1Serializer;
+import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerFactory;
 import org.colorcoding.ibas.bobas.businessone.serialization.IB1Serializer;
+import org.colorcoding.ibas.bobas.businessone.serialization.IB1SerializerManager;
 import org.colorcoding.ibas.bobas.common.ISqlQuery;
 import org.colorcoding.ibas.bobas.core.RepositoryException;
 import org.colorcoding.ibas.bobas.message.Logger;
@@ -171,7 +172,7 @@ public class BORepositoryBusinessOne {
 							+ this.getB1Company().getLastErrorDescription());
 				}
 				Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_CONNECTED, this.getServer(), this.getCompanyDB());
-				this.b1Adapter = B1AdapterFactory.create(this.getB1Company());
+				this.b1Adapter = B1Adapter.create(this.getB1Company());
 				return true;
 			} else {
 				return false;
@@ -245,11 +246,26 @@ public class BORepositoryBusinessOne {
 		return this.query(sqlQuery.getQueryString());
 	}
 
-	private IB1Serializer b1Serializer;
+	private String serialization;
 
-	public IB1Serializer getB1Serializer() {
+	public String getSerialization() {
+		if (this.serialization == null || this.serialization.isEmpty()) {
+			this.serialization = MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_SERIALIZATION_TYPE,
+					IB1SerializerManager.TYPE_JSON);
+		}
+		return serialization;
+	}
+
+	public void setSerialization(String serialization) {
+		this.serialization = serialization;
+	}
+
+	private IB1Serializer<?> b1Serializer;
+
+	protected IB1Serializer<?> getB1Serializer() {
 		if (b1Serializer == null) {
-			b1Serializer = B1Serializer.create();
+			b1Serializer = B1SerializerFactory.create().createManager().create(this.getB1Company(),
+					this.getSerialization());
 		}
 		return b1Serializer;
 	}

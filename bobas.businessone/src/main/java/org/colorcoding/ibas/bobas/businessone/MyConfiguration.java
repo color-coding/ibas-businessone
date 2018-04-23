@@ -56,5 +56,13 @@ public class MyConfiguration extends org.colorcoding.ibas.bobas.MyConfiguration 
 	/**
 	 * 配置项目-B1-数据编码
 	 */
-	public final static String CONFIG_ITEM_B1_DATA_ENCODING = "utf-8";
+	public final static String CONFIG_ITEM_B1_DATA_ENCODING = "B1Encoding";
+	/**
+	 * 配置项目-B1-数据格式
+	 */
+	public final static String CONFIG_ITEM_B1_SERIALIZATION_TYPE = "B1Serialization";
+	/**
+	 * 配置项目-B1-序列化方式
+	 */
+	public final static String CONFIG_ITEM_B1_SERIALIZATION_WAY = "B1SerializationWay";
 }

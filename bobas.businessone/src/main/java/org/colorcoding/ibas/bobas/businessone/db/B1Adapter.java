@@ -26,22 +26,15 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.sap.smb.sbo.api.ICompany;
+import com.sap.smb.sbo.api.SBOCOMConstants;
 
 public class B1Adapter implements IB1Adapter {
-	public static Document newDocument(String xmlData) throws SAXException, IOException, ParserConfigurationException {
-		return newDocument(new ByteArrayInputStream(xmlData.getBytes()));
-	}
 
-	public static Document newDocument(InputStream stream)
-			throws SAXException, IOException, ParserConfigurationException {
-		InputSource source = new InputSource(stream);
-		source.setEncoding(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DATA_ENCODING, "utf-8"));
-		return newDocument(source);
-	}
-
-	public static Document newDocument(InputSource source)
-			throws SAXException, IOException, ParserConfigurationException {
-		return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(source);
+	public static IB1Adapter create(ICompany company) {
+		if (company.getDbServerType() == SBOCOMConstants.BoDataServerTypes_dst_HANADB) {
+			return new B1Adapter(company, new BOAdapter4MsSql());
+		}
+		return new B1Adapter(company, new BOAdapter4Hana());
 	}
 
 	public B1Adapter(ICompany b1Company) {
@@ -125,6 +118,20 @@ public class B1Adapter implements IB1Adapter {
 			this.tableMap.put(boCode, table);
 		}
 		return table;
+	}
+
+	protected Document newDocument(String xmlData) throws SAXException, IOException, ParserConfigurationException {
+		return this.newDocument(new ByteArrayInputStream(xmlData.getBytes()));
+	}
+
+	protected Document newDocument(InputStream stream) throws SAXException, IOException, ParserConfigurationException {
+		InputSource source = new InputSource(stream);
+		source.setEncoding(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DATA_ENCODING, "utf-8"));
+		return this.newDocument(source);
+	}
+
+	protected Document newDocument(InputSource source) throws SAXException, IOException, ParserConfigurationException {
+		return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(source);
 	}
 
 	protected String getMasterTable(Document document) throws SAXException, IOException, ParserConfigurationException {
