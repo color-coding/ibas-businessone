@@ -1,19 +1,27 @@
 package org.colorcoding.ibas.bobas.businessone.serialization;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
+import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
+import org.colorcoding.ibas.bobas.i18n.I18N;
+import org.colorcoding.ibas.bobas.message.Logger;
+import org.colorcoding.ibas.bobas.message.MessageLevel;
+import org.colorcoding.ibas.bobas.serialization.SerializationElement;
+import org.colorcoding.ibas.bobas.serialization.SerializationElements;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
-import org.colorcoding.ibas.bobas.serialization.ValidateException;
-import org.xml.sax.InputSource;
+import org.colorcoding.ibas.bobas.serialization.Serializer;
 
 import com.sap.smb.sbo.api.ICompany;
+import com.sap.smb.sbo.api.IDocuments;
 
-public abstract class B1Serializer<S> implements IB1Serializer<S> {
+public abstract class B1Serializer<S> extends Serializer<S> implements IB1Serializer<S> {
 
 	public B1Serializer(ICompany b1Company) {
 		this.setB1Company(b1Company);
@@ -21,75 +29,126 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 
 	private ICompany b1Company;
 
-	protected ICompany getB1Company() {
+	protected final ICompany getB1Company() {
+		if (this.b1Company == null) {
+			throw new SerializationException(I18N.prop("msg_b1_invalid_company"));
+		}
 		return b1Company;
 	}
 
-	private void setB1Company(ICompany b1Company) {
+	private final void setB1Company(ICompany b1Company) {
 		this.b1Company = b1Company;
 	}
 
-	@Override
-	public <T> T clone(T arg0, Class<?>... arg1) throws SerializationException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void validate(Class<?> type, InputStream data) throws ValidateException {
-		this.validate(this.getSchema(type), data);
-	}
-
-	@Override
-	public void validate(S schema, String data) throws ValidateException {
-		this.validate(schema, new ByteArrayInputStream(data.getBytes()));
-	}
-
-	@Override
-	public void validate(Class<?> type, String data) throws ValidateException {
-		this.validate(type, new ByteArrayInputStream(data.getBytes()));
-	}
-
-	@Override
-	public void serialize(Object object, OutputStream outputStream, Class<?>... types) throws SerializationException {
-		this.serialize(object, outputStream,
-				MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_FORMATTED_OUTPUT, false), types);
-	}
-
-	@Override
-	public Object deserialize(String data, Class<?>... types) throws SerializationException {
-		return this.deserialize(new ByteArrayInputStream(data.getBytes()), types);
-	}
-
-	@Override
-	public Object deserialize(InputStream inputStream, Class<?>... types) throws SerializationException {
-		try {
-			return this.deserialize(new InputSource(inputStream), types);
-		} finally {
-			if (inputStream != null) {
-				try {
-					inputStream.close();
-				} catch (IOException e) {
-				}
+	/**
+	 * 判断是否为集合
+	 * 
+	 * @param type
+	 * @return
+	 */
+	protected boolean isCollection(Class<?> type) {
+		if (type.isArray()) {
+			return true;
+		}
+		if (Collection.class.isAssignableFrom(type)) {
+			return true;
+		}
+		int count = 0;
+		for (Method method : type.getMethods()) {
+			if (method.getName().equalsIgnoreCase("add")) {
+				count++;
+			}
+			if (method.getName().equalsIgnoreCase("setCurrentLine")) {
+				count++;
 			}
 		}
+		if (count > 1) {
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	protected List<SerializationElement> getSerializedElements(Class<?> type, boolean recursion) {
+		if (type.isInterface()) {
+			SerializationElements elements = new SerializationElements();// 类型为接口时
+			if (recursion) {
+				// 递归，先获取基类
+				for (Class<?> item : type.getInterfaces()) {
+					if (item.getName().startsWith("java.")) {
+						// 基础类型不做处理
+						continue;
+					}
+					elements.add(this.getSerializedElements(item, recursion));
+				}
+			}
+			for (Method method : type.getMethods()) {
+				if (!method.getName().startsWith("get")) {
+					continue;
+				}
+				if (method.getReturnType() == null) {
+					continue;
+				}
+				if (method.getParameterCount() != 0) {
+					continue;
+				}
+				String elementName = method.getName().replace("get", "");
+				Class<?> elementType = method.getReturnType();
+				elements.add(new SerializationElement(elementName, elementType));
+			}
+			return elements;
+		}
+		return super.getSerializedElements(type, recursion);
 	}
 
 	@Override
 	public DataWrapping wrap(String xmlData) throws SerializationException {
-		// TODO Auto-generated method stub
-		return null;
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		this.serialize(xmlData, outputStream);
+		return new DataWrapping(outputStream.toString());
 	}
 
 	@Override
-	public abstract void serialize(Object object, OutputStream outputStream, boolean formated, Class<?>... types);
+	@SuppressWarnings("unchecked")
+	public <T> T clone(T object, Class<?>... types) throws SerializationException {
+		if (object == null) {
+			return null;
+		}
+		Class<?> type = object.getClass();
+		String folder = MyConfiguration.getTempFolder();
+		if (!folder.endsWith(File.separator)) {
+			folder += File.separator;
+		}
+		String file = String.format("%s%s.tmp", folder, UUID.randomUUID().toString());
+		try {
+			Method methodSaveXml = null;
+			try {
+				methodSaveXml = type.getMethod("saveXML", String.class);
+			} catch (NoSuchMethodException e) {
+				methodSaveXml = type.getMethod("toXMLFile", String.class);
+			}
+			if (methodSaveXml != null) {
+				methodSaveXml.invoke(object, file);
+				Integer objCode = -1;
+				if (object instanceof IDocuments) {
+					objCode = ((IDocuments) object).getDocType();
+				} else {
+					objCode = Enumeration.valueOf(type);
+				}
+				if (objCode != -1) {
+					Logger.log(MessageLevel.DEBUG, "serializer: load b1 object [%s], data [%s].", objCode, file);
+					return (T) this.getB1Company().getBusinessObjectFromXML(file, objCode);
+				}
+			}
+		} catch (Exception e) {
+			throw new SerializationException(e);
+		} finally {
+			File tmpFile = new File(file);
+			if (tmpFile.isFile() && tmpFile.exists()) {
+				tmpFile.delete();
+			}
+		}
+		throw new SerializationException(I18N.prop("msg_bobas_data_type_not_support", type.getName()));
+	}
 
-	@Override
-	public abstract Object deserialize(InputSource inputSource, Class<?>... types) throws SerializationException;
-
-	@Override
-	public abstract void validate(S schema, InputStream data) throws ValidateException;
-
-	@Override
-	public abstract S getSchema(Class<?> type) throws SerializationException;
 }

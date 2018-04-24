@@ -65,4 +65,5 @@ public class MyConfiguration extends org.colorcoding.ibas.bobas.MyConfiguration 
 	 * 配置项目-B1-序列化方式
 	 */
 	public final static String CONFIG_ITEM_B1_SERIALIZATION_WAY = "B1SerializationWay";
+
 }

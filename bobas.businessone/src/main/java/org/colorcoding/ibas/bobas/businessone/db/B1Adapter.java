@@ -19,6 +19,7 @@ import org.colorcoding.ibas.bobas.db.IBOAdapter4Db;
 import org.colorcoding.ibas.bobas.db.ISqlScripts;
 import org.colorcoding.ibas.bobas.db.ParsingException;
 import org.colorcoding.ibas.bobas.i18n.I18N;
+import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -59,6 +60,9 @@ public class B1Adapter implements IB1Adapter {
 	private ICompany b1Company;
 
 	protected ICompany getB1Company() {
+		if (this.b1Company == null) {
+			throw new SerializationException(I18N.prop("msg_b1_invalid_company"));
+		}
 		return b1Company;
 	}
 

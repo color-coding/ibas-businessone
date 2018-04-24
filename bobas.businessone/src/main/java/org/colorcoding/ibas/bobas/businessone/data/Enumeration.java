@@ -86,11 +86,30 @@ public class Enumeration {
 		}
 	}
 
-	public static Integer valueOf(Boolean value) {
+	public static Integer valueOf(boolean value) {
 		if (value) {
 			return SBOCOMConstants.BoYesNoEnum_tYES;
 		} else {
 			return SBOCOMConstants.BoYesNoEnum_tNO;
 		}
+	}
+
+	/**
+	 * 对象类型编码
+	 * 
+	 * @param type
+	 *            类型
+	 * @return
+	 */
+	public static Integer valueOf(Class<?> type) {
+		if (type != null && type.getName().startsWith("com.sap.smb.sbo.api.")) {
+			String name = type.getSimpleName();
+			if (type.isInterface() && name.startsWith("I")) {
+				name = name.substring(1);
+			}
+			return valueOf("BoObjectTypes", String.format("o%s", name));
+		}
+		throw new DataConvertException(
+				I18N.prop("msg_bobas_data_type_not_support", type == null ? "UNKNOWN" : type.getName()));
 	}
 }

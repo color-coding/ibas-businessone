@@ -163,7 +163,7 @@ public class BORepositoryBusinessOne {
 		}
 	}
 
-	protected final synchronized boolean openRepository() throws RepositoryException {
+	public final synchronized boolean openRepository() throws RepositoryException {
 		try {
 			if (!this.getB1Company().isConnected()) {
 				Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_CONNECTING, this.getServer(), this.getCompanyDB());
@@ -182,7 +182,7 @@ public class BORepositoryBusinessOne {
 		}
 	}
 
-	protected final synchronized void closeRepository() {
+	public final synchronized void closeRepository() {
 		if (this.b1Company != null) {
 			if (this.b1Company.isConnected()) {
 				this.b1Company.disconnect();
