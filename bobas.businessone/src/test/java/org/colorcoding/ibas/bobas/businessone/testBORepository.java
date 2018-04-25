@@ -1,14 +1,14 @@
 package org.colorcoding.ibas.bobas.businessone;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
 import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
-import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerFactory;
+import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerJson;
+import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerXml;
 import org.colorcoding.ibas.bobas.businessone.serialization.IB1Serializer;
 import org.colorcoding.ibas.bobas.common.Criteria;
 import org.colorcoding.ibas.bobas.common.ICriteria;
@@ -56,20 +56,28 @@ public class testBORepository extends TestCase {
 		System.out.println("data: " + fileGroup + "data.xml");
 
 		fileGroup = MyConfiguration.getWorkFolder() + File.separator + "items_";
-		this.saveFile(fileGroup + "schema.xml",
-				b1Company.getBusinessObjectXmlSchema(SBOCOMConstants.BoObjectTypes_oItems));
-		System.out.println("schema: " + fileGroup + "schema.xml");
 		IItems item = SBOCOMUtil.getItems(b1Company, String.valueOf(recordset.getFields().item("ItemCode").getValue()));
 		item.saveXML(fileGroup + "data.xml");
 		System.out.println("data: " + fileGroup + "data.xml");
+		this.saveFile(fileGroup + "schema_b1.xml",
+				b1Company.getBusinessObjectXmlSchema(SBOCOMConstants.BoObjectTypes_oItems));
+		System.out.println("schema: " + fileGroup + "schema_b1.xml");
+		// xml序列化测试
+		IB1Serializer<?> serializerXml = new B1SerializerXml(b1Company);
+		FileOutputStream outputStream = new FileOutputStream(fileGroup + "schema_xml.xml");
+		serializerXml.getSchema(IItems.class, outputStream);
+		outputStream.close();
+		System.out.println("schema: " + fileGroup + "schema_xml.xml");
+		boRepository.closeRepository();
+		// json序列化测试
+		IB1Serializer<?> serializerJson = new B1SerializerJson(b1Company);
+		outputStream = new FileOutputStream(fileGroup + "schema_json.json");
+		serializerJson.getSchema(IItems.class, outputStream);
+		outputStream.close();
+		System.out.println("schema: " + fileGroup + "schema_json.json");
 		// 测试克隆
-		IB1Serializer<?> serializer = B1SerializerFactory.create().createManager().create(b1Company, "xml");
 		// item = serializer.clone(item);
 		// System.out.println(item.getAsXML());
-		ByteArrayOutputStream writer = new ByteArrayOutputStream();
-		serializer.getSchema(IItems.class, writer);
-		System.out.println(writer.toString());
-		boRepository.closeRepository();
 	}
 
 	public void testFetch() {

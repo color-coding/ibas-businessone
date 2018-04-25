@@ -10,7 +10,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.colorcoding.ibas.bobas.data.DateTime;
 import org.colorcoding.ibas.bobas.serialization.SerializationElement;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
@@ -26,6 +25,9 @@ import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.sap.smb.sbo.api.ICompany;
+import com.sap.smb.sbo.api.IFields;
+import com.sap.smb.sbo.api.IValidValue;
+import com.sap.smb.sbo.api.IValidValues;
 
 public class B1SerializerJson extends B1Serializer<JsonSchema> {
 
@@ -66,6 +68,41 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 	}
 
 	@Override
+	protected String nameElement(String name) {
+		name = super.nameElement(name);
+		int index = 0;
+		for (char item : name.toCharArray()) {
+			if (Character.isUpperCase(item)) {
+				index++;
+			} else {
+				break;
+			}
+		}
+		if (index > 0) {
+			if (index == 1 || index == name.length()) {
+				name = name.substring(0, index).toLowerCase() + name.substring(index);
+			} else {
+				index -= 1;
+				name = name.substring(0, index).toLowerCase() + name.substring(index);
+			}
+		}
+		return name;
+	}
+
+	@Override
+	public JsonSchema getSchema(Class<?> type) throws SerializationException {
+		try {
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			this.getSchema(type, outputStream);
+			JsonNode jsonSchema = JsonLoader
+					.fromReader(new InputStreamReader(new ByteArrayInputStream(outputStream.toByteArray())));
+			return JsonSchemaFactory.byDefault().getJsonSchema(jsonSchema);
+		} catch (IOException | ProcessingException e) {
+			throw new SerializationException(e);
+		}
+	}
+
+	@Override
 	public void getSchema(Class<?> type, OutputStream outputStream) throws SerializationException {
 		JsonFactory jsonFactory = new JsonFactory();
 		try {
@@ -80,7 +117,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			jsonGenerator.writeStringField("type", "string");
 			jsonGenerator.writeStringField("pattern", type.getSimpleName());
 			jsonGenerator.writeEndObject();
-			this.createSerializationElement(jsonGenerator, type);
+			this.createSchemaElement(jsonGenerator, type);
 			jsonGenerator.writeEndObject();
 			jsonGenerator.writeEndObject();
 			jsonGenerator.flush();
@@ -97,7 +134,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 		}
 	}
 
-	protected void createSerializationElement(JsonGenerator jsonGenerator, Class<?> type)
+	protected void createSchemaElement(JsonGenerator jsonGenerator, Class<?> type)
 			throws JsonGenerationException, IOException {
 		for (SerializationElement item : this.getSerializedElements(type, true)) {
 			if (type.equals(item.getType())) {
@@ -122,12 +159,45 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					}
 				}
 				jsonGenerator.writeEndArray();
-			} else if (item.getType().equals(DateTime.class) || item.getType().equals(Date.class)) {
+			} else if (item.getType().equals(Date.class)) {
 				// 日期类型
 				jsonGenerator.writeStringField("type", "string");
 				// 格式：2000-01-01 or 2000-01-01T00:00:00
 				jsonGenerator.writeStringField("pattern",
 						"^|[0-9]{4}-[0-1][0-9]-[0-3][0-9]|[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]$");
+			} else if (item.getType().equals(IFields.class)) {
+				jsonGenerator.writeStringField("type", "array");
+				jsonGenerator.writeFieldName("items");
+				jsonGenerator.writeStartObject();
+				jsonGenerator.writeStringField("type", "object");
+				jsonGenerator.writeFieldName("properties");
+				jsonGenerator.writeStartObject();
+				// 自定义字段
+				jsonGenerator.writeFieldName("name");
+				jsonGenerator.writeStartObject();
+				jsonGenerator.writeStringField("type", "string");
+				jsonGenerator.writeEndObject();
+				jsonGenerator.writeFieldName("description");
+				jsonGenerator.writeStartObject();
+				jsonGenerator.writeStringField("type", "string");
+				jsonGenerator.writeEndObject();
+				jsonGenerator.writeFieldName("value");
+				jsonGenerator.writeStartObject();
+				jsonGenerator.writeStringField("type", "object");
+				jsonGenerator.writeEndObject();
+				// 自定义字段
+				jsonGenerator.writeEndObject();
+				jsonGenerator.writeEndObject();
+			} else if (item.getType().equals(IValidValues.class)) {
+				jsonGenerator.writeStringField("type", "array");
+				jsonGenerator.writeFieldName("items");
+				jsonGenerator.writeStartObject();
+				jsonGenerator.writeStringField("type", "object");
+				jsonGenerator.writeFieldName("properties");
+				jsonGenerator.writeStartObject();
+				this.createSchemaElement(jsonGenerator, IValidValue.class);
+				jsonGenerator.writeEndObject();
+				jsonGenerator.writeEndObject();
 			} else if (item.getWrapper() != null && !item.getWrapper().isEmpty()) {
 				jsonGenerator.writeStringField("type", "array");
 				jsonGenerator.writeFieldName("items");
@@ -135,14 +205,14 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 				jsonGenerator.writeStringField("type", "object");
 				jsonGenerator.writeFieldName("properties");
 				jsonGenerator.writeStartObject();
-				this.createSerializationElement(jsonGenerator, item.getType());
+				this.createSchemaElement(jsonGenerator, item.getType());
 				jsonGenerator.writeEndObject();
 				jsonGenerator.writeEndObject();
 			} else {
 				jsonGenerator.writeStringField("type", "object");
 				jsonGenerator.writeFieldName("properties");
 				jsonGenerator.writeStartObject();
-				this.createSerializationElement(jsonGenerator, item.getType());
+				this.createSchemaElement(jsonGenerator, item.getType());
 				jsonGenerator.writeEndObject();
 			}
 			jsonGenerator.writeEndObject();
@@ -167,33 +237,17 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			this.knownTypes.put("java.lang.Double", "number");
 			this.knownTypes.put("java.lang.Character", "string");
 			this.knownTypes.put("java.math.BigDecimal", "number");
-			this.knownTypes.put("org.colorcoding.ibas.bobas.data.Decimal", "number");
 		}
 		return this.knownTypes;
 	}
 
 	@Override
-	public JsonSchema getSchema(Class<?> type) throws SerializationException {
-		try {
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			this.getSchema(type, outputStream);
-			JsonNode jsonSchema = JsonLoader
-					.fromReader(new InputStreamReader(new ByteArrayInputStream(outputStream.toByteArray())));
-			return JsonSchemaFactory.byDefault().getJsonSchema(jsonSchema);
-		} catch (IOException | ProcessingException e) {
-			throw new SerializationException(e);
-		}
-	}
-
-	@Override
 	public void serialize(Object object, OutputStream outputStream, boolean formated, Class<?>... types) {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public Object deserialize(InputSource inputSource, Class<?>... types) throws SerializationException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

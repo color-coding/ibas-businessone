@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,8 +25,6 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
-import org.colorcoding.ibas.bobas.data.DateTime;
-import org.colorcoding.ibas.bobas.i18n.I18N;
 import org.colorcoding.ibas.bobas.serialization.SerializationElement;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
@@ -38,8 +35,9 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.sap.smb.sbo.api.ICompany;
-import com.sap.smb.sbo.api.IDataBrowser;
-import com.sap.smb.sbo.api.IUserFields;
+import com.sap.smb.sbo.api.IFields;
+import com.sap.smb.sbo.api.IValidValue;
+import com.sap.smb.sbo.api.IValidValues;
 
 public class B1SerializerXml extends B1Serializer<Schema> {
 
@@ -71,7 +69,7 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 			DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			DOMImplementation domImpl = db.getDOMImplementation();
 			Document document = domImpl.createDocument(XML_FILE_NAMESPACE, "xs:schema", null);
-			this.createSerializationElement(document, type);
+			this.createSchemaElement(document, type);
 			// 将xml写到文件中
 			javax.xml.transform.Transformer transformer = TransformerFactory.newInstance().newTransformer();
 			DOMSource source = new DOMSource(document);
@@ -96,8 +94,8 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 		}
 	}
 
-	protected void createSerializationElement(Document document, Class<?> type) {
-		Element element = this.createSerializationElement(document, type, "" + type.getSimpleName(), true);
+	protected void createSchemaElement(Document document, Class<?> type) {
+		Element element = this.createSchemaElement(document, type, "" + type.getSimpleName(), true);
 		XmlRootElement annotation = type.getAnnotation(XmlRootElement.class);
 		if (annotation != null) {
 			document.getDocumentElement().setAttribute("targetNamespace", annotation.namespace());
@@ -105,7 +103,7 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 		document.getDocumentElement().appendChild(element);
 	}
 
-	protected Element createSerializationElement(Document document, Class<?> type, String name, boolean isRoot) {
+	protected Element createSchemaElement(Document document, Class<?> type, String name, boolean isRoot) {
 		Element element = document.createElement("xs:element");
 		element.setAttribute("name", name);
 		// 获取元素类型
@@ -120,13 +118,6 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 			element.setAttribute("type", typeName);
 		} else if (type.isEnum()) {
 			// 枚举类型
-			// <xs:simpleType>
-			// <xs:restriction base="xs:string">
-			// <xs:enumeration value="Audi"/>
-			// <xs:enumeration value="Golf"/>
-			// <xs:enumeration value="BMW"/>
-			// </xs:restriction>
-			// </xs:simpleType>
 			if (!isRoot) {
 				element.setAttribute("minOccurs", "0");
 				element.setAttribute("nillable", "true");
@@ -145,7 +136,12 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 			}
 			elementType.appendChild(elementRestriction);
 			element.appendChild(elementType);
-		} else if (type.equals(DateTime.class) || type.equals(Date.class)) {
+		} else if (type.equals(Object.class)) {
+			if (!isRoot) {
+				element.setAttribute("minOccurs", "0");
+				element.setAttribute("nillable", "true");
+			}
+		} else if (type.equals(Date.class)) {
 			// 日期类型
 			if (!isRoot) {
 				element.setAttribute("minOccurs", "0");
@@ -161,15 +157,32 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 			elementRestriction.appendChild(elementEnumeration);
 			elementType.appendChild(elementRestriction);
 			element.appendChild(elementType);
-		} else if (type.equals(IUserFields.class)) {
-		} else if (type.equals(IDataBrowser.class)) {
+		} else if (type.equals(IFields.class)) {
+			if (!isRoot) {
+				element.setAttribute("minOccurs", "0");
+				element.setAttribute("maxOccurs", "unbounded");
+			}
+			Element elementType = document.createElement("xs:complexType");
+			Element elementSequence = document.createElement("xs:sequence");
+			elementSequence.appendChild(this.createSchemaElement(document, String.class, "Name", false));
+			elementSequence.appendChild(this.createSchemaElement(document, String.class, "Description", false));
+			elementSequence.appendChild(this.createSchemaElement(document, Object.class, "Value", false));
+			elementType.appendChild(elementSequence);
+			element.appendChild(elementType);
+		} else if (type.equals(IValidValues.class)) {
+			if (!isRoot) {
+				element.setAttribute("minOccurs", "0");
+				element.setAttribute("maxOccurs", "unbounded");
+			}
+			Element elementType = document.createElement("xs:complexType");
+			Element elementSequence = document.createElement("xs:sequence");
+			for (SerializationElement item : this.getSerializedElements(IValidValue.class, true)) {
+				elementSequence.appendChild(this.createSchemaElement(document, item.getType(), item.getName(), false));
+			}
+			elementType.appendChild(elementSequence);
+			element.appendChild(elementType);
 		} else {
 			// 未处理的类型，可能为类，继续处理
-			// <xs:complexType>
-			// <xs:sequence>
-			// <xs:element />
-			// </xs:sequence>
-			// </xs:complexType>
 			if (!isRoot) {
 				element.setAttribute("minOccurs", "0");
 				element.setAttribute("maxOccurs", "unbounded");
@@ -181,21 +194,21 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 					// 子项是自身，不做处理
 					continue;
 				}
-				if (this.isCollection(item.getType())) {
+				if (item.getWrapper() != null && !item.getWrapper().isEmpty()) {
 					Element itemElement = document.createElement("xs:element");
 					itemElement.setAttribute("name", item.getWrapper());
 					itemElement.setAttribute("minOccurs", "0");
 					itemElement.setAttribute("maxOccurs", "unbounded");
 					Element itemElementType = document.createElement("xs:complexType");
 					Element itemElementSequence = document.createElement("xs:sequence");
-					itemElementSequence.appendChild(
-							this.createSerializationElement(document, item.getType(), item.getName(), false));
+					itemElementSequence
+							.appendChild(this.createSchemaElement(document, item.getType(), item.getName(), false));
 					itemElementType.appendChild(itemElementSequence);
 					itemElement.appendChild(itemElementType);
 					elementSequence.appendChild(itemElement);
 				} else {
-					elementSequence.appendChild(
-							this.createSerializationElement(document, item.getType(), item.getName(), false));
+					elementSequence
+							.appendChild(this.createSchemaElement(document, item.getType(), item.getName(), false));
 				}
 			}
 			elementType.appendChild(elementSequence);
@@ -222,7 +235,6 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 			this.knownTypes.put("java.lang.Double", "xs:decimal");
 			this.knownTypes.put("java.lang.Character", "xs:string");
 			this.knownTypes.put("java.math.BigDecimal", "xs:decimal");
-			this.knownTypes.put("org.colorcoding.ibas.bobas.data.Decimal", "xs:decimal");
 		}
 		return this.knownTypes;
 	}
@@ -247,27 +259,7 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 
 	@Override
 	public void serialize(Object object, OutputStream outputStream, boolean formated, Class<?>... types) {
-		Class<?> type = object.getClass();
-		try {
-			Method methodGetXml = null;
-			try {
-				methodGetXml = type.getMethod("getAsXML");
-			} catch (NoSuchMethodException e) {
-				methodGetXml = type.getMethod("toXMLString");
-			}
-			if (methodGetXml != null) {
-				Object data = methodGetXml.invoke(object);
-				if (data instanceof String) {
-					outputStream.write(((String) data).getBytes(
-							MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DATA_ENCODING, "utf-8")));
-					outputStream.flush();
-					return;
-				}
-			}
-		} catch (Exception e) {
-			throw new SerializationException(e);
-		}
-		throw new SerializationException(I18N.prop("msg_bobas_data_type_not_support", type.getName()));
+
 	}
 
 	@Override

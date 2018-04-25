@@ -2,6 +2,7 @@ package org.colorcoding.ibas.bobas.businessone.serialization;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
@@ -19,6 +20,7 @@ import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.Serializer;
 
 import com.sap.smb.sbo.api.ICompany;
+import com.sap.smb.sbo.api.IDataBrowser;
 import com.sap.smb.sbo.api.IDocuments;
 
 public abstract class B1Serializer<S> extends Serializer<S> implements IB1Serializer<S> {
@@ -68,6 +70,13 @@ public abstract class B1Serializer<S> extends Serializer<S> implements IB1Serial
 		return false;
 	}
 
+	protected String nameElement(String name) {
+		if (name.startsWith("get") || name.startsWith("set")) {
+			name = name.substring(3);
+		}
+		return name;
+	}
+
 	@Override
 	protected List<SerializationElement> getSerializedElements(Class<?> type, boolean recursion) {
 		if (type.isInterface()) {
@@ -92,9 +101,29 @@ public abstract class B1Serializer<S> extends Serializer<S> implements IB1Serial
 				if (method.getParameterCount() != 0) {
 					continue;
 				}
-				String elementName = method.getName().replace("get", "");
+				if (method.getName().equals("getCount")) {
+					continue;
+				}
+				if (method.getName().equals("getAsXML")) {
+					continue;
+				}
+				if (method.getName().equals("get_NewEnum")) {
+					continue;
+				}
 				Class<?> elementType = method.getReturnType();
-				elements.add(new SerializationElement(elementName, elementType));
+				if (elementType == IDataBrowser.class) {
+					continue;
+				}
+				String elementName = this.nameElement(method.getName());
+				if (elementName.isEmpty()) {
+					continue;
+				}
+				if (this.isCollection(elementType)) {
+					// 集合
+					elements.add(new SerializationElement(elementName, elementName, elementType));
+				} else {
+					elements.add(new SerializationElement(elementName, elementType));
+				}
 			}
 			return elements;
 		}
@@ -103,9 +132,18 @@ public abstract class B1Serializer<S> extends Serializer<S> implements IB1Serial
 
 	@Override
 	public DataWrapping wrap(String xmlData) throws SerializationException {
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		this.serialize(xmlData, outputStream);
-		return new DataWrapping(outputStream.toString());
+		ByteArrayOutputStream outputStream = null;
+		try {
+			outputStream = new ByteArrayOutputStream();
+			this.serialize(xmlData, outputStream);
+			return new DataWrapping(outputStream.toString());
+		} finally {
+			try {
+				if (outputStream != null)
+					outputStream.close();
+			} catch (IOException e) {
+			}
+		}
 	}
 
 	@Override
