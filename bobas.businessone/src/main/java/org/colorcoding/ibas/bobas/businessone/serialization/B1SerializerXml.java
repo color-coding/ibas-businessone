@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -25,19 +24,16 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
-import org.colorcoding.ibas.bobas.serialization.SerializationElement;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
+import org.colorcoding.ibas.bobas.serialization.structure.Element;
+import org.colorcoding.ibas.bobas.serialization.structure.ElementRoot;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.sap.smb.sbo.api.ICompany;
-import com.sap.smb.sbo.api.IFields;
-import com.sap.smb.sbo.api.IValidValue;
-import com.sap.smb.sbo.api.IValidValues;
 
 public class B1SerializerXml extends B1Serializer<Schema> {
 
@@ -69,7 +65,11 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 			DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			DOMImplementation domImpl = db.getDOMImplementation();
 			Document document = domImpl.createDocument(XML_FILE_NAMESPACE, "xs:schema", null);
-			this.createSchemaElement(document, type);
+			// 创建文档
+			SchemaWriter schemaWriter = new SchemaWriter();
+			schemaWriter.document = document;
+			schemaWriter.element = new B1AnalyzerGetter().analyse(type);
+			schemaWriter.write();
 			// 将xml写到文件中
 			javax.xml.transform.Transformer transformer = TransformerFactory.newInstance().newTransformer();
 			DOMSource source = new DOMSource(document);
@@ -92,151 +92,6 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 				}
 			}
 		}
-	}
-
-	protected void createSchemaElement(Document document, Class<?> type) {
-		Element element = this.createSchemaElement(document, type, "" + type.getSimpleName(), true);
-		XmlRootElement annotation = type.getAnnotation(XmlRootElement.class);
-		if (annotation != null) {
-			document.getDocumentElement().setAttribute("targetNamespace", annotation.namespace());
-		}
-		document.getDocumentElement().appendChild(element);
-	}
-
-	protected Element createSchemaElement(Document document, Class<?> type, String name, boolean isRoot) {
-		Element element = document.createElement("xs:element");
-		element.setAttribute("name", name);
-		// 获取元素类型
-		String typeName = this.getKnownTyps().get(type.getName());
-		if (typeName != null) {
-			// 已知类型
-			// type="xs:string"
-			if (!isRoot) {
-				element.setAttribute("minOccurs", "0");
-				element.setAttribute("nillable", "true");
-			}
-			element.setAttribute("type", typeName);
-		} else if (type.isEnum()) {
-			// 枚举类型
-			if (!isRoot) {
-				element.setAttribute("minOccurs", "0");
-				element.setAttribute("nillable", "true");
-			}
-			Element elementType = document.createElement("xs:simpleType");
-			Element elementRestriction = document.createElement("xs:restriction");
-			elementRestriction.setAttribute("base", "xs:string");
-			for (Object enumItem : type.getEnumConstants()) {
-				if (enumItem instanceof Enum<?>) {
-					// 枚举值（比对枚举索引）
-					Enum<?> itemValue = (Enum<?>) enumItem;
-					Element elementEnumeration = document.createElement("xs:enumeration");
-					elementEnumeration.setAttribute("value", itemValue.name());
-					elementRestriction.appendChild(elementEnumeration);
-				}
-			}
-			elementType.appendChild(elementRestriction);
-			element.appendChild(elementType);
-		} else if (type.equals(Object.class)) {
-			if (!isRoot) {
-				element.setAttribute("minOccurs", "0");
-				element.setAttribute("nillable", "true");
-			}
-		} else if (type.equals(Date.class)) {
-			// 日期类型
-			if (!isRoot) {
-				element.setAttribute("minOccurs", "0");
-				element.setAttribute("nillable", "true");
-			}
-			Element elementType = document.createElement("xs:simpleType");
-			Element elementRestriction = document.createElement("xs:restriction");
-			elementRestriction.setAttribute("base", "xs:string");
-			Element elementEnumeration = document.createElement("xs:pattern");
-			// 格式：2000-01-01 or 2000-01-01T00:00:00
-			elementEnumeration.setAttribute("value",
-					"|[0-9]{4}-[0-1][0-9]-[0-3][0-9]|[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]");
-			elementRestriction.appendChild(elementEnumeration);
-			elementType.appendChild(elementRestriction);
-			element.appendChild(elementType);
-		} else if (type.equals(IFields.class)) {
-			if (!isRoot) {
-				element.setAttribute("minOccurs", "0");
-				element.setAttribute("maxOccurs", "unbounded");
-			}
-			Element elementType = document.createElement("xs:complexType");
-			Element elementSequence = document.createElement("xs:sequence");
-			elementSequence.appendChild(this.createSchemaElement(document, String.class, "Name", false));
-			elementSequence.appendChild(this.createSchemaElement(document, String.class, "Description", false));
-			elementSequence.appendChild(this.createSchemaElement(document, Object.class, "Value", false));
-			elementType.appendChild(elementSequence);
-			element.appendChild(elementType);
-		} else if (type.equals(IValidValues.class)) {
-			if (!isRoot) {
-				element.setAttribute("minOccurs", "0");
-				element.setAttribute("maxOccurs", "unbounded");
-			}
-			Element elementType = document.createElement("xs:complexType");
-			Element elementSequence = document.createElement("xs:sequence");
-			for (SerializationElement item : this.getSerializedElements(IValidValue.class, true)) {
-				elementSequence.appendChild(this.createSchemaElement(document, item.getType(), item.getName(), false));
-			}
-			elementType.appendChild(elementSequence);
-			element.appendChild(elementType);
-		} else {
-			// 未处理的类型，可能为类，继续处理
-			if (!isRoot) {
-				element.setAttribute("minOccurs", "0");
-				element.setAttribute("maxOccurs", "unbounded");
-			}
-			Element elementType = document.createElement("xs:complexType");
-			Element elementSequence = document.createElement("xs:sequence");
-			for (SerializationElement item : this.getSerializedElements(type, true)) {
-				if (type.equals(item.getType())) {
-					// 子项是自身，不做处理
-					continue;
-				}
-				if (item.getWrapper() != null && !item.getWrapper().isEmpty()) {
-					Element itemElement = document.createElement("xs:element");
-					itemElement.setAttribute("name", item.getWrapper());
-					itemElement.setAttribute("minOccurs", "0");
-					itemElement.setAttribute("maxOccurs", "unbounded");
-					Element itemElementType = document.createElement("xs:complexType");
-					Element itemElementSequence = document.createElement("xs:sequence");
-					itemElementSequence
-							.appendChild(this.createSchemaElement(document, item.getType(), item.getName(), false));
-					itemElementType.appendChild(itemElementSequence);
-					itemElement.appendChild(itemElementType);
-					elementSequence.appendChild(itemElement);
-				} else {
-					elementSequence
-							.appendChild(this.createSchemaElement(document, item.getType(), item.getName(), false));
-				}
-			}
-			elementType.appendChild(elementSequence);
-			element.appendChild(elementType);
-		}
-		return element;
-	}
-
-	private Map<String, String> knownTypes;
-
-	public Map<String, String> getKnownTyps() {
-		if (this.knownTypes == null) {
-			this.knownTypes = new HashMap<>();
-			this.knownTypes.put("integer", "xs:integer");
-			this.knownTypes.put("short", "xs:integer");
-			this.knownTypes.put("boolean", "xs:boolean");
-			this.knownTypes.put("float", "xs:decimal");
-			this.knownTypes.put("double", "xs:decimal");
-			this.knownTypes.put("java.lang.Integer", "xs:integer");
-			this.knownTypes.put("java.lang.String", "xs:string");
-			this.knownTypes.put("java.lang.Short", "xs:integer");
-			this.knownTypes.put("java.lang.Boolean", "xs:boolean");
-			this.knownTypes.put("java.lang.Float", "xs:decimal");
-			this.knownTypes.put("java.lang.Double", "xs:decimal");
-			this.knownTypes.put("java.lang.Character", "xs:string");
-			this.knownTypes.put("java.math.BigDecimal", "xs:decimal");
-		}
-		return this.knownTypes;
 	}
 
 	@Override
@@ -266,5 +121,135 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 	public Object deserialize(InputSource inputSource, Class<?>... types) throws SerializationException {
 
 		return null;
+	}
+
+	private class SchemaWriter {
+
+		public SchemaWriter() {
+			this.knownTypes = new HashMap<>();
+			this.knownTypes.put("integer", "xs:integer");
+			this.knownTypes.put("short", "xs:integer");
+			this.knownTypes.put("boolean", "xs:boolean");
+			this.knownTypes.put("float", "xs:decimal");
+			this.knownTypes.put("double", "xs:decimal");
+			this.knownTypes.put("java.lang.Integer", "xs:integer");
+			this.knownTypes.put("java.lang.String", "xs:string");
+			this.knownTypes.put("java.lang.Short", "xs:integer");
+			this.knownTypes.put("java.lang.Boolean", "xs:boolean");
+			this.knownTypes.put("java.lang.Float", "xs:decimal");
+			this.knownTypes.put("java.lang.Double", "xs:decimal");
+			this.knownTypes.put("java.lang.Character", "xs:string");
+			this.knownTypes.put("java.math.BigDecimal", "xs:decimal");
+			this.knownTypes.put("java.math.BigInteger", "xs:integer");
+			this.knownTypes.put("java.util.Date", "xs:dateTime");
+			this.knownTypes.put("org.colorcoding.ibas.bobas.data.Decimal", "xs:decimal");
+		}
+
+		public Document document;
+		public ElementRoot element;
+		private Map<String, String> knownTypes;
+
+		public void write() {
+			if (this.element.getNamespace() != null) {
+				document.getDocumentElement().setAttribute("targetNamespace", this.element.getNamespace());
+			}
+			org.w3c.dom.Element dom = this.document.createElement("xs:element");
+			dom.setAttribute("name", this.element.getName());
+			org.w3c.dom.Element domType = this.document.createElement("xs:complexType");
+			org.w3c.dom.Element domSequence = this.document.createElement("xs:sequence");
+			for (Element item : this.element.getChilds()) {
+				this.write(domSequence, item);
+			}
+			domType.appendChild(domSequence);
+			dom.appendChild(domType);
+			this.document.getDocumentElement().appendChild(dom);
+		}
+
+		private void write(org.w3c.dom.Element domParent, Element element) {
+			org.w3c.dom.Element dom = this.document.createElement("xs:element");
+			// 获取元素类型
+			String typeName = this.knownTypes.get(element.getType().getName());
+			if (typeName != null) {
+				// 已知类型
+				// type="xs:string"
+				dom.setAttribute("name", element.getName());
+				dom.setAttribute("minOccurs", "0");
+				dom.setAttribute("nillable", "true");
+				dom.setAttribute("type", typeName);
+			} else if (element.getType().isEnum()) {
+				// 枚举类型
+				// <xs:simpleType>
+				// <xs:restriction base="xs:string">
+				// <xs:enumeration value="Audi"/>
+				// <xs:enumeration value="Golf"/>
+				// <xs:enumeration value="BMW"/>
+				// </xs:restriction>
+				// </xs:simpleType>
+				dom.setAttribute("name", element.getName());
+				dom.setAttribute("minOccurs", "0");
+				dom.setAttribute("nillable", "true");
+				org.w3c.dom.Element domType = this.document.createElement("xs:simpleType");
+				org.w3c.dom.Element domRestriction = this.document.createElement("xs:restriction");
+				domRestriction.setAttribute("base", "xs:string");
+				for (Object enumItem : element.getType().getEnumConstants()) {
+					if (enumItem instanceof Enum<?>) {
+						// 枚举值（比对枚举索引）
+						Enum<?> itemValue = (Enum<?>) enumItem;
+						org.w3c.dom.Element domEnumeration = this.document.createElement("xs:enumeration");
+						domEnumeration.setAttribute("value", itemValue.name());
+						domRestriction.appendChild(domEnumeration);
+					}
+				}
+				domType.appendChild(domRestriction);
+				dom.appendChild(domType);
+			} else if (element.getType() == Date.class) {
+				// 日期类型
+				dom.setAttribute("name", element.getName());
+				dom.setAttribute("minOccurs", "0");
+				dom.setAttribute("nillable", "true");
+				org.w3c.dom.Element domType = this.document.createElement("xs:simpleType");
+				org.w3c.dom.Element domRestriction = this.document.createElement("xs:restriction");
+				domRestriction.setAttribute("base", "xs:string");
+				org.w3c.dom.Element domEnumeration = this.document.createElement("xs:pattern");
+				// 格式：2000-01-01 or 2000-01-01T00:00:00
+				domEnumeration.setAttribute("value",
+						"|[0-9]{4}-[0-1][0-9]-[0-3][0-9]|[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]");
+				domRestriction.appendChild(domEnumeration);
+				domType.appendChild(domRestriction);
+				dom.appendChild(domType);
+			} else if (element.getWrapper() != null && !element.getWrapper().isEmpty()) {
+				dom.setAttribute("name", element.getWrapper());
+				dom.setAttribute("minOccurs", "0");
+				dom.setAttribute("maxOccurs", "unbounded");
+				org.w3c.dom.Element domType = this.document.createElement("xs:complexType");
+				org.w3c.dom.Element domSequence = this.document.createElement("xs:sequence");
+				org.w3c.dom.Element domItem = this.document.createElement("xs:element");
+				domItem.setAttribute("name", element.getName());
+				domItem.setAttribute("minOccurs", "0");
+				domItem.setAttribute("maxOccurs", "unbounded");
+				org.w3c.dom.Element domItemType = this.document.createElement("xs:complexType");
+				org.w3c.dom.Element domItemSequence = this.document.createElement("xs:sequence");
+				for (Element item : element.getChilds()) {
+					this.write(domItemSequence, item);
+				}
+				domItemType.appendChild(domItemSequence);
+				domItem.appendChild(domItemType);
+				domSequence.appendChild(domItem);
+				domType.appendChild(domSequence);
+				dom.appendChild(domType);
+			} else {
+				dom.setAttribute("name", element.getName());
+				dom.setAttribute("minOccurs", "0");
+				dom.setAttribute("maxOccurs", "unbounded");
+				org.w3c.dom.Element domType = this.document.createElement("xs:complexType");
+				org.w3c.dom.Element domSequence = this.document.createElement("xs:sequence");
+				for (Element item : element.getChilds()) {
+					this.write(domSequence, item);
+				}
+				domType.appendChild(domSequence);
+				dom.appendChild(domType);
+			}
+			domParent.appendChild(dom);
+		}
 	}
 }
