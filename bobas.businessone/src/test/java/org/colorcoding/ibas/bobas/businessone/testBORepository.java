@@ -10,9 +10,13 @@ import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerJson;
 import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerXml;
 import org.colorcoding.ibas.bobas.businessone.serialization.IB1Serializer;
+import org.colorcoding.ibas.bobas.common.ConditionOperation;
 import org.colorcoding.ibas.bobas.common.Criteria;
+import org.colorcoding.ibas.bobas.common.ICondition;
 import org.colorcoding.ibas.bobas.common.ICriteria;
 import org.colorcoding.ibas.bobas.common.IOperationResult;
+import org.colorcoding.ibas.bobas.common.ISort;
+import org.colorcoding.ibas.bobas.common.SortType;
 import org.colorcoding.ibas.bobas.core.RepositoryException;
 
 import com.sap.smb.sbo.api.ICompany;
@@ -89,9 +93,25 @@ public class testBORepository extends TestCase {
 	public void testFetch() {
 		ICriteria criteria = new Criteria();
 		criteria.setResultCount(1);
+		ICondition condition = criteria.getConditions().create();
+		condition.setAlias("ItemCode");
+		condition.setOperation(ConditionOperation.NOT_EQUAL);
+		condition.setValue("A");
+		ISort sort = criteria.getSorts().create();
+		sort.setAlias("ItemCode");
+		sort.setSortType(SortType.ASCENDING);
 		BORepositoryDemo boRepository = new BORepositoryDemo();
+		boRepository.setSerialization("xml");
 		IOperationResult<DataWrapping> operationResult = boRepository.fetchItem(criteria, this.getToken());
 		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
+		System.out.println("xml:");
+		for (DataWrapping data : operationResult.getResultObjects()) {
+			System.out.println(data.getContent());
+		}
+		boRepository.setSerialization("json");
+		operationResult = boRepository.fetchItem(criteria, this.getToken());
+		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
+		System.out.println("json:");
 		for (DataWrapping data : operationResult.getResultObjects()) {
 			System.out.println(data.getContent());
 		}

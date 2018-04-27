@@ -3,7 +3,10 @@ package org.colorcoding.ibas.bobas.businessone.serialization;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
@@ -14,6 +17,7 @@ import org.colorcoding.ibas.bobas.message.Logger;
 import org.colorcoding.ibas.bobas.message.MessageLevel;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.Serializer;
+import org.colorcoding.ibas.bobas.serialization.structure.ElementRoot;
 
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IDocuments;
@@ -35,22 +39,6 @@ public abstract class B1Serializer<S> extends Serializer<S> implements IB1Serial
 
 	private final void setB1Company(ICompany b1Company) {
 		this.b1Company = b1Company;
-	}
-
-	@Override
-	public DataWrapping wrap(String xmlData) throws SerializationException {
-		ByteArrayOutputStream outputStream = null;
-		try {
-			outputStream = new ByteArrayOutputStream();
-			this.serialize(xmlData, outputStream);
-			return new DataWrapping(outputStream.toString());
-		} finally {
-			try {
-				if (outputStream != null)
-					outputStream.close();
-			} catch (IOException e) {
-			}
-		}
 	}
 
 	@Override
@@ -96,4 +84,40 @@ public abstract class B1Serializer<S> extends Serializer<S> implements IB1Serial
 		throw new SerializationException(I18N.prop("msg_bobas_data_type_not_support", type.getName()));
 	}
 
+	@Override
+	public void serialize(Object object, OutputStream outputStream, boolean formated, Class<?>... types) {
+		this.serialize(object, outputStream, formated, new B1AnalyzerGetter().analyse(object.getClass()));
+	}
+
+	@Override
+	public <T> List<DataWrapping> wrap(T[] datas) throws SerializationException {
+		List<DataWrapping> wrappings = new ArrayList<>();
+		ElementRoot elementRoot = new B1AnalyzerGetter().analyse(datas.getClass().getComponentType());
+		for (T data : datas) {
+			wrappings.add(this.wrap(data, elementRoot));
+		}
+		return wrappings;
+	}
+
+	@Override
+	public <T> DataWrapping wrap(T data) throws SerializationException {
+		return this.wrap(data, new B1AnalyzerGetter().analyse(data.getClass()));
+	}
+
+	public <T> DataWrapping wrap(T data, ElementRoot element) throws SerializationException {
+		ByteArrayOutputStream outputStream = null;
+		try {
+			outputStream = new ByteArrayOutputStream();
+			this.serialize(data, outputStream, false, element);
+			return new DataWrapping(outputStream.toString());
+		} finally {
+			try {
+				if (outputStream != null)
+					outputStream.close();
+			} catch (IOException e) {
+			}
+		}
+	}
+
+	protected abstract void serialize(Object data, OutputStream outputStream, boolean formated, ElementRoot element);
 }

@@ -7,6 +7,7 @@ import java.util.Collection;
 import org.colorcoding.ibas.bobas.serialization.structure.AnalyzerGetter;
 import org.colorcoding.ibas.bobas.serialization.structure.Element;
 import org.colorcoding.ibas.bobas.serialization.structure.ElementMethod;
+import org.colorcoding.ibas.bobas.serialization.structure.ElementRoot;
 
 import com.sap.smb.sbo.api.IField;
 import com.sap.smb.sbo.api.IFields;
@@ -14,6 +15,21 @@ import com.sap.smb.sbo.api.IValidValue;
 import com.sap.smb.sbo.api.IValidValues;
 
 public class B1AnalyzerGetter extends AnalyzerGetter {
+
+	public static Object getValue(Element element, Object value) {
+		Method method = null;
+		try {
+			method = value.getClass().getMethod(METHOD_GET_PREFIX + element.getName());
+			if (method == null) {
+				method = value.getClass().getMethod(METHOD_IS_PREFIX + element.getName());
+			}
+			if (method != null) {
+				return method.invoke(value);
+			}
+		} catch (Exception e) {
+		}
+		return null;
+	};
 
 	public B1AnalyzerGetter() {
 		super();
@@ -48,6 +64,15 @@ public class B1AnalyzerGetter extends AnalyzerGetter {
 		} else {
 			return super.createElement(method);
 		}
+	}
+
+	@Override
+	public ElementRoot analyse(Class<?> type) {
+		ElementRoot element = super.analyse(type);
+		if (type.isInterface() && element.getName().startsWith("I")) {
+			element.setName(element.getName().substring(1));
+		}
+		return element;
 	}
 
 	/**

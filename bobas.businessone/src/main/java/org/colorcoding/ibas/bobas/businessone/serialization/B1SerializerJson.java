@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +28,7 @@ import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.sap.smb.sbo.api.ICompany;
+import com.sap.smb.sbo.api.IFields;
 
 public class B1SerializerJson extends B1Serializer<JsonSchema> {
 
@@ -103,38 +106,6 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 		}
 	}
 
-	private Map<String, String> knownTypes;
-
-	public Map<String, String> getKnownTyps() {
-		if (this.knownTypes == null) {
-			this.knownTypes = new HashMap<>();
-			this.knownTypes.put("integer", "integer");
-			this.knownTypes.put("short", "integer");
-			this.knownTypes.put("boolean", "boolean");
-			this.knownTypes.put("float", "number");
-			this.knownTypes.put("double", "number");
-			this.knownTypes.put("java.lang.Integer", "integer");
-			this.knownTypes.put("java.lang.String", "string");
-			this.knownTypes.put("java.lang.Short", "integer");
-			this.knownTypes.put("java.lang.Boolean", "boolean");
-			this.knownTypes.put("java.lang.Float", "number");
-			this.knownTypes.put("java.lang.Double", "number");
-			this.knownTypes.put("java.lang.Character", "string");
-			this.knownTypes.put("java.math.BigDecimal", "number");
-		}
-		return this.knownTypes;
-	}
-
-	@Override
-	public void serialize(Object object, OutputStream outputStream, boolean formated, Class<?>... types) {
-
-	}
-
-	@Override
-	public Object deserialize(InputSource inputSource, Class<?>... types) throws SerializationException {
-		return null;
-	}
-
 	private class SchemaWriter {
 
 		public static final String SCHEMA_VERSION = "http://json-schema.org/schema#";
@@ -146,7 +117,9 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			this.knownTypes.put("boolean", "boolean");
 			this.knownTypes.put("float", "number");
 			this.knownTypes.put("double", "number");
+			this.knownTypes.put("long", "number");
 			this.knownTypes.put("java.lang.Integer", "integer");
+			this.knownTypes.put("java.lang.Long", "integer");
 			this.knownTypes.put("java.lang.String", "string");
 			this.knownTypes.put("java.lang.Short", "integer");
 			this.knownTypes.put("java.lang.Boolean", "boolean");
@@ -251,6 +224,77 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					jsonGenerator.writeEndObject();
 				}
 				jsonGenerator.writeEndObject();
+			}
+		}
+	}
+
+	@Override
+	public Object deserialize(InputSource inputSource, Class<?>... types) throws SerializationException {
+
+		return null;
+	}
+
+	@Override
+	protected void serialize(Object data, OutputStream outputStream, boolean formated, ElementRoot element) {
+		JsonFactory jsonFactory = new JsonFactory();
+		try {
+			JsonGenerator jsonGenerator = jsonFactory.createGenerator(outputStream);
+
+			DataWriter dataWriter = new DataWriter();
+			dataWriter.jsonGenerator = jsonGenerator;
+			dataWriter.element = element;
+			dataWriter.source = data;
+			dataWriter.write();
+
+			jsonGenerator.flush();
+			jsonGenerator.close();
+		} catch (IOException e) {
+			throw new SerializationException(e);
+		} finally {
+			if (outputStream != null) {
+				try {
+					outputStream.close();
+				} catch (IOException e) {
+				}
+			}
+		}
+	}
+
+	private class DataWriter {
+
+		public JsonGenerator jsonGenerator;
+		public ElementRoot element;
+		public Object source;
+
+		public void write() throws JsonGenerationException, IOException {
+			this.jsonGenerator.writeStartObject();
+			this.jsonGenerator.writeStringField("type", this.element.getName());
+			for (Element item : this.element.getChilds()) {
+				this.write(item, this.source);
+			}
+			this.jsonGenerator.writeEndObject();
+		}
+
+		private void write(Element element, Object data) {
+			Object value = B1AnalyzerGetter.getValue(element, data);
+			if (value == null) {
+				return;
+			}
+			if (value instanceof String) {
+				if (((String) value).isEmpty()) {
+					return;
+				}
+			}
+			if (element.getType() == String.class) {
+			} else if (element.getType() == Boolean.class) {
+			} else if (element.getType() == Integer.class || element.getType() == Short.class
+					|| element.getType() == Long.class || element.getType() == Float.class
+					|| element.getType() == Double.class || element.getType() == BigInteger.class
+					|| element.getType() == BigDecimal.class) {
+
+			} else if (element.isCollection()) {
+			} else if (element.getType() == IFields.class) {
+			} else {
 			}
 		}
 	}

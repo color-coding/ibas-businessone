@@ -5,8 +5,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -24,6 +28,7 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
+import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 import org.colorcoding.ibas.bobas.serialization.structure.Element;
@@ -34,6 +39,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.sap.smb.sbo.api.ICompany;
+import com.sap.smb.sbo.api.IFields;
 
 public class B1SerializerXml extends B1Serializer<Schema> {
 
@@ -112,27 +118,18 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 		}
 	}
 
-	@Override
-	public void serialize(Object object, OutputStream outputStream, boolean formated, Class<?>... types) {
-
-	}
-
-	@Override
-	public Object deserialize(InputSource inputSource, Class<?>... types) throws SerializationException {
-
-		return null;
-	}
-
 	private class SchemaWriter {
 
 		public SchemaWriter() {
 			this.knownTypes = new HashMap<>();
 			this.knownTypes.put("integer", "xs:integer");
 			this.knownTypes.put("short", "xs:integer");
+			this.knownTypes.put("long", "xs:integer");
 			this.knownTypes.put("boolean", "xs:boolean");
 			this.knownTypes.put("float", "xs:decimal");
 			this.knownTypes.put("double", "xs:decimal");
 			this.knownTypes.put("java.lang.Integer", "xs:integer");
+			this.knownTypes.put("java.lang.Long", "xs:integer");
 			this.knownTypes.put("java.lang.String", "xs:string");
 			this.knownTypes.put("java.lang.Short", "xs:integer");
 			this.knownTypes.put("java.lang.Boolean", "xs:boolean");
@@ -144,9 +141,9 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 			this.knownTypes.put("org.colorcoding.ibas.bobas.data.Decimal", "xs:decimal");
 		}
 
+		private Map<String, String> knownTypes;
 		public Document document;
 		public ElementRoot element;
-		private Map<String, String> knownTypes;
 
 		public void write() {
 			if (this.element.getNamespace() != null) {
@@ -249,6 +246,119 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 				dom.appendChild(domType);
 			}
 			domParent.appendChild(dom);
+		}
+	}
+
+	@Override
+	public Object deserialize(InputSource inputSource, Class<?>... types) throws SerializationException {
+
+		return null;
+	}
+
+	@Override
+	protected void serialize(Object data, OutputStream outputStream, boolean formated, ElementRoot element) {
+		try {
+			// 创建文档
+			DataWriter dataWriter = new DataWriter();
+			dataWriter.document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+			dataWriter.element = element;
+			dataWriter.source = data;
+			dataWriter.write();
+			// 将xml写到文件中
+			javax.xml.transform.Transformer transformer = TransformerFactory.newInstance().newTransformer();
+			DOMSource source = new DOMSource(dataWriter.document);
+			// 添加xml 头信息
+			transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+			transformer.setOutputProperty(OutputKeys.ENCODING, XML_FILE_ENCODING);
+			transformer.setOutputProperty(OutputKeys.INDENT, XML_FILE_INDENT);
+			boolean formatted = MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_FORMATTED_OUTPUT, false);
+			if (formatted) {
+				transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+			}
+			transformer.transform(source, new StreamResult(outputStream));
+		} catch (ParserConfigurationException | TransformerException e) {
+			throw new SerializationException(e);
+		} finally {
+			if (outputStream != null) {
+				try {
+					outputStream.close();
+				} catch (IOException e) {
+				}
+			}
+		}
+	}
+
+	private class DataWriter {
+
+		public DataWriter() {
+			this.knownTypes = new ArrayList<>();
+			this.knownTypes.add(Integer.class);
+			this.knownTypes.add(String.class);
+			this.knownTypes.add(Short.class);
+			this.knownTypes.add(Boolean.class);
+			this.knownTypes.add(Float.class);
+			this.knownTypes.add(Double.class);
+			this.knownTypes.add(Character.class);
+			this.knownTypes.add(BigDecimal.class);
+			this.knownTypes.add(BigInteger.class);
+			this.knownTypes.add(Date.class);
+		}
+
+		private List<Class<?>> knownTypes;
+		public Document document;
+		public ElementRoot element;
+		public Object source;
+
+		public void write() {
+			org.w3c.dom.Element domRoot = this.document.createElement(this.element.getName());
+			for (Element item : this.element.getChilds()) {
+				this.write(domRoot, item, this.source);
+			}
+			this.document.appendChild(domRoot);
+		}
+
+		private void write(org.w3c.dom.Element domParent, Element element, Object data) {
+			Object value = B1AnalyzerGetter.getValue(element, data);
+			if (value == null) {
+				return;
+			}
+			if (value instanceof String) {
+				if (((String) value).isEmpty()) {
+					return;
+				}
+			}
+			if (this.knownTypes.contains(element.getType())) {
+				org.w3c.dom.Element dom = this.document.createElement(element.getName());
+				dom.setTextContent(B1DataConvert.toString(value));
+				domParent.appendChild(dom);
+			} else if (element.isCollection()) {
+				org.w3c.dom.Element domWrapper = this.document.createElement(element.getWrapper());
+				for (Object itemValue : B1DataConvert.toIterable(value)) {
+					org.w3c.dom.Element domItem = this.document.createElement(element.getName());
+					for (Element item : element.getChilds()) {
+						this.write(domItem, item, itemValue);
+					}
+					domWrapper.appendChild(domItem);
+				}
+				domParent.appendChild(domWrapper);
+			} else if (element.getType() == IFields.class) {
+				org.w3c.dom.Element domWrapper = this.document.createElement(element.getWrapper());
+				IFields fieldsValue = (IFields) value;
+				for (int i = 0; i < fieldsValue.getCount(); i++) {
+					org.w3c.dom.Element domItem = this.document.createElement(element.getName());
+					for (Element item : element.getChilds()) {
+						this.write(domItem, item, fieldsValue.item(i));
+					}
+					domWrapper.appendChild(domItem);
+				}
+				domParent.appendChild(domWrapper);
+			} else {
+				org.w3c.dom.Element domItem = this.document.createElement(element.getName());
+				for (Element item : element.getChilds()) {
+					this.write(domItem, item, value);
+				}
+				domParent.appendChild(domItem);
+			}
 		}
 	}
 }

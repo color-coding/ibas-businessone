@@ -21,8 +21,8 @@ import com.sap.smb.sbo.api.SBOCOMUtil;
 
 public class BORepositoryBusinessOne {
 
-	protected static final String MSG_B1_COMPANY_CONNECTING = "b1 company: [%s | %s] is connecting.";
-	protected static final String MSG_B1_COMPANY_CONNECTED = "b1 company: [%s | %s] was connected.";
+	protected static final String MSG_B1_COMPANY_CONNECTING = "b1 company: [%s|%s] is connecting.";
+	protected static final String MSG_B1_COMPANY_CONNECTED = "b1 company: [%s|%s] was connected.";
 
 	private String userToken = null;
 
@@ -154,15 +154,6 @@ public class BORepositoryBusinessOne {
 		return b1Company;
 	}
 
-	public final void dispose() throws RepositoryException {
-		if (this.b1Company != null) {
-			this.b1Company.disconnect();
-			this.b1Company.release();
-			this.b1Adapter = null;
-			System.gc();
-		}
-	}
-
 	public final synchronized boolean openRepository() throws RepositoryException {
 		try {
 			if (!this.getB1Company().isConnected()) {
@@ -184,9 +175,11 @@ public class BORepositoryBusinessOne {
 
 	public final synchronized void closeRepository() {
 		if (this.b1Company != null) {
-			if (this.b1Company.isConnected()) {
-				this.b1Company.disconnect();
-			}
+			this.b1Company.disconnect();
+			this.b1Company.release();
+			this.b1Company = null;
+			this.b1Adapter = null;
+			System.gc();
 		}
 	}
 
@@ -257,6 +250,7 @@ public class BORepositoryBusinessOne {
 	}
 
 	public void setSerialization(String serialization) {
+		this.b1Serializer = null;
 		this.serialization = serialization;
 	}
 

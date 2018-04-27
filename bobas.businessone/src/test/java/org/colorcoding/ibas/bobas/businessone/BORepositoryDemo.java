@@ -28,7 +28,7 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 			this.setUserToken(token);
 			OperationResult<DataWrapping> operationResult = new OperationResult<>();
 			for (IItems item : this.fetchItem(criteria)) {
-				operationResult.addResultObjects(this.getB1Serializer().wrap(item.getAsXML()));
+				operationResult.addResultObjects(this.getB1Serializer().wrap(item));
 				item.release();
 			}
 			return operationResult;
