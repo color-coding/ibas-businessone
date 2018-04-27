@@ -22,7 +22,8 @@
 	</developers>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<b1.version>9.2</b1.version>
+		<ibas.version>0.1.2</ibas.version>
+		<b1.version>0.1.0</b1.version>
 	</properties>
 	<build>
 		<plugins>
@@ -58,7 +59,22 @@
 		<dependency>
 			<groupId>org.colorcoding.ibas</groupId>
 			<artifactId>bobas.businessone</artifactId>
-			<version>0.1.0</version>
+			<version>${b1.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.colorcoding.ibas</groupId>
+			<artifactId>bobas.businessobjectscommon.db.mssql</artifactId>
+			<version>${ibas.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.colorcoding.ibas</groupId>
+			<artifactId>bobas.businessobjectscommon.db.hana</artifactId>
+			<version>${ibas.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.colorcoding.ibas</groupId>
+			<artifactId>bobas.businessobjectscommon.jersey</artifactId>
+			<version>${ibas.version}</version>
 		</dependency>
 	</dependencies>
 </project>

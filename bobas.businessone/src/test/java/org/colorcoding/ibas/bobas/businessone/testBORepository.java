@@ -16,6 +16,7 @@ import org.colorcoding.ibas.bobas.common.IOperationResult;
 import org.colorcoding.ibas.bobas.core.RepositoryException;
 
 import com.sap.smb.sbo.api.ICompany;
+import com.sap.smb.sbo.api.IDocuments;
 import com.sap.smb.sbo.api.IItems;
 import com.sap.smb.sbo.api.IRecordset;
 import com.sap.smb.sbo.api.SBOCOMConstants;
@@ -73,6 +74,11 @@ public class testBORepository extends TestCase {
 		IB1Serializer<?> serializerJson = new B1SerializerJson(b1Company);
 		outputStream = new FileOutputStream(fileGroup + "schema_json.json");
 		serializerJson.getSchema(IItems.class, outputStream);
+		outputStream.close();
+		System.out.println("schema: " + fileGroup + "schema_json.json");
+		fileGroup = MyConfiguration.getWorkFolder() + File.separator + "documents_";
+		outputStream = new FileOutputStream(fileGroup + "schema_json.json");
+		serializerJson.getSchema(IDocuments.class, outputStream);
 		outputStream.close();
 		System.out.println("schema: " + fileGroup + "schema_json.json");
 		// 测试克隆

@@ -22,7 +22,6 @@
 	</developers>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<b1.version>9.2</b1.version>
 	</properties>
 	<build>
 		<plugins>
@@ -94,14 +93,9 @@
 			<version>0.1.1</version>
 		</dependency>
 		<dependency>
-			<groupId>com.sap.b1</groupId>
-			<artifactId>sbowrapper</artifactId>
-			<version>${b1.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sap.b1</groupId>
-			<artifactId>sboapi</artifactId>
-			<version>${b1.version}</version>
+			<groupId>org.colorcoding.ibas</groupId>
+			<artifactId>bobas.businessone</artifactId>
+			<version>0.1.0</version>
 		</dependency>
 	</dependencies>
 </project>

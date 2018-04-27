@@ -141,7 +141,6 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 			this.knownTypes.put("java.lang.Character", "xs:string");
 			this.knownTypes.put("java.math.BigDecimal", "xs:decimal");
 			this.knownTypes.put("java.math.BigInteger", "xs:integer");
-			this.knownTypes.put("java.util.Date", "xs:dateTime");
 			this.knownTypes.put("org.colorcoding.ibas.bobas.data.Decimal", "xs:decimal");
 		}
 
@@ -217,7 +216,7 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 				domRestriction.appendChild(domEnumeration);
 				domType.appendChild(domRestriction);
 				dom.appendChild(domType);
-			} else if (element.getWrapper() != null && !element.getWrapper().isEmpty()) {
+			} else if (element.isCollection()) {
 				dom.setAttribute("name", element.getWrapper());
 				dom.setAttribute("minOccurs", "0");
 				dom.setAttribute("maxOccurs", "unbounded");

@@ -3,6 +3,7 @@
 	<name>bobas.businessone.demo</name>
 	<comment></comment>
 	<projects>
+		<project>bobas.businessone</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

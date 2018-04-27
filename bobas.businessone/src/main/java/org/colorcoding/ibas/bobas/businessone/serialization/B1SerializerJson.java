@@ -155,7 +155,6 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			this.knownTypes.put("java.lang.Character", "string");
 			this.knownTypes.put("java.math.BigDecimal", "number");
 			this.knownTypes.put("java.math.BigInteger", "number");
-			this.knownTypes.put("java.util.Date", "string");
 			this.knownTypes.put("org.colorcoding.ibas.bobas.data.Decimal", "number");
 		}
 
@@ -202,7 +201,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 		}
 
 		protected void write(JsonGenerator jsonGenerator, Element element) throws JsonGenerationException, IOException {
-			if (element.getWrapper() != null && !element.getWrapper().isEmpty()) {
+			if (element.isCollection()) {
 				jsonGenerator.writeFieldName(this.nameElement(element.getWrapper()));
 				jsonGenerator.writeStartObject();
 				jsonGenerator.writeStringField("type", "array");

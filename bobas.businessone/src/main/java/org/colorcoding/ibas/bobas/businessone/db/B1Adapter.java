@@ -15,9 +15,12 @@ import org.colorcoding.ibas.bobas.common.ICriteria;
 import org.colorcoding.ibas.bobas.common.ISorts;
 import org.colorcoding.ibas.bobas.common.ISqlQuery;
 import org.colorcoding.ibas.bobas.common.SqlQuery;
-import org.colorcoding.ibas.bobas.db.IBOAdapter4Db;
+import org.colorcoding.ibas.bobas.db.BOAdapter4Db;
+import org.colorcoding.ibas.bobas.db.DbAdapterFactory;
+import org.colorcoding.ibas.bobas.db.IDbAdapter;
 import org.colorcoding.ibas.bobas.db.ISqlScripts;
 import org.colorcoding.ibas.bobas.db.ParsingException;
+import org.colorcoding.ibas.bobas.db.SqlScripts;
 import org.colorcoding.ibas.bobas.i18n.I18N;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.w3c.dom.Document;
@@ -33,27 +36,28 @@ public class B1Adapter implements IB1Adapter {
 
 	public static IB1Adapter create(ICompany company) {
 		if (company.getDbServerType() == SBOCOMConstants.BoDataServerTypes_dst_HANADB) {
-			return new B1Adapter(company, new BOAdapter4MsSql());
+			IDbAdapter dbAdapter = DbAdapterFactory.create().createAdapter("hana");
+			return new B1Adapter(company, (BOAdapter4Db) dbAdapter.createBOAdapter());
 		}
-		return new B1Adapter(company, new BOAdapter4Hana());
+		return new B1Adapter(company, new BOAdapter());
 	}
 
 	public B1Adapter(ICompany b1Company) {
 		this.setB1Company(b1Company);
 	}
 
-	public B1Adapter(ICompany b1Company, IBOAdapter4Db adapter) {
+	public B1Adapter(ICompany b1Company, BOAdapter4Db adapter) {
 		this(b1Company);
 		this.setAdapter(adapter);
 	}
 
-	private IBOAdapter4Db adapter;
+	private BOAdapter4Db adapter;
 
-	protected IBOAdapter4Db getAdapter() {
+	protected BOAdapter4Db getAdapter() {
 		return adapter;
 	}
 
-	private void setAdapter(IBOAdapter4Db adapter) {
+	private void setAdapter(BOAdapter4Db adapter) {
 		this.adapter = adapter;
 	}
 
@@ -106,7 +110,7 @@ public class B1Adapter implements IB1Adapter {
 		// 拼接语句
 		String order = this.getAdapter().parseSqlQuery(criteria.getSorts()).getQueryString();
 		String where = this.getAdapter().parseSqlQuery(criteria.getConditions()).getQueryString();
-		ISqlScripts sqlScripts = ((SqlScriptsGetter) this.getAdapter()).getSqlScripts();
+		ISqlScripts sqlScripts = this.getAdapter().getSqlScripts();
 		return new SqlQuery(sqlScripts.groupSelectQuery("*", table, where, order, criteria.getResultCount()));
 	}
 
@@ -169,4 +173,18 @@ public class B1Adapter implements IB1Adapter {
 		}
 		return null;
 	}
+}
+
+class BOAdapter extends BOAdapter4Db {
+
+	private ISqlScripts sqlScripts = null;
+
+	@Override
+	public ISqlScripts getSqlScripts() {
+		if (this.sqlScripts == null) {
+			this.sqlScripts = new SqlScripts();
+		}
+		return this.sqlScripts;
+	}
+
 }
