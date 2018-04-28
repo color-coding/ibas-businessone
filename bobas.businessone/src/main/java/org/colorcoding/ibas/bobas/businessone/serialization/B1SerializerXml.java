@@ -40,6 +40,7 @@ import org.xml.sax.SAXException;
 
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IFields;
+import com.sap.smb.sbo.api.IValidValues;
 
 public class B1SerializerXml extends B1Serializer<Schema> {
 
@@ -327,7 +328,14 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 					return;
 				}
 			}
-			if (this.knownTypes.contains(element.getType())) {
+			if (element.getType() == Date.class) {
+				String tmp = B1DataConvert.toString(value);
+				if (tmp != null) {
+					org.w3c.dom.Element dom = this.document.createElement(element.getName());
+					dom.setTextContent(tmp);
+					domParent.appendChild(dom);
+				}
+			} else if (this.knownTypes.contains(element.getType())) {
 				org.w3c.dom.Element dom = this.document.createElement(element.getName());
 				dom.setTextContent(B1DataConvert.toString(value));
 				domParent.appendChild(dom);
@@ -348,6 +356,17 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 					org.w3c.dom.Element domItem = this.document.createElement(element.getName());
 					for (Element item : element.getChilds()) {
 						this.write(domItem, item, fieldsValue.item(i));
+					}
+					domWrapper.appendChild(domItem);
+				}
+				domParent.appendChild(domWrapper);
+			} else if (element.getType() == IValidValues.class) {
+				org.w3c.dom.Element domWrapper = this.document.createElement(element.getWrapper());
+				IValidValues validValues = (IValidValues) value;
+				for (int i = 0; i < validValues.getCount(); i++) {
+					org.w3c.dom.Element domItem = this.document.createElement(element.getName());
+					for (Element item : element.getChilds()) {
+						this.write(domItem, item, validValues.item(i));
 					}
 					domWrapper.appendChild(domItem);
 				}

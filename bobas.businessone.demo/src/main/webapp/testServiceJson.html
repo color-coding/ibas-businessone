@@ -103,6 +103,38 @@
                 }
             });
         };
+        var testFetchProductionOrder = function () {
+            var url = address + '/fetchProductionOrder?token=' + token;
+            var criteria = {};
+            $.ajax({
+                type: 'POST',
+                contentType: "application/json",
+                url: url,
+                data: JSON.stringify(criteria),
+                success: function (data, status) {
+                   showResult(data);
+                },
+                error: function (err) {
+                   showErrors(err);
+                }
+            });
+        }
+        var testSaveProductionOrder = function () {
+            var url = address + '/saveProductionOrder?token=' + token;
+            var data = testCreateItem();
+            $.ajax({
+                type: 'POST',
+                contentType: "application/json",
+                url: url,
+                data: JSON.stringify(data),
+                success: function (data, status) {
+                   showResult(data);
+                },
+                error: function (err) {
+                   showErrors(err);
+                }
+            });
+        };
     </script>
 </head>
 <body>
@@ -120,6 +152,17 @@
                 </td>
                 <td>
                     <input type="button" value="save" onclick="testSaveItem();" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label>ProductionOrder</label>
+                </td>
+                <td>
+                    <input type="button" value="fetch" onclick="testFetchProductionOrder();" />
+                </td>
+                <td>
+                    <input type="button" value="save" onclick="testSaveProductionOrder();" />
                 </td>
             </tr>
         </table>

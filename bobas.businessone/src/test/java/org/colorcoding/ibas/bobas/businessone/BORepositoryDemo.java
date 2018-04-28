@@ -12,6 +12,7 @@ import org.colorcoding.ibas.bobas.message.Logger;
 
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IItems;
+import com.sap.smb.sbo.api.IProductionOrders;
 import com.sap.smb.sbo.api.IRecordset;
 import com.sap.smb.sbo.api.SBOCOMConstants;
 import com.sap.smb.sbo.api.SBOCOMException;
@@ -45,15 +46,58 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 		boolean open = false;
 		try {
 			open = this.openRepository();
-			List<IItems> items = new ArrayList<>();
+			List<IItems> datas = new ArrayList<>();
 			recordset = this.query(this.getB1Adapter().parseSqlQuery(criteria, SBOCOMConstants.BoObjectTypes_oItems));
 			while (!recordset.isEoF()) {
-				IItems item = SBOCOMUtil.getItems(this.getB1Company(),
+				IItems data = SBOCOMUtil.getItems(this.getB1Company(),
 						String.valueOf(recordset.getFields().item("ItemCode").getValue()));
-				items.add(item);
+				datas.add(data);
 				recordset.moveNext();
 			}
-			return items;
+			return datas;
+		} finally {
+			if (recordset != null) {
+				recordset.release();
+			}
+			if (open) {
+				this.closeRepository();
+			}
+		}
+	}
+
+	public OperationResult<DataWrapping> fetchProductionOrder(ICriteria criteria, String token) {
+		try {
+			this.setUserToken(token);
+			OperationResult<DataWrapping> operationResult = new OperationResult<>();
+			for (IProductionOrders item : this.fetchProductionOrder(criteria)) {
+				operationResult.addResultObjects(this.getB1Serializer().wrap(item));
+				item.release();
+			}
+			return operationResult;
+		} catch (Exception e) {
+			Logger.log(e);
+			return new OperationResult<>(e);
+		} finally {
+			System.gc();
+		}
+	}
+
+	public List<IProductionOrders> fetchProductionOrder(ICriteria criteria)
+			throws SBOCOMException, ParsingException, RepositoryException {
+		IRecordset recordset = null;
+		boolean open = false;
+		try {
+			open = this.openRepository();
+			List<IProductionOrders> datas = new ArrayList<>();
+			recordset = this.query(
+					this.getB1Adapter().parseSqlQuery(criteria, SBOCOMConstants.BoObjectTypes_oProductionOrders));
+			while (!recordset.isEoF()) {
+				IProductionOrders data = SBOCOMUtil.getProductionOrders(this.getB1Company(),
+						(Integer) recordset.getFields().item("DocEntry").getValue());
+				datas.add(data);
+				recordset.moveNext();
+			}
+			return datas;
 		} finally {
 			if (recordset != null) {
 				recordset.release();

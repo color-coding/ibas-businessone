@@ -53,36 +53,54 @@ public class B1DataConvert {
 				try {
 					Method methodCount = value.getClass().getMethod(METHOD_GET_COUNT);
 					int count = (int) methodCount.invoke(value);
-					return new Iterator<Object>() {
-						int index;
-						Method methodItem = null;
+					try {
+						Method methodLine = value.getClass().getMethod(METHOD_SET_CURRENT_LINE, Integer.class);
+						return new Iterator<Object>() {
+							int index;
 
-						@Override
-						public boolean hasNext() {
-							if (index < count) {
-								return true;
-							}
-							return false;
-						}
-
-						@Override
-						public Object next() {
-							try {
-								if (methodItem == null) {
-									try {
-										methodItem = value.getClass().getMethod(METHOD_SET_CURRENT_LINE, Integer.class);
-									} catch (NoSuchMethodException e) {
-										methodItem = value.getClass().getMethod(METHOD_ITEM, Integer.class);
-									}
+							@Override
+							public boolean hasNext() {
+								if (index < count) {
+									return true;
 								}
-								methodItem.invoke(value, index);
-								index++;
-								return value;
-							} catch (Exception e) {
-								throw new RuntimeException(e);
+								return false;
 							}
-						}
-					};
+
+							@Override
+							public Object next() {
+								try {
+									methodLine.invoke(value, index);
+									index++;
+									return value;
+								} catch (Exception e) {
+									throw new RuntimeException(e);
+								}
+							}
+						};
+					} catch (NoSuchMethodException e) {
+						Method methodItem = value.getClass().getMethod(METHOD_ITEM, Object.class);
+						return new Iterator<Object>() {
+							int index;
+
+							@Override
+							public boolean hasNext() {
+								if (index < count) {
+									return true;
+								}
+								return false;
+							}
+
+							@Override
+							public Object next() {
+								try {
+									index++;
+									return methodItem.invoke(value, index - 1);
+								} catch (Exception e) {
+									throw new RuntimeException(e);
+								}
+							}
+						};
+					}
 				} catch (Exception e) {
 					return new Iterator<Object>() {
 

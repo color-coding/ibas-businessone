@@ -7,11 +7,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 import org.colorcoding.ibas.bobas.serialization.structure.Element;
@@ -29,6 +29,7 @@ import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IFields;
+import com.sap.smb.sbo.api.IValidValues;
 
 public class B1SerializerJson extends B1Serializer<JsonSchema> {
 
@@ -36,6 +37,26 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 
 	public B1SerializerJson(ICompany b1Company) {
 		super(b1Company);
+	}
+
+	protected String nameElement(String name) {
+		int index = 0;
+		for (char item : name.toCharArray()) {
+			if (Character.isUpperCase(item)) {
+				index++;
+			} else {
+				break;
+			}
+		}
+		if (index > 0) {
+			if (index == 1 || index == name.length()) {
+				name = name.substring(0, index).toLowerCase() + name.substring(index);
+			} else {
+				index -= 1;
+				name = name.substring(0, index).toLowerCase() + name.substring(index);
+			}
+		}
+		return name;
 	}
 
 	@Override
@@ -135,26 +156,6 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 		public ElementRoot element;
 		protected Map<String, String> knownTypes;
 
-		protected String nameElement(String name) {
-			int index = 0;
-			for (char item : name.toCharArray()) {
-				if (Character.isUpperCase(item)) {
-					index++;
-				} else {
-					break;
-				}
-			}
-			if (index > 0) {
-				if (index == 1 || index == name.length()) {
-					name = name.substring(0, index).toLowerCase() + name.substring(index);
-				} else {
-					index -= 1;
-					name = name.substring(0, index).toLowerCase() + name.substring(index);
-				}
-			}
-			return name;
-		}
-
 		public void write() throws JsonGenerationException, IOException {
 			this.jsonGenerator.writeStartObject();
 			this.jsonGenerator.writeStringField("$schema", SCHEMA_VERSION);
@@ -164,7 +165,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			this.jsonGenerator.writeFieldName("type");
 			this.jsonGenerator.writeStartObject();
 			this.jsonGenerator.writeStringField("type", "string");
-			this.jsonGenerator.writeStringField("pattern", this.element.getType().getSimpleName());
+			this.jsonGenerator.writeStringField("pattern", this.element.getName());
 			this.jsonGenerator.writeEndObject();
 			for (Element item : this.element.getChilds()) {
 				this.write(this.jsonGenerator, item);
@@ -175,7 +176,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 
 		protected void write(JsonGenerator jsonGenerator, Element element) throws JsonGenerationException, IOException {
 			if (element.isCollection()) {
-				jsonGenerator.writeFieldName(this.nameElement(element.getWrapper()));
+				jsonGenerator.writeFieldName(B1SerializerJson.this.nameElement(element.getWrapper()));
 				jsonGenerator.writeStartObject();
 				jsonGenerator.writeStringField("type", "array");
 				jsonGenerator.writeFieldName("items");
@@ -190,7 +191,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 				jsonGenerator.writeEndObject();
 				jsonGenerator.writeEndObject();
 			} else {
-				jsonGenerator.writeFieldName(this.nameElement(element.getName()));
+				jsonGenerator.writeFieldName(B1SerializerJson.this.nameElement(element.getName()));
 				jsonGenerator.writeStartObject();
 				String typeName = this.knownTypes.get(element.getType().getName());
 				if (typeName != null) {
@@ -275,7 +276,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			this.jsonGenerator.writeEndObject();
 		}
 
-		private void write(Element element, Object data) {
+		private void write(Element element, Object data) throws JsonGenerationException, IOException {
 			Object value = B1AnalyzerGetter.getValue(element, data);
 			if (value == null) {
 				return;
@@ -285,16 +286,72 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					return;
 				}
 			}
+			String name = B1SerializerJson.this.nameElement(element.getName());
 			if (element.getType() == String.class) {
+				this.jsonGenerator.writeStringField(name, B1DataConvert.toString(value));
+			} else if (element.getType() == Date.class) {
+				String tmp = B1DataConvert.toString(value);
+				if (tmp != null) {
+					this.jsonGenerator.writeStringField(name, tmp);
+				}
 			} else if (element.getType() == Boolean.class) {
-			} else if (element.getType() == Integer.class || element.getType() == Short.class
-					|| element.getType() == Long.class || element.getType() == Float.class
-					|| element.getType() == Double.class || element.getType() == BigInteger.class
-					|| element.getType() == BigDecimal.class) {
-
+				this.jsonGenerator.writeBooleanField(name, (boolean) value);
+			} else if (element.getType() == Integer.class) {
+				this.jsonGenerator.writeNumberField(name, (Integer) value);
+			} else if (element.getType() == Short.class) {
+				this.jsonGenerator.writeNumberField(name, (Short) value);
+			} else if (element.getType() == Long.class) {
+				this.jsonGenerator.writeNumberField(name, (Long) value);
+			} else if (element.getType() == Float.class) {
+				this.jsonGenerator.writeNumberField(name, (Float) value);
+			} else if (element.getType() == Double.class) {
+				this.jsonGenerator.writeNumberField(name, (Double) value);
+			} else if (element.getType() == BigDecimal.class) {
+				this.jsonGenerator.writeNumberField(name, (BigDecimal) value);
 			} else if (element.isCollection()) {
+				this.jsonGenerator.writeFieldName(B1SerializerJson.this.nameElement(element.getWrapper()));
+				this.jsonGenerator.writeStartArray();
+				for (Object itemValue : B1DataConvert.toIterable(value)) {
+					this.jsonGenerator.writeStartObject();
+					for (Element item : element.getChilds()) {
+						this.write(item, itemValue);
+					}
+					this.jsonGenerator.writeEndObject();
+				}
+				this.jsonGenerator.writeEndArray();
 			} else if (element.getType() == IFields.class) {
+				this.jsonGenerator.writeFieldName(B1SerializerJson.this.nameElement(element.getWrapper()));
+				this.jsonGenerator.writeStartArray();
+				IFields fieldsValue = (IFields) value;
+				for (int i = 0; i < fieldsValue.getCount(); i++) {
+					this.jsonGenerator.writeFieldName(name);
+					this.jsonGenerator.writeStartObject();
+					for (Element item : element.getChilds()) {
+						this.write(item, fieldsValue.item(i));
+					}
+					this.jsonGenerator.writeEndObject();
+				}
+				this.jsonGenerator.writeEndArray();
+			} else if (element.getType() == IValidValues.class) {
+				this.jsonGenerator.writeFieldName(B1SerializerJson.this.nameElement(element.getWrapper()));
+				this.jsonGenerator.writeStartArray();
+				IValidValues validValues = (IValidValues) value;
+				for (int i = 0; i < validValues.getCount(); i++) {
+					this.jsonGenerator.writeFieldName(name);
+					this.jsonGenerator.writeStartObject();
+					for (Element item : element.getChilds()) {
+						this.write(item, validValues.item(i));
+					}
+					this.jsonGenerator.writeEndObject();
+				}
+				this.jsonGenerator.writeEndArray();
 			} else {
+				this.jsonGenerator.writeFieldName(name);
+				this.jsonGenerator.writeStartObject();
+				for (Element item : element.getChilds()) {
+					this.write(item, value);
+				}
+				this.jsonGenerator.writeEndObject();
 			}
 		}
 	}

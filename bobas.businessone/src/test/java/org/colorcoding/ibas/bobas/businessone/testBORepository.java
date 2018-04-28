@@ -18,10 +18,12 @@ import org.colorcoding.ibas.bobas.common.IOperationResult;
 import org.colorcoding.ibas.bobas.common.ISort;
 import org.colorcoding.ibas.bobas.common.SortType;
 import org.colorcoding.ibas.bobas.core.RepositoryException;
+import org.colorcoding.ibas.bobas.serialization.ValidateException;
 
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IDocuments;
 import com.sap.smb.sbo.api.IItems;
+import com.sap.smb.sbo.api.IProductionOrders;
 import com.sap.smb.sbo.api.IRecordset;
 import com.sap.smb.sbo.api.SBOCOMConstants;
 import com.sap.smb.sbo.api.SBOCOMException;
@@ -90,7 +92,8 @@ public class testBORepository extends TestCase {
 		// System.out.println(item.getAsXML());
 	}
 
-	public void testFetch() {
+	public void testFetch() throws IOException, ValidateException {
+		String fileGroup = MyConfiguration.getWorkFolder() + File.separator;
 		ICriteria criteria = new Criteria();
 		criteria.setResultCount(1);
 		ICondition condition = criteria.getConditions().create();
@@ -102,18 +105,48 @@ public class testBORepository extends TestCase {
 		sort.setSortType(SortType.ASCENDING);
 		BORepositoryDemo boRepository = new BORepositoryDemo();
 		boRepository.setSerialization("xml");
+		B1SerializerXml serializerXml = new B1SerializerXml(boRepository.getCompany());
 		IOperationResult<DataWrapping> operationResult = boRepository.fetchItem(criteria, this.getToken());
 		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
-		System.out.println("xml:");
-		for (DataWrapping data : operationResult.getResultObjects()) {
-			System.out.println(data.getContent());
+		System.out.println("xml item:");
+		for (int i = 0; i < operationResult.getResultObjects().size(); i++) {
+			DataWrapping data = operationResult.getResultObjects().get(i);
+			this.saveFile(String.format("%sitems_data_%s.xml", fileGroup, i), data.getContent());
+			System.out.println(String.format("data: %sitems_data_%s.xml", fileGroup, i));
+			serializerXml.validate(IItems.class, data.getContent());
+		}
+		criteria = new Criteria();
+		criteria.setResultCount(1);
+		operationResult = boRepository.fetchProductionOrder(criteria, this.getToken());
+		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
+		System.out.println("xml production order:");
+		for (int i = 0; i < operationResult.getResultObjects().size(); i++) {
+			DataWrapping data = operationResult.getResultObjects().get(i);
+			this.saveFile(String.format("%sproductionorders_data_%s.xml", fileGroup, i), data.getContent());
+			System.out.println(String.format("data: %sproductionorders_data_%s.xml", fileGroup, i));
+			serializerXml.validate(IProductionOrders.class, data.getContent());
 		}
 		boRepository.setSerialization("json");
+		B1SerializerJson serializerJson = new B1SerializerJson(boRepository.getCompany());
 		operationResult = boRepository.fetchItem(criteria, this.getToken());
 		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
-		System.out.println("json:");
-		for (DataWrapping data : operationResult.getResultObjects()) {
-			System.out.println(data.getContent());
+		System.out.println("json item:");
+		for (int i = 0; i < operationResult.getResultObjects().size(); i++) {
+			DataWrapping data = operationResult.getResultObjects().get(i);
+			this.saveFile(String.format("%sitems_data_%s.json", fileGroup, i), data.getContent());
+			System.out.println(String.format("data: %sitems_data_%s.json", fileGroup, i));
+			serializerJson.validate(IItems.class, data.getContent());
+		}
+		criteria = new Criteria();
+		criteria.setResultCount(1);
+		operationResult = boRepository.fetchProductionOrder(criteria, this.getToken());
+		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
+		System.out.println("json production order:");
+		for (int i = 0; i < operationResult.getResultObjects().size(); i++) {
+			DataWrapping data = operationResult.getResultObjects().get(i);
+			this.saveFile(String.format("%sproductionorders_data_%s.json", fileGroup, i), data.getContent());
+			System.out.println(String.format("data: %sproductionorders_data_%s.json", fileGroup, i));
+			serializerJson.validate(IProductionOrders.class, data.getContent());
 		}
 	}
 
