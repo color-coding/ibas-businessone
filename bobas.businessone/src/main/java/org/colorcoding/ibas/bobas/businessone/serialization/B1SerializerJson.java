@@ -16,7 +16,6 @@ import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 import org.colorcoding.ibas.bobas.serialization.structure.Element;
 import org.colorcoding.ibas.bobas.serialization.structure.ElementRoot;
-import org.xml.sax.InputSource;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerationException;
@@ -104,8 +103,8 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 
 	@Override
 	public void getSchema(Class<?> type, OutputStream outputStream) throws SerializationException {
-		JsonFactory jsonFactory = new JsonFactory();
 		try {
+			JsonFactory jsonFactory = new JsonFactory();
 			JsonGenerator jsonGenerator = jsonFactory.createGenerator(outputStream);
 
 			SchemaWriter schemaWriter = new SchemaWriter();
@@ -230,15 +229,9 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 	}
 
 	@Override
-	public Object deserialize(InputSource inputSource, Class<?>... types) throws SerializationException {
-
-		return null;
-	}
-
-	@Override
 	protected void serialize(Object data, OutputStream outputStream, boolean formated, ElementRoot element) {
-		JsonFactory jsonFactory = new JsonFactory();
 		try {
+			JsonFactory jsonFactory = new JsonFactory();
 			JsonGenerator jsonGenerator = jsonFactory.createGenerator(outputStream);
 
 			DataWriter dataWriter = new DataWriter();
@@ -355,4 +348,5 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			}
 		}
 	}
+
 }

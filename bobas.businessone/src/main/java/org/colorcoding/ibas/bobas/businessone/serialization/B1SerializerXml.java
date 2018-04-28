@@ -35,7 +35,6 @@ import org.colorcoding.ibas.bobas.serialization.structure.Element;
 import org.colorcoding.ibas.bobas.serialization.structure.ElementRoot;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.sap.smb.sbo.api.ICompany;
@@ -251,12 +250,6 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 	}
 
 	@Override
-	public Object deserialize(InputSource inputSource, Class<?>... types) throws SerializationException {
-
-		return null;
-	}
-
-	@Override
 	protected void serialize(Object data, OutputStream outputStream, boolean formated, ElementRoot element) {
 		try {
 			// 创建文档
@@ -380,4 +373,5 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 			}
 		}
 	}
+
 }

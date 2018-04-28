@@ -29,7 +29,7 @@ public class B1AnalyzerGetter extends AnalyzerGetter {
 		} catch (Exception e) {
 		}
 		return null;
-	};
+	}
 
 	public B1AnalyzerGetter() {
 		super();
@@ -68,6 +68,15 @@ public class B1AnalyzerGetter extends AnalyzerGetter {
 
 	@Override
 	public ElementRoot analyse(Class<?> type) {
+		if (!type.isInterface()) {
+			// 实体类，尝试转为接口
+			String name = type.getName().substring(0, type.getName().lastIndexOf("."));
+			name = "I" + type.getSimpleName();
+			try {
+				type = Class.forName(name);
+			} catch (ClassNotFoundException e) {
+			}
+		}
 		ElementRoot element = super.analyse(type);
 		if (type.isInterface() && element.getName().startsWith("I")) {
 			element.setName(element.getName().substring(1));

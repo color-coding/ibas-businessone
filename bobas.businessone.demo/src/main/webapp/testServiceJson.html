@@ -65,7 +65,7 @@
                 $("#rsltMsg").html("unkown.");
             }
         }
-        var token = '';
+        var token = '1q2w3e';
         var testCreateItem = function () {
             var bo = ttborep.bo.Item.createNew();
             showResult(bo);
@@ -87,22 +87,6 @@
                 }
             });
         }
-        var testSaveItem = function () {
-            var url = address + '/saveItem?token=' + token;
-            var data = testCreateItem();
-            $.ajax({
-                type: 'POST',
-                contentType: "application/json",
-                url: url,
-                data: JSON.stringify(data),
-                success: function (data, status) {
-                   showResult(data);
-                },
-                error: function (err) {
-                   showErrors(err);
-                }
-            });
-        };
         var testFetchProductionOrder = function () {
             var url = address + '/fetchProductionOrder?token=' + token;
             var criteria = {};
@@ -119,22 +103,6 @@
                 }
             });
         }
-        var testSaveProductionOrder = function () {
-            var url = address + '/saveProductionOrder?token=' + token;
-            var data = testCreateItem();
-            $.ajax({
-                type: 'POST',
-                contentType: "application/json",
-                url: url,
-                data: JSON.stringify(data),
-                success: function (data, status) {
-                   showResult(data);
-                },
-                error: function (err) {
-                   showErrors(err);
-                }
-            });
-        };
     </script>
 </head>
 <body>
@@ -150,9 +118,6 @@
                 <td>
                     <input type="button" value="fetch" onclick="testFetchItem();" />
                 </td>
-                <td>
-                    <input type="button" value="save" onclick="testSaveItem();" />
-                </td>
             </tr>
             <tr>
                 <td>
@@ -160,9 +125,6 @@
                 </td>
                 <td>
                     <input type="button" value="fetch" onclick="testFetchProductionOrder();" />
-                </td>
-                <td>
-                    <input type="button" value="save" onclick="testSaveProductionOrder();" />
                 </td>
             </tr>
         </table>

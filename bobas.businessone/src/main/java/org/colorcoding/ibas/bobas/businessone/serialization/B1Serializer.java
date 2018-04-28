@@ -18,6 +18,7 @@ import org.colorcoding.ibas.bobas.message.MessageLevel;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.Serializer;
 import org.colorcoding.ibas.bobas.serialization.structure.ElementRoot;
+import org.xml.sax.InputSource;
 
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IDocuments;
@@ -119,5 +120,12 @@ public abstract class B1Serializer<S> extends Serializer<S> implements IB1Serial
 		}
 	}
 
+	@Override
+	public Object deserialize(InputSource inputSource, Class<?>... types) throws SerializationException {
+		// b1对象不支持反序列化，建议直接分析字符串或自行定义对象
+		throw new SerializationException(I18N.prop("msg_bobas_not_supported"));
+	}
+
 	protected abstract void serialize(Object data, OutputStream outputStream, boolean formated, ElementRoot element);
+
 }

@@ -30,4 +30,5 @@ public class DataService extends BORepositoryDemo {
 	public OperationResult<DataWrapping> fetchProductionOrder(Criteria criteria, @QueryParam("token") String token) {
 		return super.fetchProductionOrder(criteria, token);
 	}
+
 }
