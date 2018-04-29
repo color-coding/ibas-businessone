@@ -14,6 +14,7 @@ import org.colorcoding.tools.btulz.Environment;
 import org.colorcoding.tools.btulz.businessone.transformer.CodeTransformer;
 import org.colorcoding.tools.btulz.template.Parameter;
 
+import com.sap.smb.sbo.api.IField;
 import com.sap.smb.sbo.api.SBOCOMConstants;
 
 import junit.framework.TestCase;
@@ -32,8 +33,13 @@ public class testCodeTransformer extends TestCase {
 		codeTransformer.addParameters(new Parameter("b1Version", "0.1.0"));
 		codeTransformer.addParameters(new Parameter("ibasVersion", "0.1.2"));
 		codeTransformer.addParameters(new Parameter("ProjectId", UUID.randomUUID().toString()));
+		codeTransformer.addDomain("UserFields;Documents;");
+		codeTransformer.transform();
+		codeTransformer.getDomains().clear();
 		codeTransformer.addDomain("Items;BusinessPartners;Document_Orders;Document_PurchaseOrders;");
 		codeTransformer.transform();
+		IField dField;
+
 	}
 
 	public void testEumns() throws IllegalArgumentException, IllegalAccessException {

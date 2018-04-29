@@ -1,0 +1,25 @@
+/**
+ * @license
+ * Copyright Color-Coding Studio. All Rights Reserved.
+ *
+ * Use of this source code is governed by an Apache License, Version 2.0
+ * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
+ */
+/// <reference path="./types/Data.d.ts" />
+/// <reference path="./types/UserFields.d.ts" />
+/// <reference path="./types/Documents.d.ts" />
+$BEGIN_BO$
+/// <reference path="./types/${BO.getName()}.d.ts" />
+$END_BO$
+namespace ${Domain.getName().toLowerCase()} {
+    export namespace bo {
+        /** 数据转换者 */
+        export class DataConverter extends ibas.DataConverter4j {
+            /** 创建业务对象转换者 */
+            protected createConverter(): ibas.BOConverter {
+                return null;
+            }
+        }
+
+    }
+}

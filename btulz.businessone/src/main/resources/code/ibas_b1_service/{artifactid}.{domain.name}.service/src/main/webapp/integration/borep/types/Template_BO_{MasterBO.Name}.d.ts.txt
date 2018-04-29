@@ -5,17 +5,21 @@
  * Use of this source code is governed by an Apache License, Version 2.0
  * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
  */
-/// <reference path="./UserFields.d.ts" />
-
 declare namespace ${Domain.getName().toLowerCase()} {
     export namespace bo {
 $BEGIN_BO_MODEL$
+$BEGIN_MODEL_MODELTYPE_IS_DOCUMENT$
+        export interface ${Model.getName()} extends Documents {
+$END_MODEL_MODELTYPE_IS_DOCUMENT$
+$BEGIN_MODEL_MODELTYPE_IS_UNSPECIFIED$
         export interface ${Model.getName()} {
+$END_MODEL_MODELTYPE_IS_UNSPECIFIED$
 $BEGIN_MODEL_PROPERTY$
             ${Property.getName(LowerCamelCase)}: ${Property.getDeclaredType()};
 $END_MODEL_PROPERTY$
         }
 $END_BO_MODEL$
+
 
 $BEGIN_BOITEMS$
 $BEGIN_BO_MODEL$

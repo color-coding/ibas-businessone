@@ -21,7 +21,6 @@ import org.colorcoding.tools.btulz.model.data.emDataType;
 import org.colorcoding.tools.btulz.model.data.emModelType;
 import org.colorcoding.tools.btulz.transformer.TransformException;
 
-import com.sap.smb.sbo.api.IDocument_Lines;
 import com.sap.smb.sbo.api.IDocuments;
 import com.sap.smb.sbo.api.IUserFields;
 import com.sap.smb.sbo.api.Items;
@@ -107,12 +106,12 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 		public void write(String modelName) {
 			IModel model = this.domain.getModels().create();
 			model.setName(this.element.getName());
+			model.setModelType(emModelType.Unspecified);
 			if (modelName != null && !modelName.isEmpty()) {
 				model.setName(modelName);
-			}
-			model.setModelType(emModelType.Unspecified);
-			if (this.element.getType() == IDocuments.class) {
-				model.setModelType(emModelType.Document);
+				if (this.element.getType() == IDocuments.class) {
+					model.setModelType(emModelType.Document);
+				}
 			}
 			model.setMapped("");
 			IBusinessObject businessObject = this.domain.getBusinessObjects().create();
@@ -121,8 +120,10 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 			if (modelName != null && !modelName.isEmpty()) {
 				businessObject.setShortName(B1_DOCUMENT_PREFIX + businessObject.getShortName());
 			}
-			for (Element item : this.element.getChilds()) {
-				this.write(item, model, businessObject);
+			if (modelName == null || modelName.isEmpty()) {
+				for (Element item : this.element.getChilds()) {
+					this.write(item, model, businessObject);
+				}
 			}
 		}
 
@@ -160,6 +161,11 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 				property.setDataType(emDataType.Unknown);
 				property.setDataSubType(emDataSubType.Default);
 				property.setDeclaredType("UserFields");
+			} else if (element.getType() == Object.class) {
+				IProperty property = model.getProperties().create();
+				property.setName(element.getName());
+				property.setDataType(emDataType.Unknown);
+				property.setDataSubType(emDataSubType.Default);
 			} else if (element.isCollection()) {
 				IProperty property = model.getProperties().create();
 				property.setName(element.getName());
@@ -171,9 +177,6 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 					newModel = this.domain.getModels().create();
 					newModel.setName(element.getName());
 					newModel.setModelType(emModelType.Unspecified);
-					if (element.getType() == IDocument_Lines.class) {
-						model.setModelType(emModelType.DocumentLine);
-					}
 					newModel.setMapped("");
 					businessObjectItem = businessObject.getRelatedBOs().create();
 					for (Element item : element.getChilds()) {

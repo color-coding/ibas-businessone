@@ -42,6 +42,11 @@ public class B1AnalyzerGetter extends AnalyzerGetter {
 		this.skipMethods.add("getCount");
 		this.skipMethods.add("getImportProcesses");
 		this.skipMethods.add("getExportProcesses");
+		this.skipMethods.add("getValueDate");
+		this.skipMethods.add("getValueDouble");
+		this.skipMethods.add("getValueFloat");
+		this.skipMethods.add("getValueInteger");
+		this.skipMethods.add("getValueString");
 	}
 
 	@Override

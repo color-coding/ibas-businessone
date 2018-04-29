@@ -12,4 +12,5 @@
     <Mapping DataType="Date" SubType="Date" Mapped="Date"/>
     <Mapping DataType="Date" SubType="Time" Mapped="number"/>
     <Mapping DataType="Boolean" Mapped="boolean"/>
+    <Mapping DataType="Unknown" Mapped="any"/>
 </ns2:DataTypeMappings>

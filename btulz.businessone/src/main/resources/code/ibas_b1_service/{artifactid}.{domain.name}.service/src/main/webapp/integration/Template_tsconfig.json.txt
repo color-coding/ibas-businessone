@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
-    "module": "umd",
+    "module": "amd",
+    "target": "es6",
     "noImplicitAny": false,
     "removeComments": true,
-    "target": "es6",
-    "preserveConstEnums": true
+    "sourceMap": false
   },
-  "files": [
+  "exclude": [
   ]
 }

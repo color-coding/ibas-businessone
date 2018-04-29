@@ -96,6 +96,7 @@ public class Command4Code extends Command4Release<Command4Code> {
 	@Override
 	protected int go(Argument[] arguments) {
 		try {
+			String businessObjects = null;
 			CodeTransformer codeTransformer = null;
 			for (Argument argument : arguments) {
 				if (!argument.isInputed()) {
@@ -117,16 +118,22 @@ public class Command4Code extends Command4Release<Command4Code> {
 				} else if (argument.getName().equalsIgnoreCase("-ProjectUrl")) {
 					codeTransformer.setProjectUrl(argument.getValue());
 				} else if (argument.getName().equalsIgnoreCase("-BusinessObjects")) {
-					codeTransformer.addDomain(argument.getValue());
+					businessObjects = argument.getValue();
 				} else if (argument.getName().equalsIgnoreCase("-DomainName")) {
 					codeTransformer.setDomainName(argument.getValue());
 				} else if (argument.getName().equalsIgnoreCase("-Parameters")) {
 					codeTransformer.addParameters(this.createParameters(argument.getValue()));
 				}
 			}
+			// 必要参数赋值后才可运行
 			if (codeTransformer != null && codeTransformer.getTemplateFolder() != null
 					&& !codeTransformer.getTemplateFolder().isEmpty()) {
-				// 必要参数赋值后才可运行
+				// 首先基本输出
+				codeTransformer.addDomain("UserFields;Documents;");
+				codeTransformer.transform();
+				// 正常输出
+				codeTransformer.getDomains().clear();
+				codeTransformer.addDomain(businessObjects);
 				codeTransformer.transform();
 				return RETURN_VALUE_SUCCESS;
 			}
