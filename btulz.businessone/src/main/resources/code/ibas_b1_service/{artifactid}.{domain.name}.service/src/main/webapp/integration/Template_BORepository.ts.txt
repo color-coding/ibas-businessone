@@ -1,0 +1,33 @@
+/**
+ * @license
+ * Copyright Color-Coding Studio. All Rights Reserved.
+ *
+ * Use of this source code is governed by an Apache License, Version 2.0
+ * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
+ */
+/// <reference path="../3rdparty/ibas/index.d.ts" />
+/// <reference path="../3rdparty/b1/index.d.ts" />
+/** 业务仓库 */
+export class BORepository${Domain.getName()} extends ibas.BORepositoryApplication {
+    /** 创建此模块的后端与前端数据的转换者 */
+    protected createConverter(): ibas.IDataConverter {
+        return new DataConverter;
+    }
+$BEGIN_BO$
+    /**
+     * 查询 ${BO.getName()}
+     * @param fetcher 查询者
+     */
+    fetch${BO.getName()}(fetcher: ibas.IFetchCaller<sap.b1.${BO.getName()}>): void {
+        super.fetch("${BO.getName()}", fetcher);
+    }
+$END_BO$
+
+}
+/** 数据转换者 */
+class DataConverter extends ibas.DataConverter4j {
+    /** 创建业务对象转换者 */
+    protected createConverter(): ibas.BOConverter {
+        return null;
+    }
+}

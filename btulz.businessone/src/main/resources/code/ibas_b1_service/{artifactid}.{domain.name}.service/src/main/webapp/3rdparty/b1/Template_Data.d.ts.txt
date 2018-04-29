@@ -5,8 +5,10 @@
  * Use of this source code is governed by an Apache License, Version 2.0
  * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
  */
-declare namespace ${Domain.getName().toLowerCase()} {
-    export namespace bo {
+/// <reference path="./bo/UserFields.d.ts" />
+/// <reference path="./bo/Documents.d.ts" />
+declare namespace sap {
+    export namespace b1 {
 
         export enum AmountCatTypeEnum {
             act_Open = 0,

@@ -6,15 +6,20 @@
  * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
  */
 /// <reference path="../3rdparty/ibas/index.d.ts" />
-/// <reference path="./3rdparty/initialfantasy/index.ts" />
+/// <reference path="../3rdparty/b1/index.d.ts" />
+import { BORepository${Domain.getName()} } from "./BORepository";
+
 /** 配置项-业务仓库地址 */
 const CONFIG_REPOSITORY_URL: string = "REP_URL";
 /** 配置项-业务仓库口令 */
 const CONFIG_REPOSITORY_TOKEN: string = "REP_TOKEN";
 /** 数据交互 */
 export default class HelloWorld extends ibas.Action {
-    /** 运行逻辑 */
+    /**
+     * 运行，异步完成时需调用done()
+     * @returns true, 操作完成；false， 异步操作
+     */
     protected run(): boolean {
-
+        return false;
     }
 }
