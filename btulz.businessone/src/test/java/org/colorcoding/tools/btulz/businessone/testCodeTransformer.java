@@ -26,7 +26,6 @@ public class testCodeTransformer extends TestCase {
 		codeTransformer.setOutputFolder(Environment.getWorkingFolder() + File.separator + "out");
 		codeTransformer.setGroupId("org.colorcoding");
 		codeTransformer.setArtifactId("b1");
-		codeTransformer.setProjectId(UUID.randomUUID().toString());
 		codeTransformer.setProjectVersion("0.0.1");
 		codeTransformer.setProjectUrl("http://colorcoding.org");
 		codeTransformer.setDomainName("DataInteraction");

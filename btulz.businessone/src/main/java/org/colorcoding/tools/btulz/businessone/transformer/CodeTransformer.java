@@ -29,6 +29,7 @@ import com.sap.smb.sbo.api.Items;
 public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.CodeTransformer {
 
 	public final static String DATA_SPLIT_CHAR = ";";
+	public final static String ARRAY_PROPERTY_TEMPLATE = "%s[]";
 	public final static String B1_OBJECT_CODE_TEMPLATE = "o%s";
 	public final static String B1_DOCUMENT_PREFIX = "Document_";
 
@@ -43,19 +44,6 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 
 	public void setDomainName(String domainName) {
 		this.domainName = domainName;
-	}
-
-	private String collectionTemplate;
-
-	public String getCollectionTemplate() {
-		if (this.collectionTemplate == null || this.collectionTemplate.isEmpty()) {
-			this.collectionTemplate = "%s[]";
-		}
-		return collectionTemplate;
-	}
-
-	public void setCollectionTemplate(String collectionTemplate) {
-		this.collectionTemplate = collectionTemplate;
 	}
 
 	public void addDomain(String types) throws TransformException {
@@ -126,14 +114,12 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 			if (this.element.getType() == IDocuments.class) {
 				model.setModelType(emModelType.Document);
 			}
+			model.setMapped("");
 			IBusinessObject businessObject = this.domain.getBusinessObjects().create();
 			businessObject.setMappedModel(model);
 			businessObject.setShortName(String.format(B1_OBJECT_CODE_TEMPLATE, model.getName()));
 			if (modelName != null && !modelName.isEmpty()) {
 				businessObject.setShortName(B1_DOCUMENT_PREFIX + businessObject.getShortName());
-			}
-			if (modelName != null && !modelName.isEmpty()) {
-
 			}
 			for (Element item : this.element.getChilds()) {
 				this.write(item, model, businessObject);
@@ -188,6 +174,7 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 					if (element.getType() == IDocument_Lines.class) {
 						model.setModelType(emModelType.DocumentLine);
 					}
+					newModel.setMapped("");
 					businessObjectItem = businessObject.getRelatedBOs().create();
 					for (Element item : element.getChilds()) {
 						this.write(item, newModel, businessObjectItem);
@@ -197,8 +184,7 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 				}
 				businessObjectItem.setMappedModel(newModel);
 				businessObjectItem.setRelation(emBORelation.OneToMany);
-				property.setDeclaredType(
-						String.format(CodeTransformer.this.getCollectionTemplate(), newModel.getName()));
+				property.setDeclaredType(String.format(CodeTransformer.ARRAY_PROPERTY_TEMPLATE, newModel.getName()));
 			} else {
 				IProperty property = model.getProperties().create();
 				property.setName(element.getName());
@@ -210,6 +196,7 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 					newModel = this.domain.getModels().create();
 					newModel.setName(element.getName());
 					newModel.setModelType(emModelType.Unspecified);
+					newModel.setMapped("");
 					businessObjectItem = businessObject.getRelatedBOs().create();
 					for (Element item : element.getChilds()) {
 						this.write(item, newModel, businessObjectItem);

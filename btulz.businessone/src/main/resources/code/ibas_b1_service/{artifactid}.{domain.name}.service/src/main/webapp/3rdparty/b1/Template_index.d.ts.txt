@@ -6,6 +6,7 @@
  * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
  */
 /// <reference path="./Data.d.ts" />
+/// <reference path="./bo/UserFields.d.ts" />
 $BEGIN_BO$
 /// <reference path="./bo/${BO.getName()}.d.ts" />
 $END_BO$
