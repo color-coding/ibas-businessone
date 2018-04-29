@@ -5,9 +5,6 @@ import javax.ws.rs.core.MediaType;
 
 import org.colorcoding.ibas.bobas.common.*;
 import ${GroupId}.${ArtifactId}.${Domain.getName().toLowerCase()}.repository.*;
-$BEGIN_BO$
-import ${GroupId}.${ArtifactId}.${Domain.getName().toLowerCase()}.bo.${BO.getName().toLowerCase()}.*;
-$END_BO$
 
 /**
 * ${Domain.getName()} 数据服务JSON
@@ -15,37 +12,15 @@ $END_BO$
 @Path("data")
 public class DataService extends BORepository${Domain.getName()} {
 
-    //--------------------------------------------------------------------------------------------//
 $BEGIN_BO$
-    /**
-     * 查询-${BO.getDescription()}
-     * @param criteria 查询
-     * @param token 口令
-     * @return 操作结果
-     */
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
     @Path("fetch${BO.getName()}")
-    public OperationResult<${BO.getName()}> fetch${BO.getName()}(Criteria criteria, @QueryParam("token") String token) {
-        return super.fetch${BO.getName()}(criteria, token);
-    }
+	public OperationResult<DataWrapping> fetch${BO.getName()}(Criteria criteria, @QueryParam("token") String token) {
+		return super.fetch${BO.getName()}(criteria, token);
+	}
 
-    /**
-     * 保存-${BO.getDescription()}
-     * @param bo 对象实例
-     * @param token 口令
-     * @return 操作结果
-     */
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("save${BO.getName()}")
-    public OperationResult<${BO.getName()}> save${BO.getName()}(${BO.getName()} bo, @QueryParam("token") String token) {
-        return super.save${BO.getName()}(bo, token);
-    }
-
-    //--------------------------------------------------------------------------------------------//
 $END_BO$
 
 }

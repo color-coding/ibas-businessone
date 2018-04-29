@@ -6,6 +6,7 @@
      c. ./openui5，视图库。
      d. ./openui5/resources，视图控件，下载地址（http://openui5.org/download.html）。
   3. 注意ibas、shell、openui5目录不会签入代码管理器。
+  4. 目录b1为BusinessOne的库声明文件。
 
   * 以上建议通过操作系统文件链接指令映射，不要拷贝物理文件。
   * 链接指令示例：

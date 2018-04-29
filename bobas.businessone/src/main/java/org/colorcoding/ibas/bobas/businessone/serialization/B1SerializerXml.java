@@ -122,23 +122,23 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 
 		public SchemaWriter() {
 			this.knownTypes = new HashMap<>();
-			this.knownTypes.put("integer", "xs:integer");
-			this.knownTypes.put("short", "xs:integer");
-			this.knownTypes.put("long", "xs:integer");
+			this.knownTypes.put("integer", "xs:int");
+			this.knownTypes.put("long", "xs:long");
+			this.knownTypes.put("short", "xs:short");
+			this.knownTypes.put("float", "xs:float");
+			this.knownTypes.put("double", "xs:double");
 			this.knownTypes.put("boolean", "xs:boolean");
-			this.knownTypes.put("float", "xs:decimal");
-			this.knownTypes.put("double", "xs:decimal");
-			this.knownTypes.put("java.lang.Integer", "xs:integer");
-			this.knownTypes.put("java.lang.Long", "xs:integer");
-			this.knownTypes.put("java.lang.String", "xs:string");
-			this.knownTypes.put("java.lang.Short", "xs:integer");
-			this.knownTypes.put("java.lang.Boolean", "xs:boolean");
-			this.knownTypes.put("java.lang.Float", "xs:decimal");
-			this.knownTypes.put("java.lang.Double", "xs:decimal");
-			this.knownTypes.put("java.lang.Character", "xs:string");
-			this.knownTypes.put("java.math.BigDecimal", "xs:decimal");
+			this.knownTypes.put("java.lang.Integer", "xs:int");
+			this.knownTypes.put("java.lang.Long", "xs:long");
+			this.knownTypes.put("java.lang.Short", "xs:short");
 			this.knownTypes.put("java.math.BigInteger", "xs:integer");
-			this.knownTypes.put("org.colorcoding.ibas.bobas.data.Decimal", "xs:decimal");
+			this.knownTypes.put("java.lang.Float", "xs:float");
+			this.knownTypes.put("java.lang.Double", "xs:double");
+			this.knownTypes.put("java.math.BigDecimal", "xs:decimal");
+			this.knownTypes.put("java.lang.String", "xs:string");
+			this.knownTypes.put("java.lang.Character", "xs:string");
+			this.knownTypes.put("java.lang.Boolean", "xs:boolean");
+			// this.knownTypes.put("java.util.Date", "xs:dateTime");
 		}
 
 		private Map<String, String> knownTypes;
@@ -287,15 +287,15 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 		public DataWriter() {
 			this.knownTypes = new ArrayList<>();
 			this.knownTypes.add(Integer.class);
-			this.knownTypes.add(String.class);
 			this.knownTypes.add(Short.class);
-			this.knownTypes.add(Boolean.class);
+			this.knownTypes.add(Long.class);
 			this.knownTypes.add(Float.class);
 			this.knownTypes.add(Double.class);
+			this.knownTypes.add(String.class);
 			this.knownTypes.add(Character.class);
+			this.knownTypes.add(Boolean.class);
 			this.knownTypes.add(BigDecimal.class);
 			this.knownTypes.add(BigInteger.class);
-			this.knownTypes.add(Date.class);
 		}
 
 		private List<Class<?>> knownTypes;

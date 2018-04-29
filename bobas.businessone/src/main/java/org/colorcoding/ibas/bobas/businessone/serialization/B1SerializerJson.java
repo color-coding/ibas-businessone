@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -133,22 +134,21 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 		public SchemaWriter() {
 			this.knownTypes = new HashMap<>();
 			this.knownTypes.put("integer", "integer");
+			this.knownTypes.put("long", "integer");
 			this.knownTypes.put("short", "integer");
-			this.knownTypes.put("boolean", "boolean");
 			this.knownTypes.put("float", "number");
 			this.knownTypes.put("double", "number");
-			this.knownTypes.put("long", "number");
+			this.knownTypes.put("boolean", "boolean");
 			this.knownTypes.put("java.lang.Integer", "integer");
 			this.knownTypes.put("java.lang.Long", "integer");
-			this.knownTypes.put("java.lang.String", "string");
 			this.knownTypes.put("java.lang.Short", "integer");
-			this.knownTypes.put("java.lang.Boolean", "boolean");
+			this.knownTypes.put("java.math.BigInteger", "integer");
 			this.knownTypes.put("java.lang.Float", "number");
 			this.knownTypes.put("java.lang.Double", "number");
-			this.knownTypes.put("java.lang.Character", "string");
 			this.knownTypes.put("java.math.BigDecimal", "number");
-			this.knownTypes.put("java.math.BigInteger", "number");
-			this.knownTypes.put("org.colorcoding.ibas.bobas.data.Decimal", "number");
+			this.knownTypes.put("java.lang.Boolean", "boolean");
+			this.knownTypes.put("java.lang.String", "string");
+			this.knownTypes.put("java.lang.Character", "string");
 		}
 
 		public JsonGenerator jsonGenerator;
@@ -280,7 +280,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 				}
 			}
 			String name = B1SerializerJson.this.nameElement(element.getName());
-			if (element.getType() == String.class) {
+			if (element.getType() == String.class ||element.getType() == Character.class) {
 				this.jsonGenerator.writeStringField(name, B1DataConvert.toString(value));
 			} else if (element.getType() == Date.class) {
 				String tmp = B1DataConvert.toString(value);
@@ -301,6 +301,8 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 				this.jsonGenerator.writeNumberField(name, (Double) value);
 			} else if (element.getType() == BigDecimal.class) {
 				this.jsonGenerator.writeNumberField(name, (BigDecimal) value);
+			} else if (element.getType() == BigInteger.class) {
+				this.jsonGenerator.writeNumberField(name, ((BigInteger) value).longValue());
 			} else if (element.isCollection()) {
 				this.jsonGenerator.writeFieldName(B1SerializerJson.this.nameElement(element.getWrapper()));
 				this.jsonGenerator.writeStartArray();

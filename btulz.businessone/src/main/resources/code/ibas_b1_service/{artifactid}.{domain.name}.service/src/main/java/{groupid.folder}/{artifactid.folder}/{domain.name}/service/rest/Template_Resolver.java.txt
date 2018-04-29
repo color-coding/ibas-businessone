@@ -8,9 +8,7 @@ import javax.xml.bind.JAXBException;
 
 import org.colorcoding.ibas.bobas.bo.*;
 import org.colorcoding.ibas.bobas.common.*;
-$BEGIN_BO$
-import ${GroupId}.${ArtifactId}.${Domain.getName().toLowerCase()}.bo.${BO.getName().toLowerCase()}.*;
-$END_BO$
+import org.colorcoding.ibas.bobas.data.*;
 
 /**
  * 序列化解释器
@@ -24,7 +22,7 @@ public class Resolver implements ContextResolver<JAXBContext> {
     public JAXBContext getContext(Class<?> type) {
         try {
             if (jaxbContext == null) {
-                jaxbContext = JAXBContext.newInstance(Criteria.class, OperationResult.class);
+                jaxbContext = JAXBContext.newInstance(Criteria.class, OperationResult.class, DataWrapping.class);
             }
         } catch (JAXBException e) {
             e.printStackTrace();
