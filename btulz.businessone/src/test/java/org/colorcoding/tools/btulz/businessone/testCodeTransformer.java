@@ -14,7 +14,6 @@ import org.colorcoding.tools.btulz.Environment;
 import org.colorcoding.tools.btulz.businessone.transformer.CodeTransformer;
 import org.colorcoding.tools.btulz.template.Parameter;
 
-import com.sap.smb.sbo.api.IField;
 import com.sap.smb.sbo.api.SBOCOMConstants;
 
 import junit.framework.TestCase;
@@ -38,7 +37,6 @@ public class testCodeTransformer extends TestCase {
 		codeTransformer.getDomains().clear();
 		codeTransformer.addDomain("Items;BusinessPartners;Document_Orders;Document_PurchaseOrders;");
 		codeTransformer.transform();
-		IField dField;
 
 	}
 

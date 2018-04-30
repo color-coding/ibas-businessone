@@ -4,6 +4,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 
 import org.colorcoding.ibas.bobas.common.*;
+import org.colorcoding.ibas.bobas.data.*;
 import ${GroupId}.${ArtifactId}.${Domain.getName().toLowerCase()}.repository.*;
 
 /**
