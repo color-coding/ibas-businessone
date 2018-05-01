@@ -54,8 +54,8 @@ $BEGIN_MODEL_MODELTYPE_IS_DOCUMENT$
 			recordset = this.query(this.getB1Adapter().parseSqlQuery(criteria, SBOCOMConstants.BoObjectTypes_${BO.getShortName()}));
 			while (!recordset.isEoF()) {
 				IDocuments data = SBOCOMUtil.getDocuments(this.getB1Company(),
-						(Integer)recordset.getFields().item("DocEntry").getValue(),
-						(Integer)recordset.getFields().item("DocNum").getValue());
+						SBOCOMConstants.BoObjectTypes_${BO.getShortName()},
+						(Integer)recordset.getFields().item("DocEntry").getValue());
 				datas.add(data);
 				recordset.moveNext();
 			}

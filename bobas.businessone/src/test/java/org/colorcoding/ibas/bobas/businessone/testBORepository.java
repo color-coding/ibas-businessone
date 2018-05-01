@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerJson;
 import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerXml;
 import org.colorcoding.ibas.bobas.businessone.serialization.IB1Serializer;
@@ -17,7 +18,6 @@ import org.colorcoding.ibas.bobas.common.IOperationResult;
 import org.colorcoding.ibas.bobas.common.ISort;
 import org.colorcoding.ibas.bobas.common.SortType;
 import org.colorcoding.ibas.bobas.core.RepositoryException;
-import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 
 import com.sap.smb.sbo.api.ICompany;
@@ -106,7 +106,7 @@ public class testBORepository extends TestCase {
 		BORepositoryDemo boRepository = new BORepositoryDemo();
 		boRepository.setSerialization("xml");
 		B1SerializerXml serializerXml = new B1SerializerXml(boRepository.getCompany());
-		IOperationResult<DataWrapping> operationResult = boRepository.fetchItem(criteria, this.getToken());
+		IOperationResult<DataWrapping> operationResult = boRepository.fetchItems(criteria, this.getToken());
 		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
 		System.out.println("xml item:");
 		for (int i = 0; i < operationResult.getResultObjects().size(); i++) {
@@ -117,7 +117,7 @@ public class testBORepository extends TestCase {
 		}
 		criteria = new Criteria();
 		criteria.setResultCount(1);
-		operationResult = boRepository.fetchProductionOrder(criteria, this.getToken());
+		operationResult = boRepository.fetchProductionOrders(criteria, this.getToken());
 		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
 		System.out.println("xml production order:");
 		for (int i = 0; i < operationResult.getResultObjects().size(); i++) {
@@ -128,7 +128,7 @@ public class testBORepository extends TestCase {
 		}
 		boRepository.setSerialization("json");
 		B1SerializerJson serializerJson = new B1SerializerJson(boRepository.getCompany());
-		operationResult = boRepository.fetchItem(criteria, this.getToken());
+		operationResult = boRepository.fetchItems(criteria, this.getToken());
 		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
 		System.out.println("json item:");
 		for (int i = 0; i < operationResult.getResultObjects().size(); i++) {
@@ -139,7 +139,7 @@ public class testBORepository extends TestCase {
 		}
 		criteria = new Criteria();
 		criteria.setResultCount(1);
-		operationResult = boRepository.fetchProductionOrder(criteria, this.getToken());
+		operationResult = boRepository.fetchProductionOrders(criteria, this.getToken());
 		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
 		System.out.println("json production order:");
 		for (int i = 0; i < operationResult.getResultObjects().size(); i++) {

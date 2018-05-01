@@ -26,6 +26,14 @@ $END_BO$
 }
 /** 数据转换者 */
 class DataConverter extends ibas.DataConverter4j {
+    /** 解析数据 */
+    parsing(data: any, sign: string): any {
+        if (data.type === "DataWrapping") {
+            return JSON.parse(data.Content);
+        } else {
+            return super.parsing(data, sign);
+        }
+    }
     /** 创建业务对象转换者 */
     protected createConverter(): ibas.BOConverter {
         return null;
