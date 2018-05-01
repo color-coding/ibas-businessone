@@ -2,7 +2,7 @@ package org.colorcoding.ibas.bobas.businessone.serialization;
 
 import java.util.List;
 
-import org.colorcoding.ibas.bobas.data.DataWrapping;
+import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.serialization.ISerializer;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 

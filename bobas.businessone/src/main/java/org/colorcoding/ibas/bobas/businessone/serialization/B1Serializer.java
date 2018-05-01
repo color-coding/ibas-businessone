@@ -11,7 +11,7 @@ import java.util.UUID;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
-import org.colorcoding.ibas.bobas.data.DataWrapping;
+import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.i18n.I18N;
 import org.colorcoding.ibas.bobas.message.Logger;
 import org.colorcoding.ibas.bobas.message.MessageLevel;

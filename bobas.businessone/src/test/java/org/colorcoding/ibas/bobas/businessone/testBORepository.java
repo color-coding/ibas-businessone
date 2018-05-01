@@ -17,7 +17,7 @@ import org.colorcoding.ibas.bobas.common.IOperationResult;
 import org.colorcoding.ibas.bobas.common.ISort;
 import org.colorcoding.ibas.bobas.common.SortType;
 import org.colorcoding.ibas.bobas.core.RepositoryException;
-import org.colorcoding.ibas.bobas.data.DataWrapping;
+import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 
 import com.sap.smb.sbo.api.ICompany;
