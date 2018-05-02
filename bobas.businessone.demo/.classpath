@@ -6,17 +6,17 @@
 			<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/lib"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/bobas.businessone">
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/bobas.businessobjectscommon.b1">
 		<attributes>
 			<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/lib"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry exported="true" kind="lib" path="/bobas.businessone/target/classes">
+	<classpathentry exported="true" kind="lib" path="/bobas.businessobjectscommon.b1/target/classes">
 		<attributes>
 			<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/classes"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry exported="true" kind="lib" path="/bobas.businessone/target/test-classes">
+	<classpathentry exported="true" kind="lib" path="/bobas.businessobjectscommon.b1/target/test-classes">
 		<attributes>
 			<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/classes"/>
 		</attributes>

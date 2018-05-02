@@ -1,0 +1,131 @@
+package ${GroupId}.${ArtifactId}.${Domain.getName().toLowerCase()}.repository;
+
+import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
+import org.colorcoding.ibas.bobas.businessone.repository.BORepositoryBusinessOne;
+import org.colorcoding.ibas.bobas.core.RepositoryException;
+import org.colorcoding.ibas.bobas.db.ParsingException;
+import org.colorcoding.ibas.bobas.message.Logger;
+import org.colorcoding.ibas.bobas.common.*;
+import org.colorcoding.ibas.bobas.data.*;
+import com.sap.smb.sbo.api.*;
+
+/**
+* ${Domain.getName()}仓库
+*/
+public class BORepository${Domain.getName()} extends BORepositoryBusinessOne {
+
+    //--------------------------------------------------------------------------------------------//
+$BEGIN_BO$
+$BEGIN_BO_MODEL$
+$BEGIN_MODEL_MODELTYPE_IS_DOCUMENT$
+    /**
+     * 查询-${BO.getName()}
+     * @param criteria 查询
+     * @param token 口令
+     * @return 操作结果（已被封装）
+     */
+    public OperationResult<DataWrapping> fetch${BO.getName()}(ICriteria criteria, String token) {
+		try {
+			this.setUserToken(token);
+			OperationResult<DataWrapping> operationResult = new OperationResult<>();
+			for (IDocuments item : this.fetch${BO.getName()}(criteria)) {
+				operationResult.addResultObjects(this.getB1Serializer().wrap(item));
+				item.release();
+			}
+			return operationResult;
+		} catch (Exception e) {
+			Logger.log(e);
+			return new OperationResult<>(e);
+		} finally {
+			System.gc();
+		}
+    }
+
+    /**
+     * 查询-${BO.getName()}
+     * @param criteria 查询
+     * @return 查询结果
+     */
+	public List<IDocuments> fetch${BO.getName()}(ICriteria criteria) throws SBOCOMException, ParsingException, RepositoryException {
+		IRecordset recordset = null;
+		boolean open = false;
+		try {
+			open = this.openRepository();
+			List<IDocuments> datas = new ArrayList<>();
+			recordset = this.query(this.getB1Adapter().parseSqlQuery(criteria, SBOCOMConstants.BoObjectTypes_${BO.getShortName()}));
+			while (!recordset.isEoF()) {
+				IDocuments data = SBOCOMUtil.getDocuments(this.getB1Company(),
+						SBOCOMConstants.BoObjectTypes_${BO.getShortName()},
+						(Integer)recordset.getFields().item("DocEntry").getValue());
+				datas.add(data);
+				recordset.moveNext();
+			}
+			return datas;
+		} finally {
+			if (recordset != null) {
+				recordset.release();
+			}
+			if (open) {
+				this.closeRepository();
+			}
+		}
+	}
+$END_MODEL_MODELTYPE_IS_DOCUMENT$
+$BEGIN_MODEL_MODELTYPE_IS_UNSPECIFIED$
+    /**
+     * 查询-${BO.getName()}
+     * @param criteria 查询
+     * @param token 口令
+     * @return 操作结果（已被封装）
+     */
+    public OperationResult<DataWrapping> fetch${BO.getName()}(ICriteria criteria, String token) {
+		try {
+			this.setUserToken(token);
+			OperationResult<DataWrapping> operationResult = new OperationResult<>();
+			for (I${BO.getName()} item : this.fetch${BO.getName()}(criteria)) {
+				operationResult.addResultObjects(this.getB1Serializer().wrap(item));
+				item.release();
+			}
+			return operationResult;
+		} catch (Exception e) {
+			Logger.log(e);
+			return new OperationResult<>(e);
+		} finally {
+			System.gc();
+		}
+    }
+
+    /**
+     * 查询-${BO.getName()}
+     * @param criteria 查询
+     * @return 查询结果
+     */
+	public List<I${BO.getName()}> fetch${BO.getName()}(ICriteria criteria) throws SBOCOMException, ParsingException, RepositoryException {
+		IRecordset recordset = null;
+		boolean open = false;
+		try {
+			open = this.openRepository();
+			List<I${BO.getName()}> datas = new ArrayList<>();
+			recordset = this.query(this.getB1Adapter().parseSqlQuery(criteria, SBOCOMConstants.BoObjectTypes_${BO.getShortName()}));
+			while (!recordset.isEoF()) {
+				I${BO.getName()} data = SBOCOMUtil.get${BO.getName()}(this.getB1Company(),
+						String.valueOf(recordset.getFields().item(0).getValue()));
+				datas.add(data);
+				recordset.moveNext();
+			}
+			return datas;
+		} finally {
+			if (recordset != null) {
+				recordset.release();
+			}
+			if (open) {
+				this.closeRepository();
+			}
+		}
+	}
+$END_MODEL_MODELTYPE_IS_UNSPECIFIED$
+$END_BO_MODEL$
+    //--------------------------------------------------------------------------------------------//
+$END_BO$
+
+}

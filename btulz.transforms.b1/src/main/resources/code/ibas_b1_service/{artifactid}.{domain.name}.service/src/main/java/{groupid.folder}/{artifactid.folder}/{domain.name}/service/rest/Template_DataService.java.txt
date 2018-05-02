@@ -1,0 +1,28 @@
+package ${GroupId}.${ArtifactId}.${Domain.getName().toLowerCase()}.service.rest;
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+
+import org.colorcoding.ibas.bobas.common.*;
+import org.colorcoding.ibas.bobas.data.*;
+import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
+import ${GroupId}.${ArtifactId}.${Domain.getName().toLowerCase()}.repository.BORepository${Domain.getName()};
+
+/**
+* ${Domain.getName()} 数据服务JSON
+*/
+@Path("data")
+public class DataService extends BORepository${Domain.getName()} {
+
+$BEGIN_BO$
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+    @Path("fetch${BO.getName()}")
+	public OperationResult<DataWrapping> fetch${BO.getName()}(Criteria criteria, @QueryParam("token") String token) {
+		return super.fetch${BO.getName()}(criteria, token);
+	}
+
+$END_BO$
+
+}

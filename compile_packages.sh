@@ -77,8 +77,8 @@ do
 done < ${WORK_FOLDER}/compile_order.txt | sed 's/\r//g'
 
 echo --输出直接调用shell脚本
-cp -r ${WORK_FOLDER}/btulz.businessone/src/main/commands/btulz.shell.sh.txt ${WORK_FOLDER}/release/btulz.shell.sh
-cp -r ${WORK_FOLDER}/btulz.businessone/src/main/commands/btulz.shell.bat.txt ${WORK_FOLDER}/release/btulz.shell.bat
+cp -r ${WORK_FOLDER}/btulz.transforms.b1/src/main/commands/btulz.shell.sh.txt ${WORK_FOLDER}/release/btulz.shell.sh
+cp -r ${WORK_FOLDER}/btulz.transforms.b1/src/main/commands/btulz.shell.bat.txt ${WORK_FOLDER}/release/btulz.shell.bat
 chmod 777 ${WORK_FOLDER}/release/btulz.shell.sh
 
 echo --编译完成，更多信息请查看[compile_packages_log_${OPNAME}.txt]
