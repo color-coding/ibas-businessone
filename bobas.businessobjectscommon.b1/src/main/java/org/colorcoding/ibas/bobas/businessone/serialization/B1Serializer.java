@@ -4,14 +4,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
-import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
 import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
+import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
 import org.colorcoding.ibas.bobas.i18n.I18N;
 import org.colorcoding.ibas.bobas.message.Logger;
 import org.colorcoding.ibas.bobas.message.MessageLevel;
@@ -110,7 +111,9 @@ public abstract class B1Serializer<S> extends Serializer<S> implements IB1Serial
 		try {
 			outputStream = new ByteArrayOutputStream();
 			this.serialize(data, outputStream, false, element);
-			return new DataWrapping(outputStream.toString());
+			return new DataWrapping(new String(outputStream.toByteArray(), "utf-8"));
+		} catch (UnsupportedEncodingException e) {
+			throw new SerializationException(e);
 		} finally {
 			try {
 				if (outputStream != null)
