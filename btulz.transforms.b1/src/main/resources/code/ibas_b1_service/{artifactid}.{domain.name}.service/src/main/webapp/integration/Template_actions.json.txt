@@ -1,13 +1,17 @@
 [
   {
     "type": "Action",
-    "name": " - ",
+    "name": "DataInteraction",
     "activated": true,
-    "path": " - .ts",
+    "path": "DataInteraction.ts",
     "configs": [
       {
-        "key": "REP_TOKEN",
-        "value": "${userToken}"
+        "key": "REPOSITORY_TOKEN",
+        "value": "1q2w3e"
+      },
+      {
+        "key": "REPOSITORY_URL",
+        "value": "http://localhost:8080/datainteraction/services/rest/data/"
       }
     ]
   }

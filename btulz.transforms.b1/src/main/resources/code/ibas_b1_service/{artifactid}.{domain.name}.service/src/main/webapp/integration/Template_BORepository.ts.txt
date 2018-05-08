@@ -6,7 +6,7 @@
  * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
  */
 /// <reference path="../3rdparty/ibas/index.d.ts" />
-/// <reference path="../3rdparty/b1/index.d.ts" />
+import * as b1 from "./b1/index";
 /** 业务仓库 */
 export class BORepository${Domain.getName()} extends ibas.BORepositoryApplication {
     /** 创建此模块的后端与前端数据的转换者 */
@@ -18,7 +18,7 @@ $BEGIN_BO$
      * 查询 ${BO.getName()}
      * @param fetcher 查询者
      */
-    fetch${BO.getName()}(fetcher: ibas.IFetchCaller<sap.b1.${BO.getName()}>): void {
+    fetch${BO.getName()}(fetcher: ibas.IFetchCaller<b1.I${BO.getName()}>): void {
         super.fetch("${BO.getName()}", fetcher);
     }
 $END_BO$

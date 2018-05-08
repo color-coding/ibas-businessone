@@ -37,7 +37,6 @@ public class testCodeTransformer extends TestCase {
 		codeTransformer.getDomains().clear();
 		codeTransformer.addDomain("Items;BusinessPartners;Document_Orders;Document_PurchaseOrders;");
 		codeTransformer.transform();
-
 	}
 
 	public void testEumns() throws IllegalArgumentException, IllegalAccessException {

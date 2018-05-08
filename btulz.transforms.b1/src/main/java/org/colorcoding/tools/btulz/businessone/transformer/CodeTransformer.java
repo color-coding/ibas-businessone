@@ -105,7 +105,10 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 
 		public void write(String modelName) {
 			IModel model = this.domain.getModels().create();
-			model.setName(this.element.getName());
+			model.setName(this.element.getType().getSimpleName());
+			if (this.element.getType().isInterface() && model.getName().startsWith("I")) {
+				model.setName(model.getName().substring(1));
+			}
 			model.setModelType(emModelType.Unspecified);
 			if (modelName != null && !modelName.isEmpty()) {
 				model.setName(modelName);
@@ -160,7 +163,7 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 				property.setName(element.getName());
 				property.setDataType(emDataType.Unknown);
 				property.setDataSubType(emDataSubType.Default);
-				property.setDeclaredType("UserFields");
+				property.setDeclaredType(element.getType().getSimpleName());
 			} else if (element.getType() == Object.class) {
 				IProperty property = model.getProperties().create();
 				property.setName(element.getName());
@@ -175,7 +178,7 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 				IModel newModel = this.domain.getModels().firstOrDefault(c -> c.getName().equals(element.getName()));
 				if (newModel == null) {
 					newModel = this.domain.getModels().create();
-					newModel.setName(element.getName());
+					newModel.setName(element.getType().getSimpleName());
 					newModel.setModelType(emModelType.Unspecified);
 					newModel.setMapped("");
 					businessObjectItem = businessObject.getRelatedBOs().create();
@@ -187,7 +190,8 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 				}
 				businessObjectItem.setMappedModel(newModel);
 				businessObjectItem.setRelation(emBORelation.OneToMany);
-				property.setDeclaredType(String.format(CodeTransformer.ARRAY_PROPERTY_TEMPLATE, newModel.getName()));
+				property.setDeclaredType(
+						String.format(CodeTransformer.ARRAY_PROPERTY_TEMPLATE, element.getType().getSimpleName()));
 			} else {
 				IProperty property = model.getProperties().create();
 				property.setName(element.getName());
@@ -197,7 +201,7 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 				IModel newModel = this.domain.getModels().firstOrDefault(c -> c.getName().equals(element.getName()));
 				if (newModel == null) {
 					newModel = this.domain.getModels().create();
-					newModel.setName(element.getName());
+					newModel.setName(element.getType().getSimpleName());
 					newModel.setModelType(emModelType.Unspecified);
 					newModel.setMapped("");
 					businessObjectItem = businessObject.getRelatedBOs().create();
@@ -209,7 +213,7 @@ public class CodeTransformer extends org.colorcoding.tools.btulz.transformer.Cod
 				}
 				businessObjectItem.setMappedModel(newModel);
 				businessObjectItem.setRelation(emBORelation.OneToOne);
-				property.setDeclaredType(newModel.getName());
+				property.setDeclaredType(element.getType().getSimpleName());
 			}
 		}
 	}
