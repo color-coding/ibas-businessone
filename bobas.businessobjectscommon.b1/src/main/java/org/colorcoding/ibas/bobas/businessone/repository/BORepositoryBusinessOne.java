@@ -143,13 +143,17 @@ public class BORepositoryBusinessOne {
 			this.b1Company.setPassword(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_PASSWORD));
 			this.b1Company
 					.setLicenseServer(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_LICENSE_SERVER));
-			this.b1Company.setSLDServer(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_SLD_SERVER));
 			this.b1Company.setDbServerType(Enumeration.valueOf("BoDataServerTypes",
 					MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_TYPE)));
 			this.b1Company.setDbUserName(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_USER));
 			this.b1Company.setDbPassword(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_PASSWORD));
 			this.b1Company.setUseTrusted(
 					MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_USE_TRUSTED, false));
+			try {
+				// 低版本兼容设置
+				this.b1Company.setSLDServer(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_SLD_SERVER));
+			} catch (Exception e) {
+			}
 		}
 		return b1Company;
 	}

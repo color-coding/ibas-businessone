@@ -189,7 +189,11 @@ public class DsTransformer extends Transformer {
 		company.setDbUserName(this.getDbUserName());
 		company.setDbPassword(this.getDbPassword());
 		company.setLicenseServer(this.getLicenseServer());
-		company.setSLDServer(this.getSLDServer());
+		try {
+			// 低版本兼容设置
+			company.setSLDServer(this.getSLDServer());
+		} catch (Exception e) {
+		}
 
 		Environment.getLogger().info(
 				String.format("b1 company [%s | %s] is connecting.", company.getServer(), company.getCompanyDB()));
