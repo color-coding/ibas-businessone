@@ -1,6 +1,7 @@
 package org.colorcoding.tools.btulz.businessone.transformer;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -191,7 +192,10 @@ public class DsTransformer extends Transformer {
 		company.setLicenseServer(this.getLicenseServer());
 		try {
 			// 低版本兼容设置
-			company.setSLDServer(this.getSLDServer());
+			Method method = ICompany.class.getMethod("setSLDServer", String.class);
+			if (method != null) {
+				method.invoke(company, this.getSLDServer());
+			}
 		} catch (Exception e) {
 		}
 

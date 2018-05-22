@@ -1,5 +1,7 @@
 package org.colorcoding.ibas.bobas.businessone.repository;
 
+import java.lang.reflect.Method;
+
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
 import org.colorcoding.ibas.bobas.businessone.db.B1Adapter;
@@ -46,10 +48,6 @@ public class BORepositoryBusinessOne {
 
 	public final void setServer(String server) {
 		this.getB1Company().setServer(server);
-		if (server != null && !server.isEmpty()) {
-			this.getB1Company().setLicenseServer(String.format("%s:30000", server));
-			this.getB1Company().setSLDServer(String.format("%s:40000", server));
-		}
 	}
 
 	public final String getCompanyDB() {
@@ -151,7 +149,11 @@ public class BORepositoryBusinessOne {
 					MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_USE_TRUSTED, false));
 			try {
 				// 低版本兼容设置
-				this.b1Company.setSLDServer(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_SLD_SERVER));
+				Method method = ICompany.class.getMethod("setSLDServer", String.class);
+				if (method != null) {
+					method.invoke(this.b1Company,
+							MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_SLD_SERVER));
+				}
 			} catch (Exception e) {
 			}
 		}
