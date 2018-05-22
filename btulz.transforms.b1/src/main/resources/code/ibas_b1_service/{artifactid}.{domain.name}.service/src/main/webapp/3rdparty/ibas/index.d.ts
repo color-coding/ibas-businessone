@@ -66,8 +66,6 @@ declare namespace ibas {
      * 集合
      */
     class ArrayList<T> extends Array<T> implements IList<T> {
-        /** 创建集合，仅值 */
-        static create<P>(map: Map<any, P>): ArrayList<P>;
         /**
          * 添加项目
          * @param item 项目
@@ -3920,8 +3918,8 @@ declare namespace ibas {
         copyright: string;
         /** 图标 */
         icon: string;
-        /** 功能集合 */
-        functions(): IFunction[];
+        /** 元素 */
+        elements(): IElement[];
     }
     /**
      * 功能
@@ -4044,23 +4042,19 @@ declare namespace ibas {
         functions(): IModuleFunction[];
         /** 默认功能 */
         default(): IModuleFunction;
-        /** 添加初始化完成监听 */
-        addListener(listener: Function): void;
         /** 已实例应用集合 */
         applications(): IApplication<IView>[];
+        /** 添加初始化完成监听 */
+        addListener(listener: Function): void;
     }
     /**
      * 模块-功能
      */
     interface IModuleFunction extends IFunction {
-        /** 所属模块 */
-        module: IModule;
         /** 图标 */
         icon: string;
         /** 视图导航 */
         navigation: IViewNavigation;
-        /** 激活的 */
-        activated: boolean;
         /** 默认应用 */
         default(): IApplication<IView>;
     }
@@ -4084,11 +4078,17 @@ declare namespace ibas {
         copyright: string;
         /** 图标 */
         icon: string;
-        private _functions;
-        /** 功能集合 */
-        functions(): IFunction[];
+        private _elements;
+        /** 元素 */
+        elements(): IElement[];
+        /**
+         * 是否跳过
+         * @argument element 元素
+         * @returns true，跳过；false，使用
+         */
+        isSkip: (element: IElement) => boolean;
         /** 注册功能 */
-        protected register(item: IFunction): void;
+        protected register(item: IElement): void;
     }
     /** 地址hash值标记-功能 */
     const URL_HASH_SIGN_FUNCTIONS: string;
@@ -4173,10 +4173,16 @@ declare namespace ibas {
         rootUrl: string;
         /** 当前平台 */
         readonly plantform: emPlantform;
-        /** 功能集合，仅激活的 */
-        functions(): IModuleFunction[];
         /** 默认功能 */
         default(): IModuleFunction;
+        /** 功能集合，仅激活的 */
+        functions(): IModuleFunction[];
+        /** 应用集合 */
+        applications(): IApplication<IView>[];
+        /** 服务集合 */
+        services(): IServiceMapping[];
+        /** 注册实现，需要区分注册内容 */
+        protected register(item: IElement): void;
         private listeners;
         /** 添加初始化完成监听 */
         addListener(listener: Function): void;
@@ -4194,15 +4200,6 @@ declare namespace ibas {
         abstract navigation(): IViewNavigation;
         /** 视图显示者 */
         viewShower: IViewShower;
-        private _applications;
-        /** 已实例应用集合 */
-        applications(): IApplication<IView>[];
-        /** 注册功能 */
-        protected register(item: ModuleFunction): void;
-        /** 注册应用 */
-        protected register(item: AbstractApplication<IView>): void;
-        /** 注册服务 */
-        protected register(item: ServiceMapping): void;
         /** 设置仓库地址，返回值是否执行默认设置 */
         setRepository(address: string): boolean;
         /** 加载视图 */
@@ -4210,14 +4207,10 @@ declare namespace ibas {
     }
     /** 模块控制台 */
     abstract class ModuleFunction extends AbstractFunction implements IModuleFunction {
-        /** 所属模块 */
-        module: IModule;
         /** 图标 */
         icon: string;
         /** 创建视图导航 */
         navigation: IViewNavigation;
-        /** 激活的 */
-        activated: boolean;
         /** 默认功能 */
         abstract default(): IApplication<IView>;
     }
@@ -4532,12 +4525,7 @@ declare namespace ibas {
         data: T;
     }
     /** 业务对象服务的契约 */
-    interface IBOServiceContract extends IDataServiceContract<IBusinessObject> {
-        /** 数据转换者 */
-        converter?: IDataConverter;
-    }
-    /** 业务对象列表服务的契约 */
-    interface IBOListServiceContract extends IDataServiceContract<IBusinessObject[]> {
+    interface IBOServiceContract extends IDataServiceContract<IBusinessObject | IBusinessObject[]> {
         /** 数据转换者 */
         converter?: IDataConverter;
     }
@@ -4671,10 +4659,6 @@ declare namespace ibas {
     /** 业务对象服务代理 */
     class BOServiceProxy extends DataServiceProxy<IBOServiceContract> {
         constructor(contract: IBOServiceContract);
-    }
-    /** 业务对象列表服务代理 */
-    class BOListServiceProxy extends DataServiceProxy<IBOListServiceContract> {
-        constructor(contract: IBOListServiceContract);
     }
     /** 业务对象连接服务代理 */
     class BOLinkServiceProxy extends ServiceProxy<IBOLinkServiceContract> {
@@ -4955,8 +4939,6 @@ declare namespace ibas {
     class VariablesManager {
         /** 运行中的变量 */
         private variables;
-        /** 注册系统观察者 */
-        register(watcher: ISystemWatcher): void;
         /** 注册变量 */
         register(variable: KeyValue): void;
         /** 注册变量 */
@@ -4967,14 +4949,6 @@ declare namespace ibas {
         get(key: string): KeyValue;
         /** 获取变量 */
         getValue(key: string): any;
-        /** 系统用户 */
-        private watcher;
-        getWatcher(): ISystemWatcher;
-    }
-    /** 系统运行状态观察者 */
-    interface ISystemWatcher {
-        /** 运行的模块 */
-        modules(): IList<IModule>;
     }
     /** 变量管理员实例 */
     const variablesManager: VariablesManager;
