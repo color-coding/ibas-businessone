@@ -69,6 +69,16 @@ do
       echo --编译[${line}]失败
     fi
   fi
+  # 接口，编译war包
+  if [ -e ${WORK_FOLDER}/${line}/pom.integration.xml ]
+  then
+    echo --开始编译[${line}\|integration]
+    mvn clean package -Dmaven.test.skip=true -f ${WORK_FOLDER}/${line}/pom.integration.xml >>$LOGFILE
+    if [ -e ${WORK_FOLDER}/${line}/target/*.war ]
+    then
+      cp -r ${WORK_FOLDER}/${line}/target/*.war ${WORK_FOLDER}/release >>$LOGFILE
+    fi
+  fi
 done < ${WORK_FOLDER}/compile_order.txt | sed 's/\r//g'
 
 echo --编译完成，更多信息请查看[compile_packages_log_${OPNAME}.txt]

@@ -1,0 +1,54 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>${GroupId}.apps</groupId>
+        <artifactId>${ArtifactId}.${Domain.getName().toLowerCase()}.parent</artifactId>
+        <version>${ProjectVersion}</version>
+    </parent>
+    <artifactId>${ArtifactId}.${Domain.getName().toLowerCase()}.integration</artifactId>
+    <packaging>war</packaging>
+    <name>${ArtifactId}.${Domain.getName().toLowerCase()}.integration</name>
+    <url>${ProjectUrl}/${ArtifactId}/${Domain.getName().toLowerCase()}/</url>
+    <organization>
+        <name>Color-Coding Studio</name>
+        <url>https://colorcoding.org</url>
+    </organization>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <archiveClasses>true</archiveClasses>
+                    <warSourceExcludes>index.html,config.json,**/tsconfig*.json,**/*.map,**/*.ts,**/*.bat,**/*.sh,3rdparty/**,modules/**,test/**</warSourceExcludes>
+                    <packagingIncludes>integration/**</packagingIncludes>
+                    <packagingExcludes>META-INF/**</packagingExcludes>
+                    <packagingExcludes>WEB-INF/**</packagingExcludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <dependencies>
+        <dependency>
+            <groupId>${GroupId}.apps</groupId>
+            <artifactId>${ArtifactId}.${Domain.getName().toLowerCase()}</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.colorcoding.ibas</groupId>
+            <artifactId>bobas.businessobjectscommon.cxf</artifactId>
+            <version>${ibas.version}</version>
+        </dependency>
+    </dependencies>
+</project>

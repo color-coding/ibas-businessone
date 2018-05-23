@@ -52,5 +52,11 @@ for /f %%m in (%WORK_FOLDER%compile_order.txt) do (
       echo --编译[%%m]失败
     )
   )
+  REM 接口，编译war包
+  if exist %WORK_FOLDER%%%m\pom.integration.xml (
+      echo --开始编译[%%m^|integration]
+      call "%MAVEN_HOME%\bin\mvn" clean package -Dmaven.test.skip=true -f %WORK_FOLDER%%%m\pom.integration.xml >>%LOGFILE%
+      if exist %WORK_FOLDER%%%m\target\*.war copy /y %WORK_FOLDER%%%m\target\*.war %WORK_FOLDER%release >>%LOGFILE%
+  )
 )
 echo --编译完成，更多信息请查看[compile_packages_log_%OPNAME%.txt]
