@@ -1,6 +1,8 @@
 package org.colorcoding.tools.btulz.businessone;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -9,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.data.KeyValue;
 import org.colorcoding.tools.btulz.Environment;
 import org.colorcoding.tools.btulz.businessone.transformer.CodeTransformer;
@@ -39,7 +42,7 @@ public class testCodeTransformer extends TestCase {
 		codeTransformer.transform();
 	}
 
-	public void testEumns() throws IllegalArgumentException, IllegalAccessException {
+	public void testEumns() throws IllegalArgumentException, IllegalAccessException, IOException {
 		Map<String, List<KeyValue>> values = new HashMap<>();
 		for (Field field : SBOCOMConstants.class.getFields()) {
 			int modifiers = field.getModifiers();
@@ -62,6 +65,8 @@ public class testCodeTransformer extends TestCase {
 			Object value = field.get(SBOCOMConstants.class);
 			keyTexts.add(new KeyValue(name, value));
 		}
+		File file = new File(String.format("%s%senums.txt", MyConfiguration.getWorkFolder(), File.separator));
+		FileWriter writer = new FileWriter(file);
 		for (String key : values.keySet()) {
 			StringBuilder stringBuilder = new StringBuilder();
 			stringBuilder.append(String.format("export enum %s {", key));
@@ -75,7 +80,10 @@ public class testCodeTransformer extends TestCase {
 			}
 			stringBuilder.append("}");
 			stringBuilder.append("\n");
-			System.out.println(stringBuilder.toString());
+			writer.write(stringBuilder.toString());
 		}
+		writer.flush();
+		writer.close();
+		System.out.println(file.getPath());
 	}
 }

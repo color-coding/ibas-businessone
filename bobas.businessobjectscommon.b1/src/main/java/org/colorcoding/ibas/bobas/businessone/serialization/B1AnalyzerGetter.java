@@ -32,6 +32,7 @@ public class B1AnalyzerGetter extends AnalyzerGetter {
 		this.skipMethods.add("get");
 		this.skipMethods.add("isNull");
 		this.skipMethods.add("getAsXML");
+		this.skipMethods.add("getXMLSchema");
 		this.skipMethods.add("getBrowser");
 		this.skipMethods.add("get_NewEnum");
 		this.skipMethods.add("getCount");
