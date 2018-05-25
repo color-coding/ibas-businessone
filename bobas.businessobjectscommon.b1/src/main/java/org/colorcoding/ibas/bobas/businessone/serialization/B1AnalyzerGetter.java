@@ -9,11 +9,6 @@ import org.colorcoding.ibas.bobas.serialization.structure.Element;
 import org.colorcoding.ibas.bobas.serialization.structure.ElementMethod;
 import org.colorcoding.ibas.bobas.serialization.structure.ElementRoot;
 
-import com.sap.smb.sbo.api.IField;
-import com.sap.smb.sbo.api.IFields;
-import com.sap.smb.sbo.api.IValidValue;
-import com.sap.smb.sbo.api.IValidValues;
-
 public class B1AnalyzerGetter extends AnalyzerGetter {
 
 	public static Object getValue(Element element, Object value) {
@@ -61,14 +56,34 @@ public class B1AnalyzerGetter extends AnalyzerGetter {
 		if (this.isCollection(type)) {
 			String name = this.namedElement(method);
 			return new ElementMethod(name, type, name);
-		} else if (type == IFields.class) {
+		} else if (this.hasItems(type)) {
 			String name = this.namedElement(method);
-			return new ElementMethod(name, IField.class, name);
-		} else if (type == IValidValues.class) {
-			String name = this.namedElement(method);
-			return new ElementMethod(name, IValidValue.class, name);
+			try {
+				return new ElementMethod(name, type.getMethod("item", Object.class).getReturnType(), name);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 		} else {
 			return super.createElement(method);
+		}
+	}
+
+	protected boolean hasItems(Class<?> type) {
+		try {
+			Method method = type.getMethod("item", Object.class);
+			if (method == null) {
+				return false;
+			}
+			Class<?> rType = method.getReturnType();
+			if (rType == null) {
+				return false;
+			}
+			if (!type.getSimpleName().startsWith(rType.getSimpleName())) {
+				return false;
+			}
+			return true;
+		} catch (Exception e) {
+			return false;
 		}
 	}
 

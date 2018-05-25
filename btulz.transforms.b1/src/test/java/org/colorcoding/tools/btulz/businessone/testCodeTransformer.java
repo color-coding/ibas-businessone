@@ -35,7 +35,7 @@ public class testCodeTransformer extends TestCase {
 		codeTransformer.addDomain("UserFields;Documents;");
 		codeTransformer.transform();
 		codeTransformer.getDomains().clear();
-		codeTransformer.addDomain("Items;BusinessPartners;Document_Orders;Document_PurchaseOrders;");
+		codeTransformer.addDomain("Items;BusinessPartners;Document_Orders;Document_PurchaseOrders;ReportLayout;");
 		codeTransformer.transform();
 	}
 
