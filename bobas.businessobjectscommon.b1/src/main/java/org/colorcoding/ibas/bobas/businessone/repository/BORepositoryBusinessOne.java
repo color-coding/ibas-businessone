@@ -1,16 +1,17 @@
 package org.colorcoding.ibas.bobas.businessone.repository;
 
-import java.lang.reflect.Method;
-
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
 import org.colorcoding.ibas.bobas.businessone.db.B1Adapter;
+import org.colorcoding.ibas.bobas.businessone.db.B1CompanyPool;
 import org.colorcoding.ibas.bobas.businessone.db.IB1Adapter;
+import org.colorcoding.ibas.bobas.businessone.db.IB1Connection;
 import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerFactory;
 import org.colorcoding.ibas.bobas.businessone.serialization.IB1Serializer;
 import org.colorcoding.ibas.bobas.businessone.serialization.IB1SerializerManager;
 import org.colorcoding.ibas.bobas.common.ISqlQuery;
 import org.colorcoding.ibas.bobas.core.RepositoryException;
+import org.colorcoding.ibas.bobas.i18n.I18N;
 import org.colorcoding.ibas.bobas.message.Logger;
 import org.colorcoding.ibas.bobas.message.MessageLevel;
 import org.colorcoding.ibas.bobas.repository.InvalidTokenException;
@@ -18,13 +19,26 @@ import org.colorcoding.ibas.bobas.repository.InvalidTokenException;
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IRecordset;
 import com.sap.smb.sbo.api.SBOCOMConstants;
-import com.sap.smb.sbo.api.SBOCOMException;
 import com.sap.smb.sbo.api.SBOCOMUtil;
 
-public class BORepositoryBusinessOne {
+public class BORepositoryBusinessOne implements IB1Connection {
 
 	protected static final String MSG_B1_COMPANY_CONNECTING = "b1 company: [%s|%s] is connecting.";
 	protected static final String MSG_B1_COMPANY_CONNECTED = "b1 company: [%s|%s] was connected.";
+
+	public BORepositoryBusinessOne() {
+		this.setServer(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_SERVER));
+		this.setCompanyDB(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_COMPANY));
+		this.setUserName(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_USER));
+		this.setPassword(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_PASSWORD));
+		this.setDbServerType(Enumeration.valueOf("BoDataServerTypes",
+				MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_TYPE)));
+		this.setDbUserName(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_USER));
+		this.setDbPassword(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_PASSWORD));
+		this.setUseTrusted(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_USE_TRUSTED, false));
+		this.setSLDServer(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_SLD_SERVER));
+		this.setLicenseServer(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_LICENSE_SERVER));
+	}
 
 	private String userToken = null;
 
@@ -42,134 +56,135 @@ public class BORepositoryBusinessOne {
 		this.userToken = userToken;
 	}
 
+	private String server;
+
 	public final String getServer() {
-		return this.getB1Company().getServer();
+		return server;
 	}
 
 	public final void setServer(String server) {
-		this.getB1Company().setServer(server);
+		this.server = server;
 	}
 
+	private String companyDB;
+
 	public final String getCompanyDB() {
-		return this.getB1Company().getCompanyDB();
+		return companyDB;
 	}
 
 	public final void setCompanyDB(String companyDB) {
-		this.getB1Company().setCompanyDB(companyDB);
+		this.companyDB = companyDB;
 	}
 
+	private String userName;
+
 	public final String getUserName() {
-		return this.getB1Company().getUserName();
+		return userName;
 	}
 
 	public final void setUserName(String userName) {
-		this.getB1Company().setUserName(userName);
+		this.userName = userName;
 	}
 
+	private String password;
+
 	public final String getPassword() {
-		return this.getB1Company().getPassword();
+		return password;
 	}
 
 	public final void setPassword(String password) {
-		this.getB1Company().setPassword(password);
+		this.password = password;
 	}
 
+	private int language;
+
 	public final int getLanguage() {
-		return this.getB1Company().getLanguage();
+		return language;
 	}
 
 	public final void setLanguage(int language) {
-		this.getB1Company().setLanguage(language);
+		this.language = language;
 	}
 
+	private String licenseServer;
+
 	public final String getLicenseServer() {
-		return this.getB1Company().getLicenseServer();
+		return licenseServer;
 	}
 
 	public final void setLicenseServer(String licenseServer) {
-		this.getB1Company().setLicenseServer(licenseServer);
+		this.licenseServer = licenseServer;
 	}
 
+	private String sldServer;
+
 	public final String getSLDServer() {
-		return this.getB1Company().getSLDServer();
+		return sldServer;
 	}
 
 	public final void setSLDServer(String sldServer) {
-		this.getB1Company().setSLDServer(sldServer);
+		this.sldServer = sldServer;
 	}
 
+	private int dbServerType;
+
 	public final int getDbServerType() {
-		return this.getB1Company().getDbServerType();
+		return dbServerType;
 	}
 
 	public final void setDbServerType(int dbServerType) {
-		this.getB1Company().setDbServerType(dbServerType);
+		this.dbServerType = dbServerType;
 	}
 
+	private String dbUserName;
+
 	public final String getDbUserName() {
-		return this.getB1Company().getDbUserName();
+		return dbUserName;
 	}
 
 	public final void setDbUserName(String dbUserName) {
-		this.getB1Company().setDbUserName(dbUserName);
+		this.dbUserName = dbUserName;
 	}
 
+	private String dbPassword;
+
 	public final String getDbPassword() {
-		return this.getB1Company().getDbPassword();
+		return dbPassword;
 	}
 
 	public final void setDbPassword(String dbPassword) {
-		this.getB1Company().setDbPassword(dbPassword);
+		this.dbPassword = dbPassword;
 	}
 
+	private boolean useTrusted;
+
 	public final boolean isUseTrusted() {
-		return this.getB1Company().isUseTrusted();
+		return useTrusted;
 	}
 
 	public final void setUseTrusted(boolean useTrusted) {
-		this.getB1Company().setUseTrusted(useTrusted);
+		this.useTrusted = useTrusted;
 	}
 
 	private volatile ICompany b1Company;
 
-	protected final synchronized ICompany getB1Company() {
+	protected final ICompany getB1Company() throws RepositoryException {
 		if (this.b1Company == null) {
-			this.b1Company = SBOCOMUtil.newCompany();
-			this.b1Company.setServer(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_SERVER));
-			this.b1Company.setCompanyDB(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_COMPANY));
-			this.b1Company.setUserName(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_USER));
-			this.b1Company.setPassword(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_PASSWORD));
-			this.b1Company
-					.setLicenseServer(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_LICENSE_SERVER));
-			this.b1Company.setDbServerType(Enumeration.valueOf("BoDataServerTypes",
-					MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_TYPE)));
-			this.b1Company.setDbUserName(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_USER));
-			this.b1Company.setDbPassword(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_PASSWORD));
-			this.b1Company.setUseTrusted(
-					MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_DB_USE_TRUSTED, false));
-			try {
-				// 低版本兼容设置
-				Method method = ICompany.class.getMethod("setSLDServer", String.class);
-				if (method != null) {
-					method.invoke(this.b1Company,
-							MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_SLD_SERVER));
-				}
-			} catch (Exception e) {
-			}
+			throw new RepositoryException(I18N.prop("msg_please_open_repository_first"));
 		}
 		return b1Company;
 	}
 
 	public final synchronized boolean openRepository() throws RepositoryException {
 		try {
-			if (!this.getB1Company().isConnected()) {
-				Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_CONNECTING, this.getServer(), this.getCompanyDB());
-				if (this.getB1Company().connect() != 0) {
-					throw new RuntimeException(this.getB1Company().getLastErrorCode() + " "
-							+ this.getB1Company().getLastErrorDescription());
-				}
-				Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_CONNECTED, this.getServer(), this.getCompanyDB());
-				this.b1Adapter = B1Adapter.create(this.getB1Company());
+			if (this.b1Company != null && !this.b1Company.isConnected()) {
+				this.b1Company.release();
+				this.b1Company = null;
+				System.gc();
+			}
+			if (this.b1Company == null) {
+				this.b1Company = B1CompanyPool.use(this);
+				this.b1Adapter = B1Adapter.create(this.b1Company);
 				return true;
 			} else {
 				return false;
@@ -179,17 +194,36 @@ public class BORepositoryBusinessOne {
 		}
 	}
 
-	public final synchronized void closeRepository() {
-		if (this.b1Company != null) {
-			this.b1Company.disconnect();
-			this.b1Company.release();
-			this.b1Company = null;
-			this.b1Adapter = null;
-			System.gc();
-		}
+	public final synchronized void closeRepository() throws RepositoryException {
+		this.closeRepository(false);
 	}
 
-	public final synchronized boolean inTransaction() {
+	public final synchronized void closeRepository(boolean force) throws RepositoryException {
+		if (this.b1Company == null) {
+			this.b1Adapter = null;
+			return;
+		}
+		if (this.b1Company.isInTransaction()) {
+			throw new RepositoryException(I18N.prop("msg_please_end_transaction_first"));
+		}
+		if (force) {
+			synchronized (this.b1Company) {
+				this.b1Company.disconnect();
+				this.b1Company.release();
+			}
+			System.gc();
+		} else {
+			if (!B1CompanyPool.back(this.b1Company)) {
+				// 回收失败，释放
+				this.b1Company.disconnect();
+				this.b1Company.release();
+			}
+		}
+		this.b1Company = null;
+		this.b1Adapter = null;
+	}
+
+	public final synchronized boolean inTransaction() throws RepositoryException {
 		if (this.b1Company == null) {
 			return false;
 		}
@@ -230,21 +264,6 @@ public class BORepositoryBusinessOne {
 		return b1Adapter;
 	}
 
-	protected static final String MSG_SQL_SCRIPTS = "sql: %s";
-
-	protected final IRecordset query(String sql) throws SBOCOMException {
-		IRecordset recordset = SBOCOMUtil.newRecordset(this.getB1Company());
-		if (MyConfiguration.isDebugMode()) {
-			Logger.log(MessageLevel.DEBUG, MSG_SQL_SCRIPTS, sql);
-		}
-		recordset.doQuery(sql);
-		return recordset;
-	}
-
-	protected final IRecordset query(ISqlQuery sqlQuery) throws SBOCOMException {
-		return this.query(sqlQuery.getQueryString());
-	}
-
 	private String serialization;
 
 	public String getSerialization() {
@@ -262,12 +281,35 @@ public class BORepositoryBusinessOne {
 
 	private IB1Serializer<?> b1Serializer;
 
-	protected IB1Serializer<?> getB1Serializer() {
+	protected IB1Serializer<?> getB1Serializer() throws RepositoryException {
 		if (b1Serializer == null) {
-			b1Serializer = B1SerializerFactory.create().createManager().create(this.getB1Company(),
-					this.getSerialization());
+			b1Serializer = B1SerializerFactory.create().createManager().create(this.getSerialization());
 		}
 		return b1Serializer;
+	}
+
+	protected static final String MSG_SQL_SCRIPTS = "sql: %s";
+
+	protected final IRecordset query(String sql, Object... args) throws RepositoryException {
+		try {
+			if (args.length > 0) {
+				sql = String.format(sql, args);
+			}
+			IRecordset recordset = SBOCOMUtil.newRecordset(this.getB1Company());
+			if (MyConfiguration.isDebugMode()) {
+				Logger.log(MessageLevel.DEBUG, MSG_SQL_SCRIPTS, sql);
+			}
+			recordset.doQuery(sql);
+			return recordset;
+		} catch (RepositoryException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new RepositoryException(e);
+		}
+	}
+
+	protected final IRecordset query(ISqlQuery sqlQuery) throws RepositoryException {
+		return this.query(sqlQuery.getQueryString());
 	}
 
 }

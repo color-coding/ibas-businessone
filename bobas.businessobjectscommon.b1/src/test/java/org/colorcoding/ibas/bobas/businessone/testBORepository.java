@@ -70,14 +70,14 @@ public class testBORepository extends TestCase {
 				b1Company.getBusinessObjectXmlSchema(SBOCOMConstants.BoObjectTypes_oItems));
 		System.out.println("schema: " + fileGroup + "schema_b1.xml");
 		// xml序列化测试
-		IB1Serializer<?> serializerXml = new B1SerializerXml(b1Company);
+		IB1Serializer<?> serializerXml = new B1SerializerXml();
 		FileOutputStream outputStream = new FileOutputStream(fileGroup + "schema_xml.xml");
 		serializerXml.getSchema(IItems.class, outputStream);
 		outputStream.close();
 		System.out.println("schema: " + fileGroup + "schema_xml.xml");
 		boRepository.closeRepository();
 		// json序列化测试
-		IB1Serializer<?> serializerJson = new B1SerializerJson(b1Company);
+		IB1Serializer<?> serializerJson = new B1SerializerJson();
 		outputStream = new FileOutputStream(fileGroup + "schema_json.json");
 		serializerJson.getSchema(IItems.class, outputStream);
 		outputStream.close();
@@ -87,12 +87,9 @@ public class testBORepository extends TestCase {
 		serializerJson.getSchema(IDocuments.class, outputStream);
 		outputStream.close();
 		System.out.println("schema: " + fileGroup + "schema_json.json");
-		// 测试克隆
-		// item = serializer.clone(item);
-		// System.out.println(item.getAsXML());
 	}
 
-	public void testFetch() throws IOException, ValidateException {
+	public void testFetch() throws IOException, ValidateException, RepositoryException {
 		String fileGroup = MyConfiguration.getWorkFolder() + File.separator;
 		ICriteria criteria = new Criteria();
 		criteria.setResultCount(1);
@@ -105,7 +102,7 @@ public class testBORepository extends TestCase {
 		sort.setSortType(SortType.ASCENDING);
 		BORepositoryDemo boRepository = new BORepositoryDemo();
 		boRepository.setSerialization("xml");
-		B1SerializerXml serializerXml = new B1SerializerXml(boRepository.getCompany());
+		B1SerializerXml serializerXml = new B1SerializerXml();
 		IOperationResult<DataWrapping> operationResult = boRepository.fetchItems(criteria, this.getToken());
 		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
 		System.out.println("xml item:");
@@ -127,7 +124,7 @@ public class testBORepository extends TestCase {
 			serializerXml.validate(IProductionOrders.class, data.getContent());
 		}
 		boRepository.setSerialization("json");
-		B1SerializerJson serializerJson = new B1SerializerJson(boRepository.getCompany());
+		B1SerializerJson serializerJson = new B1SerializerJson();
 		operationResult = boRepository.fetchItems(criteria, this.getToken());
 		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
 		System.out.println("json item:");

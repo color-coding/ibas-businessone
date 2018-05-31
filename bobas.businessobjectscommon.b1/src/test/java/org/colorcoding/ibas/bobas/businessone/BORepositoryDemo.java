@@ -22,7 +22,7 @@ import com.sap.smb.sbo.api.SBOCOMUtil;
 
 public class BORepositoryDemo extends BORepositoryBusinessOne {
 
-	public ICompany getCompany() {
+	public ICompany getCompany() throws RepositoryException {
 		return super.getB1Company();
 	}
 

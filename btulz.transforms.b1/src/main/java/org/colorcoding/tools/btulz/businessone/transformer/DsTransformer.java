@@ -1,10 +1,11 @@
 package org.colorcoding.tools.btulz.businessone.transformer;
 
 import java.io.File;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.colorcoding.ibas.bobas.businessone.db.B1CompanyPool;
+import org.colorcoding.ibas.bobas.businessone.db.IB1Connection;
 import org.colorcoding.tools.btulz.Environment;
 import org.colorcoding.tools.btulz.businessone.model.Domain;
 import org.colorcoding.tools.btulz.businessone.model.Model;
@@ -29,7 +30,7 @@ import com.sap.smb.sbo.api.SBOCOMConstants;
 import com.sap.smb.sbo.api.SBOCOMException;
 import com.sap.smb.sbo.api.SBOCOMUtil;
 
-public class DsTransformer extends Transformer {
+public class DsTransformer extends Transformer implements IB1Connection {
 
 	public final static String TEMPLATE_USER_TABLE = "@%s";
 	public final static String TEMPLATE_USER_FIELD = "U_%s";
@@ -77,9 +78,6 @@ public class DsTransformer extends Transformer {
 	private int language;
 
 	public int getLanguage() {
-		if (this.language <= 0) {
-			this.language = SBOCOMConstants.BoSuppLangs_ln_English;
-		}
 		return language;
 	}
 
@@ -90,9 +88,6 @@ public class DsTransformer extends Transformer {
 	private String licenseServer;
 
 	public String getLicenseServer() {
-		if (this.licenseServer == null && this.getServer() != null && !this.getServer().isEmpty()) {
-			this.licenseServer = String.format("%s:30000", this.getServer());
-		}
 		return licenseServer;
 	}
 
@@ -103,9 +98,6 @@ public class DsTransformer extends Transformer {
 	private String sldServer;
 
 	public String getSLDServer() {
-		if (this.sldServer == null && this.getServer() != null && !this.getServer().isEmpty()) {
-			this.sldServer = String.format("%s:40000", this.getServer());
-		}
 		return sldServer;
 	}
 
@@ -116,9 +108,6 @@ public class DsTransformer extends Transformer {
 	private int dbServerType;
 
 	public int getDbServerType() {
-		if (this.dbServerType <= 0) {
-			this.dbServerType = SBOCOMConstants.BoDataServerTypes_dst_MSSQL2014;
-		}
 		return dbServerType;
 	}
 
@@ -178,42 +167,8 @@ public class DsTransformer extends Transformer {
 		}
 	}
 
-	protected ICompany getCompany() throws TransformException {
-		ICompany company = SBOCOMUtil.newCompany();
-		company.setDbServerType(this.getDbServerType());
-		company.setServer(this.getServer());
-		company.setCompanyDB(this.getCompanyDB());
-		company.setUserName(this.getUserName());
-		company.setPassword(this.getPassword());
-		company.setUseTrusted(this.isUseTrusted());
-		company.setLanguage(this.getLanguage());
-		company.setDbUserName(this.getDbUserName());
-		company.setDbPassword(this.getDbPassword());
-		company.setLicenseServer(this.getLicenseServer());
-		try {
-			// 低版本兼容设置
-			Method method = ICompany.class.getMethod("setSLDServer", String.class);
-			if (method != null) {
-				method.invoke(company, this.getSLDServer());
-			}
-		} catch (Exception e) {
-		}
-
-		Environment.getLogger().info(
-				String.format("b1 company [%s | %s] is connecting.", company.getServer(), company.getCompanyDB()));
-		int error = company.connect();
-		if (error != 0) {
-			throw new TransformException(
-					String.format("%s - %s", company.getLastErrorCode(), company.getLastErrorDescription()));
-		} else {
-			Environment.getLogger().info(
-					String.format("b1 company [%s | %s] was connected.", company.getServer(), company.getCompanyDB()));
-		}
-		return company;
-	}
-
 	public void transform() throws Exception {
-		ICompany b1Company = this.getCompany();
+		ICompany b1Company = B1CompanyPool.use(this);
 		try {
 			long startTime = System.currentTimeMillis();
 			Environment.getLogger().info(String.format("begin transform data structures."));

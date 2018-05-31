@@ -27,17 +27,12 @@ import com.github.fge.jsonschema.core.exceptions.ProcessingException;
 import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
-import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IFields;
 import com.sap.smb.sbo.api.IValidValues;
 
 public class B1SerializerJson extends B1Serializer<JsonSchema> {
 
 	public static final String SCHEMA_VERSION = "http://json-schema.org/schema#";
-
-	public B1SerializerJson(ICompany b1Company) {
-		super(b1Company);
-	}
 
 	protected String nameElement(String name) {
 		int index = 0;
@@ -280,7 +275,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 				}
 			}
 			String name = B1SerializerJson.this.nameElement(element.getName());
-			if (element.getType() == String.class ||element.getType() == Character.class) {
+			if (element.getType() == String.class || element.getType() == Character.class) {
 				this.jsonGenerator.writeStringField(name, B1DataConvert.toString(value));
 			} else if (element.getType() == Date.class) {
 				String tmp = B1DataConvert.toString(value);

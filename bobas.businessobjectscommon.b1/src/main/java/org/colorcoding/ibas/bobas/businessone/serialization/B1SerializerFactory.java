@@ -3,8 +3,6 @@ package org.colorcoding.ibas.bobas.businessone.serialization;
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.configuration.ConfigurableFactory;
 
-import com.sap.smb.sbo.api.ICompany;
-
 public class B1SerializerFactory extends ConfigurableFactory<IB1SerializerManager> {
 	private B1SerializerFactory() {
 	}
@@ -27,11 +25,11 @@ public class B1SerializerFactory extends ConfigurableFactory<IB1SerializerManage
 		return new IB1SerializerManager() {
 
 			@Override
-			public IB1Serializer<?> create(ICompany b1Company, String sign) {
+			public IB1Serializer<?> create(String sign) {
 				if (TYPE_XML.equalsIgnoreCase(sign)) {
-					return new B1SerializerXml(b1Company);
+					return new B1SerializerXml();
 				}
-				return new B1SerializerJson(b1Company);
+				return new B1SerializerJson();
 			}
 		};
 	}

@@ -37,7 +37,6 @@ import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IFields;
 import com.sap.smb.sbo.api.IValidValues;
 
@@ -47,10 +46,6 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 	public static final String XML_FILE_ENCODING = "utf-8";
 	public static final String XML_FILE_INDENT = "yes";
 	public static final String XML_FILE_NAMESPACE = "http://www.w3.org/2001/XMLSchema";
-
-	public B1SerializerXml(ICompany b1Company) {
-		super(b1Company);
-	}
 
 	@Override
 	public Schema getSchema(Class<?> type) throws SerializationException {
