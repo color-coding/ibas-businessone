@@ -13,7 +13,7 @@ import com.sap.smb.sbo.api.SBOCOMConstants;
 
 import junit.framework.TestCase;
 
-public class testUtils extends TestCase {
+public class TestUtils extends TestCase {
 
 	public void testDataConvert() {
 		assertEquals(SBOCOMConstants.BoDataServerTypes_dst_MSSQL2012,

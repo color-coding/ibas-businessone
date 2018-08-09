@@ -16,7 +16,7 @@ import org.colorcoding.tools.btulz.transformer.TransformException;
 
 import junit.framework.TestCase;
 
-public class testXmlTransformer extends TestCase {
+public class TestXmlTransformer extends TestCase {
 
 	public void testLoad() throws ClassNotFoundException, TransformException, MultiTransformException, JAXBException {
 		XmlTransformer xmlTransformer = new XmlTransformer();

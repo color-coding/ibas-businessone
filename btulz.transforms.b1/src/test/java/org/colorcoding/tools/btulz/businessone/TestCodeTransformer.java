@@ -21,7 +21,7 @@ import com.sap.smb.sbo.api.SBOCOMConstants;
 
 import junit.framework.TestCase;
 
-public class testCodeTransformer extends TestCase {
+public class TestCodeTransformer extends TestCase {
 
 	public void testTransform() throws Exception {
 		CodeTransformer codeTransformer = new CodeTransformer();

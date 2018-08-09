@@ -13,7 +13,7 @@ import com.sap.smb.sbo.api.SBOCOMUtil;
 
 import junit.framework.TestCase;
 
-public class testDsTransformer extends TestCase {
+public class TestDsTransformer extends TestCase {
 
 	public void testB1() {
 		ICompany company = SBOCOMUtil.newCompany();

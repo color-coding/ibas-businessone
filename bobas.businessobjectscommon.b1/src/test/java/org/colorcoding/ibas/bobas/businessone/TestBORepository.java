@@ -31,7 +31,7 @@ import com.sap.smb.sbo.api.SBOCOMUtil;
 
 import junit.framework.TestCase;
 
-public class testBORepository extends TestCase {
+public class TestBORepository extends TestCase {
 
 	public String getToken() {
 		return "";
