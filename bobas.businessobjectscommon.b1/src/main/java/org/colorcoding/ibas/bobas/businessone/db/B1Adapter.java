@@ -35,6 +35,11 @@ import com.sap.smb.sbo.api.SBOCOMConstants;
 public class B1Adapter implements IB1Adapter {
 
 	public static IB1Adapter create(ICompany company) {
+		try {
+			SBOCOMConstants.class.getField("BoDataServerTypes_dst_HANADB");
+		} catch (NoSuchFieldException e) {
+			return new B1Adapter(company, new BOAdapter());
+		}
 		if (company.getDbServerType() == SBOCOMConstants.BoDataServerTypes_dst_HANADB) {
 			IDbAdapter dbAdapter = DbAdapterFactory.create().createAdapter("hana");
 			return new B1Adapter(company, (BOAdapter4Db) dbAdapter.createBOAdapter());
