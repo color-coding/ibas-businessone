@@ -323,7 +323,7 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 					dom.setTextContent(tmp);
 					domParent.appendChild(dom);
 				}
-			} else if (this.knownTypes.contains(element.getType())) {
+			} else if (this.knownTypes.contains(element.getType()) || this.knownTypes.contains(value.getClass())) {
 				org.w3c.dom.Element dom = this.document.createElement(element.getName());
 				dom.setTextContent(B1DataConvert.toString(value));
 				domParent.appendChild(dom);

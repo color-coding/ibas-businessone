@@ -275,28 +275,29 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 				}
 			}
 			String name = B1SerializerJson.this.nameElement(element.getName());
-			if (element.getType() == String.class || element.getType() == Character.class) {
+			if (element.getType() == String.class || element.getType() == Character.class || value instanceof String
+					|| value instanceof Character) {
 				this.jsonGenerator.writeStringField(name, B1DataConvert.toString(value));
-			} else if (element.getType() == Date.class) {
+			} else if (element.getType() == Date.class || value instanceof Date) {
 				String tmp = B1DataConvert.toString(value);
 				if (tmp != null) {
 					this.jsonGenerator.writeStringField(name, tmp);
 				}
-			} else if (element.getType() == Boolean.class) {
+			} else if (element.getType() == Boolean.class || value instanceof Boolean) {
 				this.jsonGenerator.writeBooleanField(name, (boolean) value);
-			} else if (element.getType() == Integer.class) {
+			} else if (element.getType() == Integer.class || value instanceof Integer) {
 				this.jsonGenerator.writeNumberField(name, (Integer) value);
-			} else if (element.getType() == Short.class) {
+			} else if (element.getType() == Short.class || value instanceof Short) {
 				this.jsonGenerator.writeNumberField(name, (Short) value);
-			} else if (element.getType() == Long.class) {
+			} else if (element.getType() == Long.class || value instanceof Long) {
 				this.jsonGenerator.writeNumberField(name, (Long) value);
-			} else if (element.getType() == Float.class) {
+			} else if (element.getType() == Float.class || value instanceof Float) {
 				this.jsonGenerator.writeNumberField(name, (Float) value);
-			} else if (element.getType() == Double.class) {
+			} else if (element.getType() == Double.class || value instanceof Double) {
 				this.jsonGenerator.writeNumberField(name, (Double) value);
-			} else if (element.getType() == BigDecimal.class) {
+			} else if (element.getType() == BigDecimal.class || value instanceof BigDecimal) {
 				this.jsonGenerator.writeNumberField(name, (BigDecimal) value);
-			} else if (element.getType() == BigInteger.class) {
+			} else if (element.getType() == BigInteger.class || value instanceof BigInteger) {
 				this.jsonGenerator.writeNumberField(name, ((BigInteger) value).longValue());
 			} else if (element.isCollection()) {
 				this.jsonGenerator.writeFieldName(B1SerializerJson.this.nameElement(element.getWrapper()));
