@@ -35,12 +35,13 @@ import com.sap.smb.sbo.api.SBOCOMConstants;
 public class B1Adapter implements IB1Adapter {
 
 	public static IB1Adapter create(ICompany company) {
+		Integer dbHana = -1;
 		try {
-			SBOCOMConstants.class.getField("BoDataServerTypes_dst_HANADB");
-		} catch (NoSuchFieldException e) {
+			dbHana = (Integer) SBOCOMConstants.class.getField("BoDataServerTypes_dst_HANADB").get(SBOCOMConstants.class);
+		} catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
 			return new B1Adapter(company, new BOAdapter());
 		}
-		if (company.getDbServerType() == SBOCOMConstants.BoDataServerTypes_dst_HANADB) {
+		if (dbHana != -1 && company.getDbServerType() == dbHana) {
 			IDbAdapter dbAdapter = DbAdapterFactory.create().createAdapter("hana");
 			return new B1Adapter(company, (BOAdapter4Db) dbAdapter.createBOAdapter());
 		}

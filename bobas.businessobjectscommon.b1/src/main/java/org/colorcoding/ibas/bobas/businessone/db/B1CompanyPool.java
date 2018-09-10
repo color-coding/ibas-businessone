@@ -1,5 +1,6 @@
 package org.colorcoding.ibas.bobas.businessone.db;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import org.colorcoding.ibas.bobas.message.Logger;
@@ -49,7 +50,14 @@ public class B1CompanyPool {
 		company.setPassword(connection.getPassword());
 		// 数据库相关
 		if (connection.getDbServerType() <= 0) {
-			company.setDbServerType(SBOCOMConstants.BoDataServerTypes_dst_MSSQL2014);
+			for (Field field : SBOCOMConstants.class.getFields()) {
+				if (field.getName().startsWith("BoDataServerTypes_dst_MSSQL")) {
+					try {
+						company.setDbServerType((Integer) field.get(SBOCOMConstants.class));
+					} catch (Exception e) {
+					}
+				}
+			}
 		} else {
 			company.setDbServerType(connection.getDbServerType());
 		}

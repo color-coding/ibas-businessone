@@ -43,7 +43,7 @@
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<mainClass> org.colorcoding.tools.btulz.businessone.Console</mainClass>
+							<mainClass>org.colorcoding.tools.btulz.businessone.Console</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
