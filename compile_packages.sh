@@ -6,7 +6,7 @@ echo '                           2016.06.17                                     
 echo '  说明：                                                                    '
 echo '    1. 安装apache-maven，sudo apt-get install maven                         '
 echo '    2. 解压apache-maven，并设置系统变量MAVEN_HOME为解压的程序目录。         '
-echo '    3. 添加PATH变量到MAVEN_HOME\bin，并检查JAVE_HOME配置是否正确。          '
+echo '    3. 添加PATH变量到MAVEN_HOME/bin，并检查JAVE_HOME配置是否正确。          '
 echo '    4. 运行提示符运行mvn -v 检查安装是否成功。                              '
 echo '    5. 此脚本会遍历当前目录的子目录，查找pom.xml并编译jar包到release目录。  '
 echo '    6. 可在compile_order.txt文件中调整编译顺序。                            '
@@ -73,10 +73,46 @@ do
     fi
   fi
 done < ${WORK_FOLDER}/compile_order.txt | sed 's/\r//g'
+echo --开始编译额外内容
+mvn clean install -f ${WORK_FOLDER}/btulz.transforms.b1/pom.xml
+mvn clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b188.xml
+if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ]
+then
+  cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ${WORK_FOLDER}/release
+fi
+if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/lib/ ]
+then 
+  cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/lib/* ${WORK_FOLDER}/release
+fi
+mvn clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b191.xml
+if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ]
+then
+  cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ${WORK_FOLDER}/release
+fi
+if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/lib/ ]
+then
+  cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/lib/* ${WORK_FOLDER}/release
+fi
+mvn clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b192.xml
+if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ]
+then
+  cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ${WORK_FOLDER}/release
+fi
+if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/lib/ ]
+then
+  cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/lib/* ${WORK_FOLDER}/release
+fi
 
 echo --输出直接调用shell脚本
 cp -r ${WORK_FOLDER}/btulz.transforms.b1/src/main/commands/btulz.shell.sh.txt ${WORK_FOLDER}/release/btulz.shell.sh
 cp -r ${WORK_FOLDER}/btulz.transforms.b1/src/main/commands/btulz.shell.bat.txt ${WORK_FOLDER}/release/btulz.shell.bat
 chmod 777 ${WORK_FOLDER}/release/btulz.shell.sh
+echo --压缩编译文件为tar包
+if [ -e ${WORK_FOLDER}/release ]
+then
+  cd ${WORK_FOLDER}/release/
+  tar -cvf btulz.transforms.tar *.jar btulz.shell.*
+fi
+cd ${WORK_FOLDER}
 
 echo --编译完成，更多信息请查看[compile_packages_log_${OPNAME}.txt]

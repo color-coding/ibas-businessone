@@ -1,8 +1,10 @@
 package org.colorcoding.tools.btulz.businessone;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import org.colorcoding.tools.btulz.Environment;
+import org.colorcoding.tools.btulz.businessone.command.Command4Ds;
 import org.colorcoding.tools.btulz.businessone.transformer.DsTransformer;
 
 import com.sap.smb.sbo.api.ICompany;
@@ -57,5 +59,24 @@ public class TestDsTransformer extends TestCase {
 		dsTransformer.setDbUserName("sa");
 		dsTransformer.setDbPassword("1q2w3e");
 		dsTransformer.transform();
+	}
+
+	public void testCmd() {
+		ArrayList<String> args = new ArrayList<>();
+		args.add(String.format(Command4Ds.COMMAND_PROMPT));
+		args.add(String.format("-Server=%s", "ibas-demo-b1"));
+		args.add(String.format("-CompanyDB=%s", "SBODemoCN"));
+		args.add(String.format("-UserName=%s", "manager"));
+		args.add(String.format("-Password=%s", "manager"));
+		args.add(String.format("-DbServerType=%s", "8"));
+		args.add(String.format("-DbUser=%s", "sa"));
+		args.add(String.format("-DbPassword=%s", "1q2w3e"));
+		args.add(String.format("-LicenseServer=%s", ""));
+		args.add(String.format("-SLDServer=%s", ""));
+		args.add(String.format("-Language=%s", "15"));
+		System.out.println("显示帮助信息：");
+		Console.main(new String[] { Command4Ds.COMMAND_PROMPT, Command4Ds.ARGUMENT_NAME_HELP });
+		System.out.println("开始运行：");
+		Console.main(args.toArray(new String[] {}));
 	}
 }

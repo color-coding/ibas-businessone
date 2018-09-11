@@ -11,6 +11,11 @@ public class Command4Ds extends Command<Command4Ds> {
 
 	public final static String COMMAND_PROMPT = "ds";
 
+	public Command4Ds() {
+		this.setName(COMMAND_PROMPT);
+		this.setDescription("根据模型创建用户数据结构");
+	}
+
 	@Override
 	protected Argument[] createArguments() {
 		ArrayList<Argument> arguments = new ArrayList<>();
@@ -76,12 +81,10 @@ public class Command4Ds extends Command<Command4Ds> {
 	}
 
 	private Integer getDbServerType(String value) {
-
-		return -1;
+		return Integer.valueOf(value);
 	}
 
 	private Integer getLanguage(String value) {
-
-		return -1;
+		return Integer.valueOf(value);
 	}
 }

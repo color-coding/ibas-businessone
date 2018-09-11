@@ -50,8 +50,26 @@ for /f %%m in (%WORK_FOLDER%compile_order.txt) do (
     )
   )
 )
+echo --开始编译额外内容
+call "%MAVEN_HOME%\bin\mvn" clean install -f %WORK_FOLDER%btulz.transforms.b1\pom.xml
+call "%MAVEN_HOME%\bin\mvn" clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b188.xml
+if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release
+if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release
+call "%MAVEN_HOME%\bin\mvn" clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b191.xml
+if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release
+if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release
+call "%MAVEN_HOME%\bin\mvn" clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b192.xml
+if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release
+if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release
+
 echo --输出直接调用shell脚本
 copy /y %WORK_FOLDER%btulz.transforms.b1\src\main\commands\btulz.shell.bat.txt %WORK_FOLDER%release\btulz.shell.bat
 copy /y %WORK_FOLDER%btulz.transforms.b1\src\main\commands\btulz.shell.sh.txt %WORK_FOLDER%release\btulz.shell.sh
+echo --压缩编译文件为tar包
+if exist %WORK_FOLDER%release\*.* (
+  cd /d %WORK_FOLDER%release\
+  7z a -ttar btulz.transforms.tar *.jar btulz.shell.*
+)
+cd /d %WORK_FOLDER%
 
 echo --编译完成，更多信息请查看[compile_packages_log_%OPNAME%.txt]

@@ -47,8 +47,69 @@ for /f %%m in (%WORKFOLDER%compile_order.txt) do (
         -Durl=%REPOSITORY_URL% ^
         -DrepositoryId=%REPOSITORY_ID% ^
         -Dpackaging=jar
+      )
     )
   )
+)
+REM 发布父项
+if exist %WORK_FOLDER%\btulz.transforms.b1\pom.xml (
+  call mvn deploy:deploy-file ^
+    -Dfile=%WORK_FOLDER%\btulz.transforms.b1\pom.xml ^
+    -DpomFile=%WORK_FOLDER%\btulz.transforms.b1\pom.xml ^
+    -Durl=%REPOSITORY_URL% ^
+    -DrepositoryId=%REPOSITORY_ID% ^
+    -Dpackaging=pom
+)
+REM 发布子项
+set FILE_POM=btulz.transforms.b1\pom.b188.xml
+set FILE_JAR=btulz.transforms.b1-0.1.0-8.8.jar
+if exist %WORK_FOLDER%%FILE_POM% (
+  if exist %WORK_FOLDER%release\%FILE_JAR% (
+    call mvn deploy:deploy-file ^
+      -Dfile=%WORK_FOLDER%release\%FILE_JAR% ^
+      -DpomFile=%WORK_FOLDER%%FILE_POM% ^
+      -Durl=%REPOSITORY_URL% ^
+      -DrepositoryId=%REPOSITORY_ID% ^
+      -Dpackaging=jar
+    )
+  )
+)
+set FILE_POM=btulz.transforms.b1\pom.b191.xml
+set FILE_JAR=btulz.transforms.b1-0.1.0-9.1.jar
+if exist %WORK_FOLDER%%FILE_POM% (
+  if exist %WORK_FOLDER%release\%FILE_JAR% (
+    call mvn deploy:deploy-file ^
+      -Dfile=%WORK_FOLDER%release\%FILE_JAR% ^
+      -DpomFile=%WORK_FOLDER%%FILE_POM% ^
+      -Durl=%REPOSITORY_URL% ^
+      -DrepositoryId=%REPOSITORY_ID% ^
+      -Dpackaging=jar
+    )
+  )
+)
+set FILE_POM=btulz.transforms.b1\pom.b192.xml
+set FILE_JAR=btulz.transforms.b1-0.1.0-9.2.jar
+if exist %WORK_FOLDER%%FILE_POM% (
+  if exist %WORK_FOLDER%release\%FILE_JAR% (
+    call mvn deploy:deploy-file ^
+      -Dfile=%WORK_FOLDER%release\%FILE_JAR% ^
+      -DpomFile=%WORK_FOLDER%%FILE_POM% ^
+      -Durl=%REPOSITORY_URL% ^
+      -DrepositoryId=%REPOSITORY_ID% ^
+      -Dpackaging=jar
+    )
+  )
+)
+REM 发布工具包集合
+if exist %WORK_FOLDER%\release\btulz.transforms.tar (
+  call mvn deploy:deploy-file ^
+    -DgroupId=org.colorcoding.tools ^
+    -DartifactId=btulz.transforms ^
+    -Durl=%REPOSITORY_URL% ^
+    -DrepositoryId=%REPOSITORY_ID% ^
+    -Dfile=%WORK_FOLDER%\release\btulz.transforms.tar ^
+    -Dpackaging=tar ^
+    -Dversion=b1-latest
 )
 echo --操作完成
 
