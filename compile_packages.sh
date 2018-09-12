@@ -30,7 +30,7 @@ fi
 mkdir -p ${WORK_FOLDER}/release/
 if [ -e ${WORK_FOLDER}/pom.xml ]
 then
-  mvn clean install -f ${WORK_FOLDER}/pom.xml
+  mvn -q clean install -f ${WORK_FOLDER}/pom.xml
 fi
 
 echo --开始编译[compile_order.txt]内容
@@ -43,7 +43,7 @@ do
     then
       # 网站，编译war包
       echo --开始编译[${line}]
-      mvn clean package -Dmaven.test.skip=true -f ${WORK_FOLDER}/${line}/pom.xml
+      mvn -q clean package -Dmaven.test.skip=true -f ${WORK_FOLDER}/${line}/pom.xml
 
       if [ -e ${WORK_FOLDER}/${line}/target/*.war ]
       then
@@ -52,7 +52,7 @@ do
     else
       # 非网站，编译jar包并安装到本地
       echo --开始编译[${line}]+安装
-      mvn clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/${line}/pom.xml
+      mvn -q clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/${line}/pom.xml
 
       if [ -e ${WORK_FOLDER}/${line}/target/*.jar ]
       then
@@ -74,8 +74,8 @@ do
   fi
 done < ${WORK_FOLDER}/compile_order.txt | sed 's/\r//g'
 echo --开始编译额外内容
-mvn clean install -f ${WORK_FOLDER}/btulz.transforms.b1/pom.xml
-mvn clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b188.xml
+mvn -q clean install -f ${WORK_FOLDER}/btulz.transforms.b1/pom.xml
+mvn -q clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b188.xml
 if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ]
 then
   cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ${WORK_FOLDER}/release
@@ -84,7 +84,7 @@ if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/lib/ ]
 then 
   cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/lib/* ${WORK_FOLDER}/release
 fi
-mvn clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b191.xml
+mvn -q clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b191.xml
 if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ]
 then
   cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ${WORK_FOLDER}/release
@@ -93,7 +93,7 @@ if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/lib/ ]
 then
   cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/lib/* ${WORK_FOLDER}/release
 fi
-mvn clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b192.xml
+mvn -q clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b192.xml
 if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ]
 then
   cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ${WORK_FOLDER}/release
