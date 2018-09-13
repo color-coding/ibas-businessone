@@ -23,9 +23,6 @@ import com.sap.smb.sbo.api.SBOCOMUtil;
 
 public class BORepositoryBusinessOne implements IB1Connection {
 
-	protected static final String MSG_B1_COMPANY_CONNECTING = "b1 company: [%s|%s] is connecting.";
-	protected static final String MSG_B1_COMPANY_CONNECTED = "b1 company: [%s|%s] was connected.";
-
 	public BORepositoryBusinessOne() {
 		this.setServer(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_SERVER));
 		this.setCompanyDB(MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_COMPANY));
@@ -178,9 +175,7 @@ public class BORepositoryBusinessOne implements IB1Connection {
 	public final synchronized boolean openRepository() throws RepositoryException {
 		try {
 			if (this.b1Company != null && !this.b1Company.isConnected()) {
-				this.b1Company.release();
-				this.b1Company = null;
-				System.gc();
+				B1CompanyPool.release(this.b1Company);
 			}
 			if (this.b1Company == null) {
 				this.b1Company = B1CompanyPool.use(this);
@@ -207,16 +202,11 @@ public class BORepositoryBusinessOne implements IB1Connection {
 			throw new RepositoryException(I18N.prop("msg_please_end_transaction_first"));
 		}
 		if (force) {
-			synchronized (this.b1Company) {
-				this.b1Company.disconnect();
-				this.b1Company.release();
-			}
-			System.gc();
+			B1CompanyPool.release(this.b1Company);
 		} else {
 			if (!B1CompanyPool.back(this.b1Company)) {
 				// 回收失败，释放
-				this.b1Company.disconnect();
-				this.b1Company.release();
+				B1CompanyPool.release(this.b1Company);
 			}
 		}
 		this.b1Company = null;

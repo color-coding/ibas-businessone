@@ -3,6 +3,7 @@ package org.colorcoding.ibas.bobas.businessone.db;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.message.Logger;
 import org.colorcoding.ibas.bobas.message.MessageLevel;
 
@@ -16,10 +17,12 @@ public class B1CompanyPool {
 	protected static final String MSG_B1_COMPANY_CONNECTED = "b1 company: [%s|%s] was connected.";
 	protected static final String MSG_B1_COMPANY_WAITING = "b1 company: [%s|%s] is waiting.";
 	protected static final String MSG_B1_COMPANY_RECYCLED = "b1 company: [%s|%s] was recycled.";
+	protected static final String MSG_B1_COMPANY_RELEASED = "b1 company: [%s|%s] was released.";
 
-	public static final int POOL_SIZE = 2;
-	public static final int WAITING_TIME = 1000;
+	public static final int POOL_SIZE = MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_COMPANY_POOL_SIZE,
+			1);
 	public static final int RETRY_COUNT = 3;
+	public static final int WAITING_TIME = 1000;
 
 	public static ICompany use(IB1Connection connection) throws B1Exception {
 		return getB1CompanyPool().obtain(connection);
@@ -27,6 +30,21 @@ public class B1CompanyPool {
 
 	public static boolean back(ICompany company) {
 		return getB1CompanyPool().recycling(company);
+	}
+
+	public static void release(ICompany company) {
+		if (company == null) {
+			return;
+		}
+		String message = String.format(MSG_B1_COMPANY_RELEASED, company.getServer(), company.getCompanyDB());
+		synchronized (company) {
+			if (company.isConnected()) {
+				company.disconnect();
+			}
+			company.release();
+		}
+		System.gc();
+		Logger.log(MessageLevel.INFO, message);
 	}
 
 	private volatile static B1CompanyPool b1CompanyPool = null;
@@ -106,7 +124,7 @@ public class B1CompanyPool {
 		if (connection == null) {
 			return null;
 		}
-		if (this.wrappings == null) {
+		if (this.wrappings == null || this.wrappings.length == 0) {
 			return this.createCompany(connection);
 		}
 		synchronized (this.wrappings) {
@@ -165,7 +183,7 @@ public class B1CompanyPool {
 					continue;
 				}
 				this.wrappings[i] = new B1CompanyWrapping(company);
-				Logger.log(MessageLevel.DEBUG, MSG_B1_COMPANY_RECYCLED, company.getServer(), company.getCompanyDB());
+				Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_RECYCLED, company.getServer(), company.getCompanyDB());
 				return true;
 			}
 		}

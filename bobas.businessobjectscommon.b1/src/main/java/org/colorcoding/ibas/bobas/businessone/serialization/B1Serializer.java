@@ -9,8 +9,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.i18n.I18N;
+import org.colorcoding.ibas.bobas.message.Logger;
+import org.colorcoding.ibas.bobas.message.MessageLevel;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.Serializer;
 import org.colorcoding.ibas.bobas.serialization.structure.ElementRoot;
@@ -18,7 +21,9 @@ import org.xml.sax.InputSource;
 
 public abstract class B1Serializer<S> extends Serializer<S> implements IB1Serializer<S> {
 
-	private static Map<Class<?>, ElementRoot> elements = new HashMap<>();
+	protected static final String MSG_B1_SERIALIZER_WRAPPING_DATA = "b1 serializer: wrapping data [%s].";
+
+	private volatile static Map<Class<?>, ElementRoot> elements = new HashMap<>();
 
 	protected static synchronized ElementRoot getElement(Class<?> clazz) {
 		ElementRoot element = elements.get(clazz);
@@ -62,6 +67,10 @@ public abstract class B1Serializer<S> extends Serializer<S> implements IB1Serial
 	public <T> DataWrapping wrap(T data, ElementRoot element) throws SerializationException {
 		ByteArrayOutputStream outputStream = null;
 		try {
+			if (MyConfiguration.isDebugMode()) {
+				Logger.log(MessageLevel.DEBUG, MSG_B1_SERIALIZER_WRAPPING_DATA,
+						data == null ? "Unknown" : data.getClass().getName());
+			}
 			outputStream = new ByteArrayOutputStream();
 			this.serialize(data, outputStream, false, element);
 			return new DataWrapping(new String(outputStream.toByteArray(), "utf-8"));
