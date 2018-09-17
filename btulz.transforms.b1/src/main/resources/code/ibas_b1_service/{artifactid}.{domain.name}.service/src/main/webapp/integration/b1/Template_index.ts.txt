@@ -6,6 +6,7 @@
  * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
  */
 export * from "./Data";
+export * from "./bo/Recordset.d";
 $BEGIN_BO$
 export * from "./bo/${BO.getName()}.d";
 $END_BO$

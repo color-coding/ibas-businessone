@@ -129,7 +129,7 @@ public class Command4Code extends Command4Release<Command4Code> {
 			if (codeTransformer != null && codeTransformer.getTemplateFolder() != null
 					&& !codeTransformer.getTemplateFolder().isEmpty()) {
 				// 首先基本输出
-				codeTransformer.addDomain("UserFields;Documents;");
+				codeTransformer.addDomain("UserFields;Recordset;Documents;");
 				codeTransformer.transform();
 				// 正常输出
 				codeTransformer.getDomains().clear();

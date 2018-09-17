@@ -55,4 +55,11 @@ public class DataService extends BORepositoryDemo {
 		return super.fetchProductionOrders(criteria, token);
 	}
 
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("fetchItemRecords")
+	public OperationResult<DataWrapping> fetchItemRecords(Criteria criteria, @QueryParam("token") String token) {
+		return super.fetchItemRecords(criteria, token);
+	}
 }

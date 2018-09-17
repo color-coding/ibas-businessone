@@ -44,6 +44,10 @@ public class B1AnalyzerGetter extends AnalyzerGetter {
 		this.skipMethods.add("getValueInteger");
 		this.skipMethods.add("getValueString");
 		this.skipMethods.add("getApprovalTemplates");
+		this.skipMethods.add("isBoF");
+		this.skipMethods.add("isEoF");
+		this.skipMethods.add("getCommand");
+		this.skipMethods.add("getFixedSchema");
 	}
 
 	@Override

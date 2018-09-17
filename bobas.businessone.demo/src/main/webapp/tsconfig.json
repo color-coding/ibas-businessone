@@ -4,11 +4,12 @@
     "removeComments": true,
     "target": "es6",
     "preserveConstEnums": true,
-    "outFile": "./repository.js",
+    "outFile": "./index.js",
     "declaration": false,
     "sourceMap": false
   },
   "files": [
-    "./repository.ts"
+    "./b1/index.ts",
+    "./BORepository.ts"
   ]
 }

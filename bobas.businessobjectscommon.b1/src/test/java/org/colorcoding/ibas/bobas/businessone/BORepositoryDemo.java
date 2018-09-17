@@ -30,10 +30,8 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	/**
 	 * 查询-Items
 	 * 
-	 * @param criteria
-	 *            查询
-	 * @param token
-	 *            口令
+	 * @param criteria 查询
+	 * @param token    口令
 	 * @return 操作结果（已被封装）
 	 */
 	public OperationResult<DataWrapping> fetchItems(ICriteria criteria, String token) {
@@ -56,8 +54,7 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	/**
 	 * 查询-Items
 	 * 
-	 * @param criteria
-	 *            查询
+	 * @param criteria 查询
 	 * @return 查询结果
 	 */
 	public List<IItems> fetchItems(ICriteria criteria) throws SBOCOMException, ParsingException, RepositoryException {
@@ -88,10 +85,8 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	/**
 	 * 查询-BusinessPartners
 	 * 
-	 * @param criteria
-	 *            查询
-	 * @param token
-	 *            口令
+	 * @param criteria 查询
+	 * @param token    口令
 	 * @return 操作结果（已被封装）
 	 */
 	public OperationResult<DataWrapping> fetchBusinessPartners(ICriteria criteria, String token) {
@@ -114,8 +109,7 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	/**
 	 * 查询-BusinessPartners
 	 * 
-	 * @param criteria
-	 *            查询
+	 * @param criteria 查询
 	 * @return 查询结果
 	 */
 	public List<IBusinessPartners> fetchBusinessPartners(ICriteria criteria)
@@ -148,10 +142,8 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	/**
 	 * 查询-Orders
 	 * 
-	 * @param criteria
-	 *            查询
-	 * @param token
-	 *            口令
+	 * @param criteria 查询
+	 * @param token    口令
 	 * @return 操作结果（已被封装）
 	 */
 	public OperationResult<DataWrapping> fetchOrders(ICriteria criteria, String token) {
@@ -174,8 +166,7 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	/**
 	 * 查询-Orders
 	 * 
-	 * @param criteria
-	 *            查询
+	 * @param criteria 查询
 	 * @return 查询结果
 	 */
 	public List<IDocuments> fetchOrders(ICriteria criteria)
@@ -209,10 +200,8 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	/**
 	 * 查询-PurchaseOrders
 	 * 
-	 * @param criteria
-	 *            查询
-	 * @param token
-	 *            口令
+	 * @param criteria 查询
+	 * @param token    口令
 	 * @return 操作结果（已被封装）
 	 */
 	public OperationResult<DataWrapping> fetchPurchaseOrders(ICriteria criteria, String token) {
@@ -235,8 +224,7 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	/**
 	 * 查询-PurchaseOrders
 	 * 
-	 * @param criteria
-	 *            查询
+	 * @param criteria 查询
 	 * @return 查询结果
 	 */
 	public List<IDocuments> fetchPurchaseOrders(ICriteria criteria)
@@ -270,10 +258,8 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	/**
 	 * 查询-ProductionOrders
 	 * 
-	 * @param criteria
-	 *            查询
-	 * @param token
-	 *            口令
+	 * @param criteria 查询
+	 * @param token    口令
 	 * @return 操作结果（已被封装）
 	 */
 	public OperationResult<DataWrapping> fetchProductionOrders(ICriteria criteria, String token) {
@@ -296,8 +282,7 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	/**
 	 * 查询-ProductionOrders
 	 * 
-	 * @param criteria
-	 *            查询
+	 * @param criteria 查询
 	 * @return 查询结果
 	 */
 	public List<IProductionOrders> fetchProductionOrders(ICriteria criteria)
@@ -326,4 +311,66 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 		}
 	}
 
+	// --------------------------------------------------------------------------------------------//
+	/**
+	 * 查询-Items记录
+	 * 
+	 * @param criteria 查询
+	 * @param token    口令
+	 * @return 操作结果（已被封装）
+	 */
+	public OperationResult<DataWrapping> fetchItemRecords(ICriteria criteria, String token) {
+		IRecordset recordset = null;
+		boolean open = false;
+		try {
+			this.setUserToken(token);
+			open = this.openRepository();
+			// 形成查询
+			StringBuilder stringBuilder = new StringBuilder();
+			stringBuilder.append("SELECT");
+			stringBuilder.append(" ");
+			if (criteria.getResultCount() > 0) {
+				stringBuilder.append("TOP");
+				stringBuilder.append(" ");
+				stringBuilder.append(criteria.getResultCount());
+				stringBuilder.append(" ");
+			}
+			stringBuilder.append("ItemCode, ");
+			stringBuilder.append("ItemName");
+			stringBuilder.append(" ");
+			stringBuilder.append("FROM");
+			stringBuilder.append(" ");
+			stringBuilder.append("OITM");
+			stringBuilder.append(" ");
+			if (criteria.getConditions().size() > 0) {
+				// 解析查询条件
+				stringBuilder.append("WHERE");
+				stringBuilder.append(" ");
+				stringBuilder.append(this.getB1Adapter().parseSqlQuery(criteria.getConditions()));
+			}
+			// 通过di运行sql
+			OperationResult<DataWrapping> operationResult = new OperationResult<>();
+			recordset = super.query(stringBuilder.toString());
+			while (!recordset.isEoF()) {
+				operationResult.addResultObjects(this.getB1Serializer().wrap(recordset));
+				recordset.moveNext();
+			}
+			return operationResult;
+		} catch (Exception e) {
+			Logger.log(e);
+			return new OperationResult<>(e);
+		} finally {
+			if (recordset != null) {
+				recordset.release();
+			}
+			if (open) {
+				try {
+					this.closeRepository();
+				} catch (RepositoryException e) {
+					Logger.log(e);
+				}
+			}
+			System.gc();
+		}
+	}
 }

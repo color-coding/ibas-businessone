@@ -66,8 +66,6 @@ declare namespace ibas {
      * 集合
      */
     class ArrayList<T> extends Array<T> implements IList<T> {
-        /** 创建集合，仅值 */
-        static create<P>(map: Map<any, P>): ArrayList<P>;
         /**
          * 添加项目
          * @param item 项目
@@ -242,7 +240,7 @@ declare namespace ibas {
         /** 消息 */
         INFO = 3,
         /** 调试信息 */
-        DEBUG = 4,
+        DEBUG = 4
     }
     /**
      * 比较方式
@@ -273,7 +271,7 @@ declare namespace ibas {
         /** 是空 */
         IS_NULL = 11,
         /** 非空 */
-        NOT_NULL = 12,
+        NOT_NULL = 12
     }
     /**
      * 条件之间关系
@@ -284,7 +282,7 @@ declare namespace ibas {
         /** 且 */
         AND = 1,
         /** 或 */
-        OR = 2,
+        OR = 2
     }
     /**
      * 排序方式
@@ -293,7 +291,7 @@ declare namespace ibas {
         /** 降序 */
         DESCENDING = 0,
         /** 升序 */
-        ASCENDING = 1,
+        ASCENDING = 1
     }
     /**
      * 是否
@@ -302,7 +300,7 @@ declare namespace ibas {
         /** 否 */
         NO = 0,
         /** 是 */
-        YES = 1,
+        YES = 1
     }
     /**
      * 单据状态
@@ -315,7 +313,7 @@ declare namespace ibas {
         /** 完成 */
         FINISHED = 2,
         /** 结算 */
-        CLOSED = 3,
+        CLOSED = 3
     }
     /**
      * 业务对象状态
@@ -324,7 +322,7 @@ declare namespace ibas {
         /** 未清 */
         OPEN = 0,
         /** 已清 */
-        CLOSED = 1,
+        CLOSED = 1
     }
     /**
      * 审批步骤状态
@@ -339,7 +337,7 @@ declare namespace ibas {
         /** 已拒绝 */
         REJECTED = 3,
         /** 已跳过 */
-        SKIPPED = 4,
+        SKIPPED = 4
     }
     /**
      * 审批状态
@@ -354,7 +352,7 @@ declare namespace ibas {
         /** 已拒绝 */
         REJECTED = 3,
         /** 已取消 */
-        CANCELLED = 4,
+        CANCELLED = 4
     }
     /**
      * 审批结果
@@ -365,7 +363,7 @@ declare namespace ibas {
         /** 拒绝的 */
         REJECTED = 1,
         /** 重置为进行中 */
-        PROCESSING = 2,
+        PROCESSING = 2
     }
     /**
      * 方向
@@ -374,7 +372,7 @@ declare namespace ibas {
         /** 入 */
         IN = 0,
         /** 出 */
-        OUT = 1,
+        OUT = 1
     }
     /**
      * 判断操作
@@ -435,7 +433,38 @@ declare namespace ibas {
         /**
          * 或（仅布尔比较有效）
          */
-        OR = 13,
+        OR = 13
+    }
+    /** 数据库字段类型 */
+    enum emDbFieldType {
+        /**
+         * 未知
+         */
+        UNKNOWN = 0,
+        /**
+         * 字母数字
+         */
+        ALPHANUMERIC = 1,
+        /**
+         * 长字符串
+         */
+        MEMO = 2,
+        /**
+         * 数字
+         */
+        NUMERIC = 3,
+        /**
+         * 日期
+         */
+        DATE = 4,
+        /**
+         * 小数
+         */
+        DECIMAL = 5,
+        /**
+         * 字节
+         */
+        BYTES = 6
     }
 }
 /**
@@ -450,6 +479,17 @@ declare namespace ibas {
      * 字符串构建器
      */
     class StringBuilder {
+        constructor();
+        private valueMap;
+        /**
+         * 设置值的映射字符串
+         * @param value 值
+         * @param str 映射的字符串
+         */
+        map(value: any, str: string): void;
+        /**
+         * 已添加的值
+         */
         private values;
         /**
          * 获取当前长度
@@ -473,6 +513,13 @@ declare namespace ibas {
  * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
  */
 declare namespace ibas {
+    /** 转换参数 */
+    interface IConvertParam {
+        /** 格式化数据 */
+        format: boolean;
+        /** 使用名称 */
+        nameAs: "name" | "index" | "description";
+    }
     /** 数据表 */
     class DataTable {
         /** 名称 */
@@ -484,9 +531,12 @@ declare namespace ibas {
         /** 行 */
         rows: ArrayList<DataTableRow>;
         /** 转为对象 */
-        convert(conversion: boolean): any[];
-        /** 转为对象 */
-        convert(): any[];
+        convert(param?: IConvertParam): any[];
+        /**
+         * 克隆
+         * @param rows 保留的行索引（未定义为全部）
+         */
+        clone(rows?: number[]): DataTable;
     }
     /** 数据表-列 */
     class DataTableColumn {
@@ -515,7 +565,7 @@ declare namespace ibas {
         /** 日期 */
         DATE = 2,
         /** 小数 */
-        DECIMAL = 3,
+        DECIMAL = 3
     }
 }
 /**
@@ -559,12 +609,10 @@ declare namespace ibas {
      * 运行消息记录
      */
     class Logger implements ILogger {
-        private _level;
         /**
          * 消息输出的级别
          */
-        readonly level: emMessageLevel;
-        language: emMessageLevel;
+        level: emMessageLevel;
         /**
          * 记录消息
          * @param message
@@ -603,10 +651,8 @@ declare namespace ibas {
     class I18N {
         /** 默认语言编码 */
         private DEFAULT_LANGUAGE_CODE;
-        private _language;
         /** 语言 */
         language: string;
-        private _listeners;
         /**
          * 注册监听事件
          * @param listener 监听者
@@ -627,7 +673,7 @@ declare namespace ibas {
         reload(): void;
         load(address: string): void;
         private groups;
-        private groupName(key);
+        private groupName;
         add(key: string, value: string): string;
     }
     /** 语言变化监听者 */
@@ -680,9 +726,14 @@ declare namespace ibas {
         function getName(type: any): string;
         /**
          * 获取实例类型
-         * @param 实例 类型
+         * @param 实例
          */
         function getType(instance: any): any;
+        /**
+         * 获取实例的类型名称
+         * @param instance 实例
+         */
+        function getTypeName(instance: any): any;
         /**
          * 克隆对象
          * @param data 数据
@@ -716,6 +767,17 @@ declare namespace ibas {
          * @param value 查询的字符
          */
         function count(content: string, value: string): number;
+        /**
+         * 删除全部空格
+         * @param content 待分析字符串
+         */
+        function trim(content: string): string;
+        /**
+         * 删除指定字符
+         * @param content 待分析字符串
+         * @param args 删除的字符
+         */
+        function remove(content: string, ...args: string[]): string;
         /**
          * 替换字符，全部
          * @param content 待分析字符
@@ -823,7 +885,7 @@ declare namespace ibas {
             DAY = 0,
             HOUR = 1,
             MINUTE = 2,
-            SECOND = 3,
+            SECOND = 3
         }
         /**
          * 计算时间差
@@ -866,6 +928,12 @@ declare namespace ibas {
         function toInt(data: any): number;
         /**  数字 */
         function valueOf(data: any): number;
+        /**
+         * 保留小数位
+         * @param value 数
+         * @param scale 小数位（默认配置值）
+         */
+        function round(value: number, scale?: number): number;
     }
     /**
      * 地址
@@ -935,7 +1003,7 @@ declare namespace ibas {
      * 配置
      */
     class Configuration {
-        private items;
+        constructor();
         /**
          * 加载配置文件
          */
@@ -966,11 +1034,10 @@ declare namespace ibas {
         get<T>(key: string, defalut: T, type: any): T;
         /** 返回配置项目 */
         all(): IList<KeyValue>;
-        private log(level, message);
+        private log;
         private variableMap;
         /** 替换字符串中的配置项，配置项示例：${Company} */
         applyVariables(value: string): string;
-        private _listeners;
         /**
          * 注册监听事件
          * @param listener 监听者
@@ -999,10 +1066,10 @@ declare namespace ibas {
      * 属性改变监听者
      */
     interface IPropertyChangedListener {
-        /** 调用者，this指向 */
-        caller?: any;
         /** 标记 */
         id?: string;
+        /** 调用者，this指向 */
+        caller?: any;
         /**
          * 属性改变
          */
@@ -1043,10 +1110,6 @@ declare namespace ibas {
          * 是否删除
          */
         readonly isDeleted: boolean;
-        /**
-         * 是否有效
-         */
-        readonly isVaild: boolean;
         /**
          * 是否加载数据中
          */
@@ -1126,6 +1189,12 @@ declare namespace ibas {
          * 新建并添加子项
          */
         create(): T;
+        /**
+         * 移出项目
+         * @param item 被移出项目
+         * @returns true,被移出;false,被delete;null,无效数据
+         */
+        remove(item: T): boolean;
         /** 过滤删除的项目 */
         filterDeleted(): T[];
     }
@@ -1142,7 +1211,6 @@ declare namespace ibas {
      * 可监听的对象
      */
     abstract class Bindable implements IBindable {
-        private _listeners;
         /**
          * 注册监听事件
          * @param listener 监听者
@@ -1166,36 +1234,16 @@ declare namespace ibas {
      */
     abstract class TrackableBase extends Bindable implements ITrackable {
         constructor();
-        private _new;
-        /**
-         * 是否新建
-         */
+        /** 是否新建 */
         isNew: boolean;
-        private _dirty;
-        /**
-         * 是否修改
-         */
+        /** 是否修改 */
         isDirty: boolean;
-        private _deleted;
-        /**
-         * 是否刪除
-         */
+        /** 是否刪除 */
         isDeleted: boolean;
-        private _savable;
-        /**
-         * 是否保存
-         */
+        /** 是否保存 */
         isSavable: boolean;
-        private _loading;
-        /**
-         * 是否加载
-         */
+        /** 是否加载 */
         isLoading: boolean;
-        private _vaild;
-        /**
-         * 是否有效
-         */
-        isVaild: boolean;
         /**
          * 标记为未修改
          */
@@ -1284,10 +1332,10 @@ declare namespace ibas {
          */
         protected afterAdd(item: T): void;
         /**
-         * 移出项目
+         * 移出项目（新数据，则移出集合；否则，标记删除）
          * @param item 项目
          */
-        remove(item: T): void;
+        remove(item: T): boolean;
         /**
          * 移出项目后
          * @param item 项目
@@ -1605,6 +1653,33 @@ declare namespace ibas {
          */
         organization: string;
     }
+    /** 业务对象-用户字段 */
+    interface IBOUserFields {
+        /** 用户字段 */
+        userFields: IUserFields;
+    }
+    /** 用户字段 */
+    interface IUserField {
+        /** 名称 */
+        name: string;
+        /** 类型 */
+        valueType: emDbFieldType;
+        /** 值 */
+        value: any;
+    }
+    /** 用户字段集合 */
+    interface IUserFields {
+        /** 获取用户字段 */
+        get(index: number): IUserField;
+        /** 获取用户字段 */
+        get(name: string): IUserField;
+        /** 变量集合 */
+        forEach(): IUserField[];
+        /** 大小 */
+        size(): number;
+        /** 注册 */
+        register(name: string, valueType: emDbFieldType): IUserField;
+    }
     /**
      * 业务对象基类
      */
@@ -1624,12 +1699,15 @@ declare namespace ibas {
         /**
          * 初始化业务规则
          */
-        private initRules();
+        private initRules;
         /**
          * 注册的业务规则
          */
         protected registerRules(): IBusinessRule[];
         protected firePropertyChanged(property: string): void;
+        /** 用户字段 */
+        private UserFields;
+        readonly userFields: IUserFields;
     }
     /**
      * 业务对象集合基类
@@ -1640,9 +1718,6 @@ declare namespace ibas {
          * @param parent 父项
          */
         constructor(parent: P);
-        private _listener;
-        protected readonly listener: IPropertyChangedListener;
-        private _parent;
         protected parent: P;
         /** 父项属性改变时 */
         protected onParentPropertyChanged(name: string): void;
@@ -1658,8 +1733,7 @@ declare namespace ibas {
          * @param item 项目
          */
         protected afterRemove(item: T): void;
-        private myRules;
-        private runRules(property);
+        private runRules;
     }
     /**
      * 单据对象基类
@@ -1714,6 +1788,48 @@ declare namespace ibas {
         criteria(): ICriteria;
         /** 输出字符串 */
         toString(): string;
+    }
+    /** 用户字段 */
+    class UserField<T> implements IUserField {
+        /** 名称 */
+        Name: string;
+        name: string;
+        /** 类型 */
+        ValueType: emDbFieldType;
+        valueType: emDbFieldType;
+        /** 值 */
+        Value: T;
+        value: T;
+    }
+    /** 用户字段集合 */
+    class UserFields extends Array<IUserField> implements IUserFields {
+        constructor(bo: IBusinessObject);
+        /** 注册全部用户字段 */
+        registers(): void;
+        /** 注册用户字段 */
+        register(name: string, valueType: emDbFieldType): IUserField;
+        /** 大小 */
+        size(): number;
+        /** 变量集合 */
+        forEach(): IUserField[];
+        /** 获取用户字段 */
+        get(index: number): IUserField;
+        /** 获取用户字段 */
+        get(name: string): IUserField;
+    }
+    /** 业务对象工具 */
+    namespace businessobjects {
+        /**
+         * 业务对象名称
+         * @param boCode 对象编码
+         */
+        function name(boCode: string): string;
+        /**
+         * 描述业务对象
+         * 如：{[CC_MM_ITEM].[Code = A00001]&[DocEntry = 3]}
+         * @param boKeys 对象标记
+         */
+        function describe(boKeys: string): string;
     }
 }
 /**
@@ -1926,7 +2042,7 @@ declare namespace ibas {
          * 转换为字符串
          */
         toString(): string;
-        private charRelationship(value);
+        private charRelationship;
         /**
          * 计算下一结果集的查询条件
          * 注意BO多主键情况下，请自行修正
@@ -2005,7 +2121,7 @@ declare namespace ibas {
          * 转换为字符串
          */
         toString(): string;
-        private charOperation(value);
+        private charOperation;
     }
     /**
      * 查询条件集合
@@ -2171,15 +2287,15 @@ declare namespace ibas {
      */
     interface IOperationInformation {
         /**
-         * 获取-名称
+         * 名称
          */
         name: string;
         /**
-         * 获取-内容
+         * 内容
          */
         content: string;
         /**
-         * 获取-标签
+         * 标签
          */
         tag: string;
     }
@@ -2187,20 +2303,15 @@ declare namespace ibas {
      * 操作信息
      */
     class OperationInformation implements IOperationInformation {
-        /**
-         * 获取-名称
-         */
-        private _name;
+        constructor();
+        constructor(name: string);
+        constructor(name: string, content: string);
+        constructor(name: string, content: string, tag: string);
+        /** 名称 */
         name: string;
-        /**
-         * 获取-内容
-         */
-        private _content;
+        /** 内容 */
         content: string;
-        /**
-         * 获取-标签
-         */
-        private _tag;
+        /** 标签 */
         tag: string;
     }
     /**
@@ -2208,50 +2319,36 @@ declare namespace ibas {
      */
     class OperationMessage implements IOperationMessage {
         constructor();
-        /**
-         * 结果标识
-         */
-        private _signID;
+        constructor(error: Error);
+        /** 结果标识 */
         signID: string;
-        /**
-         * 结果编码
-         */
-        private _resultCode;
+        /** 结果编码 */
         resultCode: number;
-        /**
-         * 结果描述
-         */
-        private _message;
+        /** 结果描述 */
         message: string;
-        /**
-         * 结果时间
-         */
-        private _time;
+        /** 结果时间 */
         time: Date;
-        /**
-         * 用户标识
-         */
-        private _userSign;
+        /** 用户标识 */
         userSign: string;
     }
     /**
      * 操作消息结果
      */
     class OperationResult<P> extends OperationMessage implements IOperationResult<P> {
+        constructor();
+        constructor(error: Error);
         /**
          * 返回对象
          */
-        private _resultObjects;
         resultObjects: IList<P>;
+        /**
+         * 操作执行信息
+         */
+        informations: IList<IOperationInformation>;
         /** 添加结果 */
         addResults(value: P): void;
         /** 添加结果 */
         addResults(value: P[]): void;
-        /**
-         * 操作执行信息
-         */
-        private _informations;
-        informations: IList<IOperationInformation>;
     }
 }
 /**
@@ -2286,10 +2383,13 @@ declare namespace ibas {
  * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
  */
 declare namespace ibas {
+    /** 断言错误 */
+    class AssertionError extends Error {
+    }
     /**
      * 单元测试，断言相关
      */
-    namespace assert {
+    namespace asserts {
         /**
          * 断言相等
          * @param message 消息
@@ -2303,6 +2403,63 @@ declare namespace ibas {
          * @param actual 运行值
          */
         function equals(unexpected: any, actual: any): void;
+    }
+}
+/**
+ * @license
+ * Copyright Color-Coding Studio. All Rights Reserved.
+ *
+ * Use of this source code is governed by an Apache License, Version 2.0
+ * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
+ */
+declare namespace ibas {
+    /** 单元测试 */
+    class TestCase {
+        /**
+         * 断言相等
+         * @param message 消息
+         * @param unexpected 目标值
+         * @param actual 运行值
+         */
+        protected assertEquals(message: string, unexpected: any, actual: any): void;
+        /**
+         * 断言相等
+         * @param unexpected 目标值
+         * @param actual 运行值
+         */
+        protected assertEquals(unexpected: any, actual: any): void;
+        /**
+         * 运行测试
+         * @param result 运行结果
+         */
+        run(result?: TestResult): void;
+    }
+    /** 测试结果 */
+    class TestResult {
+        /** 添加运行错误 */
+        addError(test: TestCase, error: Error): void;
+        /** 添加断言错误 */
+        addFailure(test: TestCase, error: Error): void;
+        /** 运行错误 */
+        errors(): TestFailure[];
+        /** 断言错误 */
+        failures(): TestFailure[];
+    }
+    /** 测试失败 */
+    class TestFailure {
+        constructor(test: TestCase, error: Error);
+        /** 失败的测试 */
+        failedTest: TestCase;
+        /** 抛出的错误 */
+        thrownError: Error;
+    }
+    namespace test {
+        /**
+         * 返回程序包的测试用例
+         * @param lib 程序包
+         * @param namespace 分析的命名空间
+         */
+        function cases(lib: any): IList<TestCase>;
     }
 }
 /**
@@ -2451,6 +2608,15 @@ declare namespace ibas4j {
         /** 值 */
         Text: string;
     }
+    /** 用户字段 */
+    interface IUserField extends IDataDeclaration {
+        /** 名称 */
+        Name: string;
+        /** 数据类型 */
+        ValueType: string;
+        /** 值 */
+        Value: string;
+    }
 }
 /**
  * @license
@@ -2580,7 +2746,7 @@ declare namespace ibas {
      */
     interface IDownloadFileCaller<T> extends IMethodCaller<T> {
         /** 下载条件 */
-        criteria: ICriteria;
+        criteria: ICriteria | FormData;
     }
     /**
      * 文件上传仓库
@@ -2634,12 +2800,10 @@ declare namespace ibas {
     /** 远程仓库 */
     abstract class RemoteRepository implements IRemoteRepository {
         /** 远程服务地址 */
-        private _address;
         address: string;
         /** 访问口令 */
-        private _token;
         token: string;
-        private _converter;
+        /** 数据转换者 */
         converter: IDataConverter;
         /**
          * 返回方法地址
@@ -2672,6 +2836,8 @@ declare namespace ibas {
          * @returns 目标类型
          */
         convert(data: any, sign: string): any;
+        /** 修正消息 */
+        protected fixMessage(message: string): string;
         /**
          * 解析业务对象数据
          * @param data 目标类型
@@ -2679,7 +2845,6 @@ declare namespace ibas {
          * @returns 本地类型
          */
         parsing(data: any, sign: string): any;
-        private _boConverter;
         protected readonly boConverter: IBOConverter<IBusinessObject, any>;
         /** 创建业务对象转换者 */
         protected abstract createConverter(): IBOConverter<IBusinessObject, any>;
@@ -2702,10 +2867,9 @@ declare namespace ibas {
     /** 业务对象的数据转换 */
     abstract class BOConverter implements IBOConverter<IBusinessObject, any> {
         /** 获取对象类型 */
-        private getTypeName(data);
+        private getTypeName;
         /** 设置对象类型 */
-        private setTypeName(data, type);
-        private _propertyMaps;
+        private setTypeName;
         private readonly propertyMaps;
         /**
          * 解析远程数据
@@ -2718,7 +2882,7 @@ declare namespace ibas {
          * @param source 源数据（远程类型）
          * @param target 目标数据（本地类型）
          */
-        private parsingProperties(source, target);
+        private parsingProperties;
         /**
          * 转换数据
          * @param data 当前类型数据
@@ -2731,7 +2895,7 @@ declare namespace ibas {
          * @param target 目标数据（远程类型）
          * @returns 目标数据
          */
-        private convertProperties(source, target);
+        private convertProperties;
         /**
          * 解析数据
          * @param boName 对象名称
@@ -2756,6 +2920,16 @@ declare namespace ibas {
         protected abstract customParsing(data: any): IBusinessObject;
         /** 业务对象工厂实例 */
         protected abstract factory(): BOFactory;
+    }
+    /**
+     * 查询方法
+     */
+    namespace criterias {
+        /**
+         * 解析查询
+         * @param content 内容
+         */
+        function valueOf(content: string): ICriteria;
     }
 }
 /**
@@ -3006,7 +3180,7 @@ declare namespace ibas {
          * @param startIndex 括号索引
          * @param judgmentItems 基于的项目
          */
-        private getJudgmentItems(startIndex, judgmentItems);
+        private getJudgmentItems;
         /**
          * 判断
          * @param value 比较值
@@ -3127,7 +3301,7 @@ declare namespace ibas {
          * @param data 数据
          * @return true,符合条件；false，不符合条件
          */
-        private filter(criteria, data);
+        private filter;
     }
     /** 文件上传仓库 */
     class FileRepositoryUploadAjax extends RemoteRepositoryAjax implements IFileRepositoryUpload {
@@ -3178,6 +3352,81 @@ declare namespace ibas {
  * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
  */
 declare namespace ibas {
+    /** 本地仓库 */
+    abstract class LocalRepository {
+        /** 数据转换者 */
+        converter: IDataConverter;
+    }
+    /** 本地仓库，IndexedDB */
+    abstract class LocalRepositoryIndexedDB extends LocalRepository {
+        /** 名称 */
+        name: string;
+        /** 数据库，需要先初始化 */
+        protected db: IDBDatabase;
+        /** 打开数据库 */
+        protected openDB(opener: ILocalDBOpener): void;
+        /** 关闭数据库 */
+        closeDB(): void;
+    }
+    /**
+     * 数据库打开者
+     */
+    interface ILocalDBOpener {
+        /** 成功打开 */
+        onSuccess(db: IDBDatabase): void;
+        /** 发生错误 */
+        onError(error: Error): void;
+    }
+    /**
+     * 查询调用者
+     */
+    interface ILocalFetchCaller<P> extends IMethodCaller<P> {
+        /** 查询条件 */
+        criteria: ICriteria;
+    }
+    /**
+     * 保存调用者
+     */
+    interface ILocalSaveCaller<P> extends IMethodCaller<P> {
+        /** 被保存对象 */
+        beSaved: P;
+        /**
+         * 调用完成
+         * @param opRslt 结果
+         */
+        onCompleted(opRslt: IOperationResult<P>): void;
+    }
+    /** 本地业务对象仓库 */
+    class BORepositoryIndexedDB extends LocalRepositoryIndexedDB implements IBORepository {
+        /**
+         * 查询数据
+         * @param boName 业务对象名称
+         * @param caller 查询监听者
+         */
+        fetch<P>(boName: string, caller: ILocalFetchCaller<P>): void;
+        /**
+         * 过滤数据
+         * @param criteria 查询
+         * @param data 数据
+         * @return true,符合条件；false，不符合条件
+         */
+        protected filter(criteria: ICriteria, data: any): boolean;
+        /**
+         * 保存数据
+         * @param boName 业务对象名称
+         * @param caller 保存监听者
+         */
+        save<P>(boName: string, caller: ISaveCaller<P>): void;
+    }
+}
+/**
+ * @license
+ * Copyright Color-Coding Studio. All Rights Reserved.
+ *
+ * Use of this source code is governed by an Apache License, Version 2.0
+ * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
+ */
+declare namespace ibas {
     /** 模块仓库名称模板 */
     const MODULE_REPOSITORY_NAME_TEMPLATE: string;
     /** 配置项目-离线模式 */
@@ -3214,13 +3463,10 @@ declare namespace ibas {
      */
     abstract class BORepositoryApplication implements IBORepositoryApplication {
         constructor();
-        private _address;
         /** 远程地址 */
         address: string;
-        private _token;
         /** 访问口令 */
         token: string;
-        private _offline;
         /** 是否离线 */
         offline: boolean;
         /** 创建只读业务仓库 */
@@ -3247,13 +3493,14 @@ declare namespace ibas {
      * 动作
      */
     abstract class Action {
-        constructor();
-        /**
-         * 构造
-         * @param logger 日志记录者
-         */
-        constructor(logger: ILogger);
-        private config;
+        /** 标识 */
+        id: string;
+        /** 名称 */
+        name: string;
+        /** 开始时间 */
+        readonly startTime: Date;
+        /** 结束时间 */
+        readonly endTime: Date;
         /**
          * 添加配置
          * @param key 配置项
@@ -3271,8 +3518,6 @@ declare namespace ibas {
          * @param defalut 默认值
          */
         protected getConfig<T>(key: string, defalut: T): T;
-        /** 日志记录者 */
-        private logger;
         /** 设置日志记录者 */
         setLogger(logger: ILogger): void;
         /**
@@ -3288,16 +3533,6 @@ declare namespace ibas {
          * @param pars 格式内容
          */
         protected log(message: string, ...pars: any[]): void;
-        /** 标识 */
-        id: string;
-        /** 名称 */
-        name: string;
-        /** 开始时间 */
-        private _startTime;
-        readonly startTime: Date;
-        /** 结束时间 */
-        private _endTime;
-        readonly endTime: Date;
         /** 是否运行中 */
         isRunning(): boolean;
         /** 进行 */
@@ -3306,10 +3541,12 @@ declare namespace ibas {
         protected done(): void;
         /** 停止（最好重载） */
         stop(): void;
-        /** 运行（需要实现） */
-        protected abstract run(): boolean;
         /** 额外的运行数据 */
         extraData: any;
+        /** 执行完成时调用 */
+        onDone: Function;
+        /** 运行（需要实现） */
+        protected abstract run(): boolean;
     }
 }
 /**
@@ -3646,7 +3883,7 @@ declare namespace ibas {
         /** 手机 */
         PHONE = 2,
         /** 平板 */
-        TABLET = 3,
+        TABLET = 3
     }
     /** 消息类型 */
     enum emMessageType {
@@ -3659,7 +3896,7 @@ declare namespace ibas {
         /** 警告 */
         WARNING = 3,
         /** 问询 */
-        QUESTION = 4,
+        QUESTION = 4
     }
     /** 消息动作 */
     enum emMessageAction {
@@ -3680,7 +3917,7 @@ declare namespace ibas {
         /** 重试 */
         RETRY = 7,
         /** 是 */
-        YES = 8,
+        YES = 8
     }
     /** 权限来源 */
     enum emPrivilegeSource {
@@ -3689,7 +3926,7 @@ declare namespace ibas {
         /** 应用设置 */
         APPLICATION = 1,
         /** 业务对象设置 */
-        BUSINESS_OBJECT = 2,
+        BUSINESS_OBJECT = 2
     }
     /** 权限值 */
     enum emAuthoriseType {
@@ -3698,14 +3935,21 @@ declare namespace ibas {
         /** 只取权限 */
         READ = 1,
         /** 没有权限 */
-        NONE = 2,
+        NONE = 2
     }
     /** 选择类型 */
     enum emChooseType {
         /** 单选 */
         SINGLE = 0,
         /** 多选 */
-        MULTIPLE = 1,
+        MULTIPLE = 1
+    }
+    /** 视图模式 */
+    enum emViewMode {
+        /** 一般 */
+        COMMON = 0,
+        /** 查看 */
+        VIEW = 1
     }
     /** 手指触控移动方向 */
     enum emTouchMoveDirection {
@@ -3718,7 +3962,7 @@ declare namespace ibas {
         /** 右 */
         RIGHT = 3,
         /** 无 */
-        NONE = 4,
+        NONE = 4
     }
 }
 /**
@@ -3759,7 +4003,6 @@ declare namespace ibas {
     }
     class BrowserEventManager {
         /** 集合 */
-        private _listeners;
         listeners(): IList<IBrowserEventListener>;
         listeners(type: emBrowserEventType): IList<IBrowserEventListener>;
         /** 获取 */
@@ -3871,6 +4114,8 @@ declare namespace ibas {
         UNLOAD = 88,
         VOLUMECHANGE = 89,
         WAITING = 90,
+        /** 自定义事件-扫码,CustomEvent */
+        SCAN = 91
     }
     /** 浏览器事件管理员实例 */
     const browserEventManager: BrowserEventManager;
@@ -3920,8 +4165,8 @@ declare namespace ibas {
         copyright: string;
         /** 图标 */
         icon: string;
-        /** 功能集合 */
-        functions(): IFunction[];
+        /** 元素 */
+        elements(): IElement[];
     }
     /**
      * 功能
@@ -3960,10 +4205,10 @@ declare namespace ibas {
         id: string;
         /** 标题 */
         title: string;
-        /** 绘制视图 */
-        draw(): any;
         /** 关闭视图 */
         closeEvent: Function;
+        /** 绘制视图 */
+        draw(): any;
     }
     /**
      * 应用-视图
@@ -4044,23 +4289,19 @@ declare namespace ibas {
         functions(): IModuleFunction[];
         /** 默认功能 */
         default(): IModuleFunction;
-        /** 添加初始化完成监听 */
-        addListener(listener: Function): void;
         /** 已实例应用集合 */
         applications(): IApplication<IView>[];
+        /** 添加初始化完成监听 */
+        addListener(listener: Function): void;
     }
     /**
      * 模块-功能
      */
     interface IModuleFunction extends IFunction {
-        /** 所属模块 */
-        module: IModule;
         /** 图标 */
         icon: string;
         /** 视图导航 */
         navigation: IViewNavigation;
-        /** 激活的 */
-        activated: boolean;
         /** 默认应用 */
         default(): IApplication<IView>;
     }
@@ -4084,11 +4325,16 @@ declare namespace ibas {
         copyright: string;
         /** 图标 */
         icon: string;
-        private _functions;
-        /** 功能集合 */
-        functions(): IFunction[];
+        /** 元素 */
+        elements(): IElement[];
+        /**
+         * 是否跳过
+         * @argument element 元素
+         * @returns true，跳过；false，使用
+         */
+        isSkip: (element: IElement) => boolean;
         /** 注册功能 */
-        protected register(item: IFunction): void;
+        protected register(item: IElement): void;
     }
     /** 地址hash值标记-功能 */
     const URL_HASH_SIGN_FUNCTIONS: string;
@@ -4107,7 +4353,6 @@ declare namespace ibas {
         viewShower: IViewShower;
         /** 视图导航 */
         navigation: IViewNavigation;
-        private _view;
         /** 应用的视图 */
         readonly view: T;
         /** 视图是否已显示 */
@@ -4128,7 +4373,7 @@ declare namespace ibas {
     /** 视图 */
     abstract class View implements IView {
         /** 应用 */
-        application: IApplication<IView>;
+        readonly application: IApplication<IView>;
         /** 唯一标识 */
         id: string;
         /** 标题 */
@@ -4139,10 +4384,10 @@ declare namespace ibas {
         isDisplayed: boolean;
         /** 是否忙 */
         isBusy: boolean;
-        /** 绘制视图 */
-        abstract draw(): any;
         /** 关闭视图 */
         closeEvent: Function;
+        /** 绘制视图 */
+        abstract draw(): any;
         /**
          * 触发视图事件
          * @param event 触发的事件
@@ -4173,10 +4418,16 @@ declare namespace ibas {
         rootUrl: string;
         /** 当前平台 */
         readonly plantform: emPlantform;
-        /** 功能集合，仅激活的 */
-        functions(): IModuleFunction[];
         /** 默认功能 */
         default(): IModuleFunction;
+        /** 功能集合，仅激活的 */
+        functions(): IModuleFunction[];
+        /** 应用集合 */
+        applications(): IApplication<IView>[];
+        /** 服务集合 */
+        services(): IServiceMapping[];
+        /** 注册实现，需要区分注册内容 */
+        protected register(item: IElement): void;
         private listeners;
         /** 添加初始化完成监听 */
         addListener(listener: Function): void;
@@ -4194,15 +4445,6 @@ declare namespace ibas {
         abstract navigation(): IViewNavigation;
         /** 视图显示者 */
         viewShower: IViewShower;
-        private _applications;
-        /** 已实例应用集合 */
-        applications(): IApplication<IView>[];
-        /** 注册功能 */
-        protected register(item: ModuleFunction): void;
-        /** 注册应用 */
-        protected register(item: AbstractApplication<IView>): void;
-        /** 注册服务 */
-        protected register(item: ServiceMapping): void;
         /** 设置仓库地址，返回值是否执行默认设置 */
         setRepository(address: string): boolean;
         /** 加载视图 */
@@ -4210,14 +4452,10 @@ declare namespace ibas {
     }
     /** 模块控制台 */
     abstract class ModuleFunction extends AbstractFunction implements IModuleFunction {
-        /** 所属模块 */
-        module: IModule;
         /** 图标 */
         icon: string;
         /** 创建视图导航 */
         navigation: IViewNavigation;
-        /** 激活的 */
-        activated: boolean;
         /** 默认功能 */
         abstract default(): IApplication<IView>;
     }
@@ -4267,70 +4505,6 @@ declare namespace ibas {
         embedded(view: any): void;
     }
     /**
-     * 业务对象应用-视图
-     */
-    interface IBOView extends IView {
-    }
-    /** 使用查询面板 */
-    interface IUseQueryPanel {
-        /** 查询标识 */
-        readonly queryId: string;
-        /** 查询目标 */
-        readonly queryTarget?: any;
-        /** 使用的查询 */
-        readonly usingCriteria?: ICriteria;
-        /** 查询数据 */
-        query(criteria: ICriteria): void;
-        /** 嵌入下拉条 */
-        embeddedPuller?(view: any): void;
-    }
-    /** 嵌入查询面板 */
-    interface IEmbeddedQueryPanel {
-        /** 嵌入 */
-        embedded(view: any): void;
-    }
-    /**
-     * 业务对象应用-选择视图
-     */
-    interface IBOQueryView extends IBOView, IUseQueryPanel {
-        /** 查询数据事件，参数：查询条件 ICriteria */
-        fetchDataEvent: Function;
-    }
-    /**
-     * 业务对象应用-选择视图
-     */
-    interface IBOChooseView extends IBOQueryView {
-        /** 选择数据事件，参数：选择数据 */
-        chooseDataEvent: Function;
-        /** 新建数据事件 */
-        newDataEvent: Function;
-        /** 选择类型 */
-        chooseType: emChooseType;
-    }
-    /**
-     * 业务对象应用-列表视图
-     */
-    interface IBOListView extends IBOQueryView {
-        /** 新建数据事件 */
-        newDataEvent: Function;
-        /** 查看数据事件，参数：目标数据 */
-        viewDataEvent: Function;
-    }
-    /**
-     * 业务对象应用-编辑视图
-     */
-    interface IBOEditView extends IBOView {
-        /** 保存数据事件 */
-        saveDataEvent: Function;
-    }
-    /**
-     * 业务对象应用-查看视图
-     */
-    interface IBOViewView extends IBOView {
-        /** 编辑数据事件 */
-        editDataEvent: Function;
-    }
-    /**
      * 常驻应用-视图
      */
     interface IResidentView extends IBarView {
@@ -4349,7 +4523,7 @@ declare namespace ibas {
         /** 显示视图 */
         show(): void;
         /** 视图显示后 */
-        private afterViewShow();
+        private afterViewShow;
         /** 注册视图 */
         protected registerView(): void;
         /** 视图显示后 */
@@ -4362,6 +4536,8 @@ declare namespace ibas {
         protected busy(busy: boolean, msg: string): void;
         /** 设置消息 */
         protected proceeding(msg: string): void;
+        /** 设置消息 */
+        protected proceeding(error: Error): void;
         /** 设置消息 */
         protected proceeding(type: emMessageType, msg: string): void;
         /**
@@ -4429,24 +4605,6 @@ declare namespace ibas {
         private onCompleted;
         /** 触发完成事件 */
         protected fireCompleted(result: D): void;
-    }
-    /**
-     * 业务对象应用
-     */
-    abstract class BOApplication<T extends IBOView> extends Application<T> {
-        /** 业务对象编码 */
-        boCode: string;
-        /** 注册视图，重载需要回掉此方法 */
-        protected registerView(): void;
-    }
-    /**
-     * 业务对象查询应用
-     */
-    abstract class BOQueryApplication<T extends IBOQueryView> extends BOApplication<T> {
-        /** 注册视图，重载需要回掉此方法 */
-        protected registerView(): void;
-        /** 查询数据 */
-        protected abstract fetchData(criteria: ICriteria): void;
     }
     /**
      * 常驻应用
@@ -4532,14 +4690,12 @@ declare namespace ibas {
         data: T;
     }
     /** 业务对象服务的契约 */
-    interface IBOServiceContract extends IDataServiceContract<IBusinessObject> {
+    interface IBOServiceContract extends IDataServiceContract<IBusinessObject | IBusinessObject[]> {
         /** 数据转换者 */
         converter?: IDataConverter;
     }
-    /** 业务对象列表服务的契约 */
-    interface IBOListServiceContract extends IDataServiceContract<IBusinessObject[]> {
-        /** 数据转换者 */
-        converter?: IDataConverter;
+    /** 数据表格服务契约 */
+    interface IDataTableServiceContract extends IDataServiceContract<DataTable> {
     }
     /** 业务对象连接服务的契约 */
     interface IBOLinkServiceContract extends IServiceContract {
@@ -4558,6 +4714,8 @@ declare namespace ibas {
         criteria?: ICriteria | ICondition[];
         /** 选择服务标题 */
         title?: string;
+        /** 视图模式 */
+        viewMode?: emViewMode;
     }
     /** 查询编辑服务契约 */
     interface ICriteriaEditorServiceContract extends IServiceContract {
@@ -4672,9 +4830,9 @@ declare namespace ibas {
     class BOServiceProxy extends DataServiceProxy<IBOServiceContract> {
         constructor(contract: IBOServiceContract);
     }
-    /** 业务对象列表服务代理 */
-    class BOListServiceProxy extends DataServiceProxy<IBOListServiceContract> {
-        constructor(contract: IBOListServiceContract);
+    /** 数据表格服务代理 */
+    class DataTableServiceProxy extends DataServiceProxy<IDataTableServiceContract> {
+        constructor(contract: IDataTableServiceContract);
     }
     /** 业务对象连接服务代理 */
     class BOLinkServiceProxy extends ServiceProxy<IBOLinkServiceContract> {
@@ -4704,11 +4862,11 @@ declare namespace ibas {
          * @param caller 调用者
          * @returns 是否成功运行服务
          */
-        private runService(caller);
+        private runService;
         /** 运行选择服务 */
-        runChooseService<D>(caller: IBOChooseServiceCaller<D>): void;
+        runChooseService<D>(caller: IBOChooseServiceCaller<D>): boolean;
         /** 运行连接服务 */
-        runLinkService(caller: IBOLinkServiceCaller): void;
+        runLinkService(caller: IBOLinkServiceCaller): boolean;
         /**
          * 运行应用服务
          * @param caller 调用者<In>(<输入类型>)
@@ -4737,6 +4895,76 @@ declare namespace ibas {
  */
 declare namespace ibas {
     /**
+     * 业务对象应用-视图
+     */
+    interface IBOView extends IView {
+    }
+    /**
+     * 业务对象应用-选择视图
+     */
+    interface IBOQueryView extends IBOView, IUseQueryPanel {
+        /** 查询数据事件，参数：查询条件 ICriteria */
+        fetchDataEvent: Function;
+    }
+    /**
+     * 业务对象应用-选择视图
+     */
+    interface IBOChooseView extends IBOQueryView {
+        /** 选择数据事件，参数：选择数据 */
+        chooseDataEvent: Function;
+        /** 新建数据事件 */
+        newDataEvent: Function;
+        /** 选择类型 */
+        chooseType: emChooseType;
+        /** 视图模式 */
+        mode: emViewMode;
+    }
+    /**
+     * 业务对象应用-列表视图
+     */
+    interface IBOListView extends IBOQueryView {
+        /** 新建数据事件 */
+        newDataEvent: Function;
+        /** 查看数据事件，参数：目标数据 */
+        viewDataEvent: Function;
+    }
+    /**
+     * 业务对象应用-编辑视图
+     */
+    interface IBOEditView extends IBOView {
+        /** 保存数据事件 */
+        saveDataEvent: Function;
+    }
+    /**
+     * 业务对象应用-查看视图
+     */
+    interface IBOViewView extends IBOView {
+        /** 编辑数据事件 */
+        editDataEvent: Function;
+        /** 视图模式 */
+        mode: emViewMode;
+    }
+    /**
+     * 业务对象应用
+     */
+    abstract class BOApplication<T extends IBOView> extends Application<T> {
+        /** 业务对象编码 */
+        boCode: string;
+        /** 注册视图，重载需要回掉此方法 */
+        protected registerView(): void;
+        /** 视图显示后 */
+        protected viewShowed(): void;
+    }
+    /**
+     * 业务对象查询应用
+     */
+    abstract class BOQueryApplication<T extends IBOQueryView> extends BOApplication<T> {
+        /** 注册视图，重载需要回掉此方法 */
+        protected registerView(): void;
+        /** 查询数据 */
+        protected abstract fetchData(criteria: ICriteria): void;
+    }
+    /**
      * 业务对象选择应用
      */
     abstract class BOChooseApplication<T extends IBOChooseView, D> extends BOQueryApplication<T> {
@@ -4764,7 +4992,7 @@ declare namespace ibas {
         /** 完成 */
         private onCompleted;
         /** 触发完成事件 */
-        private fireCompleted(selecteds);
+        private fireCompleted;
         /** 选择数据后,直接触发完成事件 */
         protected chooseData(datas: D[]): void;
     }
@@ -4798,20 +5026,24 @@ declare namespace ibas {
         protected abstract editData: D;
         /** 选择数据，参数：数据 */
         protected abstract saveData(): void;
-        /** 关闭视图 */
-        close(): void;
+        /** 视图显示后 */
+        protected viewShowed(): void;
     }
     /**
      * 业务对象查看应用
      */
-    abstract class BOViewApplication<T extends IBOViewView> extends BOApplication<T> {
+    abstract class BOViewApplication<T extends IBOViewView, D> extends BOApplication<T> {
         /** 注册视图，重载需要回掉此方法 */
         protected registerView(): void;
+        /** 当前查看的数据 */
+        protected abstract viewData: D;
+        /** 视图显示后 */
+        protected viewShowed(): void;
     }
     /**
      * 业务对象查看应用服务
      */
-    abstract class BOViewService<T extends IBOViewView> extends BOViewApplication<T> {
+    abstract class BOViewService<T extends IBOViewView, D> extends BOViewApplication<T, D> {
         /** 运行 */
         run(): void;
         /**
@@ -4821,6 +5053,8 @@ declare namespace ibas {
         run(caller: IBOLinkServiceCaller): void;
         /** 查询数据 */
         protected abstract fetchData(criteria: ICriteria | string): void;
+        /** 视图显示后 */
+        protected viewShowed(): void;
     }
 }
 /**
@@ -4846,12 +5080,16 @@ declare namespace ibas {
         /** 确认 */
         confirm(): void;
     }
+    /** 配置项目-自动查询 */
+    const CONFIG_ITEM_AUTO_QUERY: string;
     /** 业务对象查询视图 */
     abstract class BOQueryView extends BOView implements IBOQueryView {
         /** 查询标识 */
         readonly queryId: string;
         /** 使用的查询 */
         readonly usingCriteria: ICriteria;
+        /** 自动查询 */
+        readonly autoQuery: boolean;
         /** 上一次使用的查询 */
         protected lastCriteria: ICriteria;
         /** 查询数据事件，参数：查询条件 ICriteria */
@@ -4865,6 +5103,8 @@ declare namespace ibas {
         readonly queryId: string;
         /** 使用的查询 */
         readonly usingCriteria: ICriteria;
+        /** 自动查询 */
+        readonly autoQuery: boolean;
         /** 上一次使用的查询 */
         protected lastCriteria: ICriteria;
         /** 查询数据事件，参数：查询条件 ICriteria */
@@ -4892,11 +5132,15 @@ declare namespace ibas {
         chooseDataEvent: Function;
         /** 选择类型 */
         chooseType: emChooseType;
+        /** 视图模式 */
+        mode: emViewMode;
     }
     /** 业务对象查看视图 */
     abstract class BOViewView extends BOView implements IBOViewView {
         /** 编辑数据事件 */
         editDataEvent: Function;
+        /** 视图模式 */
+        mode: emViewMode;
     }
     /** 业务对象编辑视图 */
     abstract class BOEditView extends BOView implements IBOEditView {
@@ -4955,8 +5199,6 @@ declare namespace ibas {
     class VariablesManager {
         /** 运行中的变量 */
         private variables;
-        /** 注册系统观察者 */
-        register(watcher: ISystemWatcher): void;
         /** 注册变量 */
         register(variable: KeyValue): void;
         /** 注册变量 */
@@ -4967,14 +5209,6 @@ declare namespace ibas {
         get(key: string): KeyValue;
         /** 获取变量 */
         getValue(key: string): any;
-        /** 系统用户 */
-        private watcher;
-        getWatcher(): ISystemWatcher;
-    }
-    /** 系统运行状态观察者 */
-    interface ISystemWatcher {
-        /** 运行的模块 */
-        modules(): IList<IModule>;
     }
     /** 变量管理员实例 */
     const variablesManager: VariablesManager;

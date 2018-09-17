@@ -30,6 +30,13 @@ class DataConverter extends ibas.DataConverter4j {
     parsing(data: any, sign: string): any {
         if (data.type === "DataWrapping") {
             return JSON.parse(data.Content);
+        } else if (data.type === "Recordset") {
+            let remote: b1.IRecordset = data;
+            let newData: any = new Object();
+            for (let field of remote.fields) {
+                newData[field.name] = field.value;
+            }
+            return newData;
         } else {
             return super.parsing(data, sign);
         }

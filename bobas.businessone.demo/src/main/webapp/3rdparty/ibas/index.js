@@ -11,14 +11,6 @@ var ibas;
      * 集合
      */
     class ArrayList extends Array {
-        /** 创建集合，仅值 */
-        static create(map) {
-            let list = new ArrayList();
-            for (let item of map.values()) {
-                list.add(item);
-            }
-            return list;
-        }
         add() {
             // 无效值不做处理
             if (arguments === null || arguments === undefined) {
@@ -66,7 +58,7 @@ var ibas;
          * @param index 项目索引
          */
         removeAt(index) {
-            if (index >= 0 && index < super.length) {
+            if (index >= 0 && index < this.length) {
                 this.remove(this[index]);
             }
         }
@@ -491,6 +483,38 @@ var ibas;
          */
         emJudmentOperation[emJudmentOperation["OR"] = 13] = "OR";
     })(emJudmentOperation = ibas.emJudmentOperation || (ibas.emJudmentOperation = {}));
+    /** 数据库字段类型 */
+    let emDbFieldType;
+    (function (emDbFieldType) {
+        /**
+         * 未知
+         */
+        emDbFieldType[emDbFieldType["UNKNOWN"] = 0] = "UNKNOWN";
+        /**
+         * 字母数字
+         */
+        emDbFieldType[emDbFieldType["ALPHANUMERIC"] = 1] = "ALPHANUMERIC";
+        /**
+         * 长字符串
+         */
+        emDbFieldType[emDbFieldType["MEMO"] = 2] = "MEMO";
+        /**
+         * 数字
+         */
+        emDbFieldType[emDbFieldType["NUMERIC"] = 3] = "NUMERIC";
+        /**
+         * 日期
+         */
+        emDbFieldType[emDbFieldType["DATE"] = 4] = "DATE";
+        /**
+         * 小数
+         */
+        emDbFieldType[emDbFieldType["DECIMAL"] = 5] = "DECIMAL";
+        /**
+         * 字节
+         */
+        emDbFieldType[emDbFieldType["BYTES"] = 6] = "BYTES";
+    })(emDbFieldType = ibas.emDbFieldType || (ibas.emDbFieldType = {}));
 })(ibas || (ibas = {}));
 /**
  * @license
@@ -506,7 +530,24 @@ var ibas;
      */
     class StringBuilder {
         constructor() {
+            /**
+             * 已添加的值
+             */
             this.values = new Array();
+            this.valueMap = new Map();
+            this.valueMap.set(null, "null");
+            this.valueMap.set(undefined, "undefined");
+        }
+        /**
+         * 设置值的映射字符串
+         * @param value 值
+         * @param str 映射的字符串
+         */
+        map(value, str) {
+            if (ibas.objects.isNull(str)) {
+                return;
+            }
+            this.valueMap.set(value, str);
         }
         /**
          * 获取当前长度
@@ -518,14 +559,13 @@ var ibas;
          * 添加字符
          */
         append(str) {
-            if (str === undefined) {
-                this.values.push("undefined");
-            }
-            else if (str === null) {
-                this.values.push("null");
+            if (!ibas.objects.isNull(this.valueMap) && this.valueMap.has(str)) {
+                this.values.push(this.valueMap.get(str));
             }
             else {
-                this.values.push(str.toString());
+                if (!ibas.objects.isNull(str)) {
+                    this.values.push(str.toString());
+                }
             }
         }
         /**
@@ -560,29 +600,67 @@ var ibas;
             this.rows = new ibas.ArrayList();
         }
         /** 转为对象 */
-        convert() {
-            let conversionType = true;
-            if (arguments.length > 0) {
-                conversionType = arguments[0];
+        convert(param = undefined) {
+            if (ibas.objects.isNull(param)) {
+                param = {
+                    format: true,
+                    nameAs: "name",
+                };
             }
             let datas = [];
-            let data;
             for (let row of this.rows) {
-                data = {};
-                for (var index = 0; index < this.columns.length; index++) {
-                    var col = this.columns[index];
-                    if (conversionType) {
+                let data = {};
+                for (let index = 0; index < this.columns.length; index++) {
+                    let col = this.columns[index];
+                    let value = row.cells[index];
+                    if (param.format) {
                         // 转换类型
-                        data[col.name] = col.convert(row.cells[index]);
+                        value = col.convert(value);
+                    }
+                    if (param.nameAs === "index") {
+                        data[index.toString()] = value;
+                    }
+                    else if (param.nameAs === "description" && !ibas.strings.isEmpty(col.description)) {
+                        data[col.description] = value;
                     }
                     else {
-                        // 不转换类型
-                        data[col.name] = row.cells[index];
+                        data[col.name] = value;
                     }
                 }
                 datas.push(data);
             }
             return datas;
+        }
+        /**
+         * 克隆
+         * @param rows 保留的行索引（未定义为全部）
+         */
+        clone(rows = undefined) {
+            let nTable = new DataTable();
+            nTable.name = this.name;
+            nTable.description = this.description;
+            for (let item of this.columns) {
+                let nItem = new DataTableColumn();
+                nItem.name = item.name;
+                nItem.description = item.description;
+                nItem.dataType = item.dataType;
+                nTable.columns.push(nItem);
+            }
+            if (!(rows instanceof Array)) {
+                rows = [];
+                for (let index = 0; index < this.rows.length; index++) {
+                    rows.push(index);
+                }
+            }
+            for (let item of rows) {
+                let row = this.rows[item];
+                let nRow = new DataTableRow();
+                for (let cell of row.cells) {
+                    nRow.cells.add(cell);
+                }
+                nTable.rows.push(nRow);
+            }
+            return nTable;
         }
     }
     ibas.DataTable = DataTable;
@@ -660,6 +738,7 @@ var ibas;
 (function (ibas) {
     /** 配置项目-消息输出级别 */
     ibas.CONFIG_ITEM_MESSAGES_LEVEL = "msgLevel";
+    const PROPERTY_LEVEL = Symbol("level");
     /**
      * 运行消息记录
      */
@@ -668,7 +747,7 @@ var ibas;
          * 消息输出的级别
          */
         get level() {
-            if (ibas.strings.isEmpty(this._level)) {
+            if (ibas.strings.isEmpty(this[PROPERTY_LEVEL])) {
                 // 没有设置则每次都从配置取
                 let level = ibas.config.get(ibas.CONFIG_ITEM_MESSAGES_LEVEL, ibas.emMessageLevel.ERROR, ibas.emMessageLevel);
                 if (ibas.config.get(ibas.CONFIG_ITEM_DEBUG_MODE, false)) {
@@ -676,10 +755,10 @@ var ibas;
                 }
                 return level;
             }
-            return this._level;
+            return this[PROPERTY_LEVEL];
         }
-        set language(value) {
-            this._level = value;
+        set level(value) {
+            this[PROPERTY_LEVEL] = value;
         }
         /**
          * 记录消息
@@ -762,6 +841,8 @@ var ibas;
     ibas.CONFIG_ITEM_LANGUAGE_CODE = "language";
     /** 配置项目-资源分组名称 */
     ibas.CONFIG_ITEM_I18N_GROUP_NAMES = "i18nGroups";
+    const PROPERTY_LISTENER = Symbol("listener");
+    const PROPERTY_LANGUAGE = Symbol("language");
     /** 多语言 */
     class I18N {
         constructor() {
@@ -773,14 +854,14 @@ var ibas;
         }
         /** 语言 */
         get language() {
-            if (ibas.strings.isEmpty(this._language)) {
-                this._language = ibas.config.get(ibas.CONFIG_ITEM_LANGUAGE_CODE, this.DEFAULT_LANGUAGE_CODE);
+            if (ibas.strings.isEmpty(this[PROPERTY_LANGUAGE])) {
+                this[PROPERTY_LANGUAGE] = ibas.config.get(ibas.CONFIG_ITEM_LANGUAGE_CODE, this.DEFAULT_LANGUAGE_CODE);
             }
-            return this._language;
+            return this[PROPERTY_LANGUAGE];
         }
         set language(value) {
-            if (this._language !== value) {
-                this._language = value;
+            if (this[PROPERTY_LANGUAGE] !== value) {
+                this[PROPERTY_LANGUAGE] = value;
                 this.fireLanguageChanged();
             }
         }
@@ -792,20 +873,20 @@ var ibas;
             if (ibas.objects.isNull(listener)) {
                 return;
             }
-            if (ibas.objects.isNull(this._listeners)) {
-                this._listeners = new ibas.ArrayList();
+            if (ibas.objects.isNull(this[PROPERTY_LISTENER])) {
+                this[PROPERTY_LISTENER] = new ibas.ArrayList();
             }
-            this._listeners.add(listener);
+            this[PROPERTY_LISTENER].add(listener);
         }
         /** 触发语言改变事件 */
         fireLanguageChanged() {
-            if (!ibas.objects.isNull(this._language)) {
-                ibas.logger.log(ibas.emMessageLevel.INFO, "i18n: language change to [{0}].", this._language);
+            if (!ibas.objects.isNull(this[PROPERTY_LANGUAGE])) {
+                ibas.logger.log(ibas.emMessageLevel.INFO, "i18n: language change to [{0}].", this[PROPERTY_LANGUAGE]);
             }
             this.reload();
-            if (!ibas.objects.isNull(this._listeners)) {
-                for (let item of this._listeners) {
-                    item.onLanguageChanged(this._language);
+            if (!ibas.objects.isNull(this[PROPERTY_LISTENER])) {
+                for (let item of this[PROPERTY_LISTENER]) {
+                    item.onLanguageChanged(this[PROPERTY_LANGUAGE]);
                 }
             }
         }
@@ -815,18 +896,18 @@ var ibas;
          * @param args 替代内容
          */
         prop(key, ...args) {
+            if (ibas.strings.isEmpty(key)) {
+                return key;
+            }
             if (ibas.objects.isNull(this.resources)) {
                 // 没有初始化则加载
                 this.resources = new Map();
                 this.load(null);
             }
             let value = null;
-            if (!ibas.strings.isEmpty(key)) {
-                let group = this.groupName(key);
-                let map = this.resources.get(group);
-                if (!ibas.objects.isNull(map)) {
-                    value = map.get(key);
-                }
+            let map = this.resources.get(this.groupName(key));
+            if (!ibas.objects.isNull(map)) {
+                value = map.get(key);
             }
             if (!ibas.strings.isEmpty(value)) {
                 return ibas.strings.format(value, args);
@@ -935,7 +1016,7 @@ var ibas;
     class LanguageLoader {
         /** 加载 */
         load(caller) {
-            var JQryAjxSetting = {
+            let JQryAjxSetting = {
                 url: caller.address,
                 type: "GET",
                 contentType: "application/json; charset=utf-8",
@@ -1062,20 +1143,34 @@ var ibas;
             if (objects.isNull(type)) {
                 return undefined;
             }
+            if (typeof type !== "function") {
+                throw new Error("is not a class.");
+            }
             return type.name;
         }
         objects.getName = getName;
         /**
          * 获取实例类型
-         * @param 实例 类型
+         * @param 实例
          */
         function getType(instance) {
             if (objects.isNull(instance)) {
                 return undefined;
             }
+            if (typeof instance !== "object") {
+                throw new Error("is not a object.");
+            }
             return instance.constructor;
         }
         objects.getType = getType;
+        /**
+         * 获取实例的类型名称
+         * @param instance 实例
+         */
+        function getTypeName(instance) {
+            return getName(getType(instance));
+        }
+        objects.getTypeName = getTypeName;
         /**
          * 克隆对象
          * @param data 数据
@@ -1113,6 +1208,9 @@ var ibas;
                             nValue.push(nItem);
                         }
                     }
+                }
+                else if (value instanceof Date) {
+                    newData[name] = new Date(value.getTime());
                 }
                 else if (value instanceof Object) {
                     // 克隆新对象
@@ -1218,6 +1316,40 @@ var ibas;
             return count;
         }
         strings.count = count;
+        /**
+         * 删除全部空格
+         * @param content 待分析字符串
+         */
+        function trim(content) {
+            return replace(content, " ", "");
+        }
+        strings.trim = trim;
+        /**
+         * 删除指定字符
+         * @param content 待分析字符串
+         * @param args 删除的字符
+         */
+        function remove(content, ...args) {
+            if (content === undefined || content === null) {
+                throw new Error("content is invalid.");
+            }
+            if (args === undefined || args === null || args.length === 0) {
+                throw new Error("args is invalid.");
+            }
+            let removes = "";
+            for (let item of args) {
+                removes = removes + item;
+            }
+            let value = "";
+            for (let item of content) {
+                if (removes.indexOf(item) >= 0) {
+                    continue;
+                }
+                value = value + item;
+            }
+            return value;
+        }
+        strings.remove = remove;
         /**
          * 替换字符，全部
          * @param content 待分析字符
@@ -1423,7 +1555,7 @@ var ibas;
         function today() {
             let date = now();
             // 月份从0开始
-            return new Date(strings.format("{0}-{1}-{2}", date.getFullYear(), date.getMonth() + 1, date.getDate()));
+            return valueOf(strings.format("{0}-{1}-{2}", date.getFullYear(), date.getMonth() + 1, date.getDate()));
         }
         dates.today = today;
         /**
@@ -1469,26 +1601,26 @@ var ibas;
                     }
                     tmps = date.split(spChar);
                     if (!objects.isNull(tmps[0])) {
-                        year = Number.parseInt(tmps[0]);
+                        year = Number.parseInt(tmps[0], 0);
                     }
                     if (!objects.isNull(tmps[1])) {
-                        month = Number.parseInt(tmps[1]);
+                        month = Number.parseInt(tmps[1], 0);
                     }
                     if (!objects.isNull(tmps[2])) {
-                        day = Number.parseInt(tmps[2]);
+                        day = Number.parseInt(tmps[2], 0);
                     }
                 }
                 if (!objects.isNull(time)) {
                     let spChar = ":";
                     tmps = time.split(spChar);
                     if (!objects.isNull(tmps[0])) {
-                        hour = Number.parseInt(tmps[0]);
+                        hour = Number.parseInt(tmps[0], 0);
                     }
                     if (!objects.isNull(tmps[1])) {
-                        minute = Number.parseInt(tmps[1]);
+                        minute = Number.parseInt(tmps[1], 0);
                     }
                     if (!objects.isNull(tmps[2])) {
-                        second = Number.parseInt(tmps[2]);
+                        second = Number.parseInt(tmps[2], 0);
                     }
                 }
                 // 月份从0开始
@@ -1673,6 +1805,37 @@ var ibas;
             }
         }
         numbers.valueOf = valueOf;
+        /**
+         * 保留小数位
+         * @param value 数
+         * @param scale 小数位（默认配置值）
+         */
+        function round(value, scale) {
+            if (Math.round(value) !== value) {
+                if (isNaN(scale)) {
+                    scale = ibas.config.get(ibas.CONFIG_ITEM_DECIMAL_PLACES, 6);
+                }
+                if (Math.pow(0.1, scale) > value) {
+                    return 0;
+                }
+                let sign = Math.sign(value);
+                let arr = ("" + Math.abs(value)).split(".");
+                if (arr.length > 1) {
+                    if (arr[1].length > scale) {
+                        let integ = +arr[0] * Math.pow(10, scale);
+                        let dec = integ + (+arr[1].slice(0, scale) + Math.pow(10, scale));
+                        let proc = +arr[1].slice(scale, scale + 1);
+                        if (proc >= 5) {
+                            dec = dec + 1;
+                        }
+                        dec = sign * (dec - Math.pow(10, scale)) / Math.pow(10, scale);
+                        return dec;
+                    }
+                }
+            }
+            return value;
+        }
+        numbers.round = round;
     })(numbers = ibas.numbers || (ibas.numbers = {}));
     /**
      * 地址
@@ -1918,19 +2081,21 @@ var ibas;
     ibas.CONFIG_ITEM_RUNTIME_VERSION = "runtimeVersion";
     /** 配置项目-使用最小库 */
     ibas.CONFIG_ITEM_USE_MINIMUM_LIBRARY = "minLibrary";
+    const PROPERTY_ITEMS = Symbol("items");
+    const PROPERTY_LISTENER = Symbol("listener");
     /**
      * 配置
      */
     class Configuration {
         constructor() {
-            this.items = new Map();
+            this[PROPERTY_ITEMS] = new Map();
         }
         /**
          * 加载配置文件
          */
         load(address) {
             let that = this;
-            var JQryAjxSetting = {
+            let JQryAjxSetting = {
                 url: address,
                 type: "GET",
                 contentType: "application/json; charset=utf-8",
@@ -1962,7 +2127,7 @@ var ibas;
          * @param value 值
          */
         set(key, value) {
-            this.items.set(key, value);
+            this[PROPERTY_ITEMS].set(key, value);
             // 触发值改变事件
             this.fireConfigurationChanged(key, value);
         }
@@ -1985,9 +2150,9 @@ var ibas;
                 type = arguments[2];
             }
             let value;
-            if (this.items.has(key)) {
+            if (this[PROPERTY_ITEMS].has(key)) {
                 // 配置了
-                value = this.items.get(key);
+                value = this[PROPERTY_ITEMS].get(key);
                 if (defalut !== undefined) {
                     // 提供了默认值
                     if (typeof value !== typeof defalut) {
@@ -2017,8 +2182,8 @@ var ibas;
         /** 返回配置项目 */
         all() {
             let items = new ibas.ArrayList();
-            for (let item of this.items.keys()) {
-                items.add(new ibas.KeyValue(item, this.items.get(item)));
+            for (let item of this[PROPERTY_ITEMS].keys()) {
+                items.add(new ibas.KeyValue(item, this[PROPERTY_ITEMS].get(item)));
             }
             return items;
         }
@@ -2042,7 +2207,7 @@ var ibas;
         }
         /** 替换字符串中的配置项，配置项示例：${Company} */
         applyVariables(value) {
-            if (value !== null && value.indexOf("${") >= 0) {
+            if (value !== undefined && value !== null && value.indexOf("${") >= 0) {
                 if (this.variableMap == null) {
                     this.variableMap = new Map();
                 }
@@ -2051,7 +2216,7 @@ var ibas;
                 }
                 let reg = new RegExp("\\$\\{([\\!a-zA-Z].*?)\\}");
                 let results = reg.exec(value);
-                if (results !== null) {
+                if (results !== undefined && results !== null) {
                     for (let item of results) {
                         if (!item.startsWith("${") || !item.endsWith("}")) {
                             // 正则写不对，麻痹的不搞了
@@ -2077,17 +2242,17 @@ var ibas;
             if (listener === undefined || listener === null) {
                 return;
             }
-            if (this._listeners === undefined || this._listeners === null) {
-                this._listeners = new Array();
+            if (this[PROPERTY_LISTENER] === undefined || this[PROPERTY_LISTENER] === null) {
+                this[PROPERTY_LISTENER] = new Array();
             }
-            this._listeners.push(listener);
+            this[PROPERTY_LISTENER].push(listener);
         }
         /** 触发语言改变事件 */
         fireConfigurationChanged(name, value) {
-            if (this._listeners === undefined || this._listeners === null) {
+            if (this[PROPERTY_LISTENER] === undefined || this[PROPERTY_LISTENER] === null) {
                 return;
             }
-            for (let item of this._listeners) {
+            for (let item of this[PROPERTY_LISTENER]) {
                 item.onConfigurationChanged(name, value);
             }
         }
@@ -2108,6 +2273,7 @@ var ibas;
 /// <reference path="../common/I18N.ts" />
 var ibas;
 (function (ibas) {
+    const PROPERTY_LISTENER = Symbol("listener");
     /**
      * 可监听的对象
      */
@@ -2117,29 +2283,21 @@ var ibas;
          * @param listener 监听者
          */
         registerListener(listener) {
-            if (ibas.objects.isNull(this._listeners)) {
-                this._listeners = new ibas.ArrayList();
+            if (this[PROPERTY_LISTENER] === undefined) {
+                this[PROPERTY_LISTENER] = new ibas.ArrayList();
             }
-            // 存在指定id则更新
-            for (let index = 0; index < this._listeners.length; index++) {
-                let item = this._listeners[index];
-                if (item.id === listener.id && listener.id !== undefined) {
-                    this._listeners[index] = item;
-                    return;
-                }
-            }
-            this._listeners.push(listener);
+            this[PROPERTY_LISTENER].push(listener);
         }
         /** 移出监听实现 */
         removeListener() {
-            if (ibas.objects.isNull(this._listeners)) {
+            if (ibas.objects.isNull(this[PROPERTY_LISTENER])) {
                 return;
             }
             let listener = arguments[0];
             if (!ibas.objects.isNull(listener)) {
-                for (let item of this._listeners) {
+                for (let item of this[PROPERTY_LISTENER]) {
                     if (item === listener) {
-                        this._listeners.remove(item);
+                        this[PROPERTY_LISTENER].remove(item);
                     }
                 }
             }
@@ -2149,7 +2307,7 @@ var ibas;
          * @param property 属性
          */
         firePropertyChanged(property) {
-            if (ibas.objects.isNull(this._listeners)) {
+            if (ibas.objects.isNull(this[PROPERTY_LISTENER])) {
                 return;
             }
             if (!ibas.objects.isNull(property) && property.length > 0) {
@@ -2160,7 +2318,7 @@ var ibas;
                 // 属性首字母小写
                 property = property[0].toLowerCase() + property.substring(1);
             }
-            for (let item of this._listeners) {
+            for (let item of this[PROPERTY_LISTENER]) {
                 if (ibas.objects.isNull(item.caller)) {
                     item.propertyChanged(property);
                 }
@@ -2171,6 +2329,7 @@ var ibas;
         }
     }
     ibas.Bindable = Bindable;
+    const PROPERTY_ISLOADING = Symbol("isLoading");
     /**
      * 状态跟踪对象
      */
@@ -2183,59 +2342,12 @@ var ibas;
             this.isLoading = false;
             this.isSavable = true;
         }
-        /**
-         * 是否新建
-         */
-        get isNew() {
-            return this._new;
-        }
-        set isNew(value) {
-            this._new = value;
-        }
-        /**
-         * 是否修改
-         */
-        get isDirty() {
-            return this._dirty;
-        }
-        set isDirty(value) {
-            this._dirty = value;
-        }
-        /**
-         * 是否刪除
-         */
-        get isDeleted() {
-            return this._deleted;
-        }
-        set isDeleted(value) {
-            this._deleted = value;
-        }
-        /**
-         * 是否保存
-         */
-        get isSavable() {
-            return this._savable;
-        }
-        set isSavable(value) {
-            this._savable = value;
-        }
-        /**
-         * 是否加载
-         */
+        /** 是否加载 */
         get isLoading() {
-            return this._loading;
+            return this[PROPERTY_ISLOADING];
         }
         set isLoading(value) {
-            this._loading = value;
-        }
-        /**
-         * 是否有效
-         */
-        get isVaild() {
-            return this._vaild;
-        }
-        set isVaild(value) {
-            this._vaild = value;
+            this[PROPERTY_ISLOADING] = value;
         }
         /**
          * 标记为未修改
@@ -2484,16 +2596,27 @@ var ibas;
             // 可重载
         }
         /**
-         * 移出项目
+         * 移出项目（新数据，则移出集合；否则，标记删除）
          * @param item 项目
          */
         remove(item) {
             // 无效值不做处理
             if (item === null || item === undefined) {
-                return;
+                return null;
             }
-            super.remove(item);
-            this.afterRemove(item);
+            // 不是集合值
+            if (!this.contain(item)) {
+                return null;
+            }
+            if (!item.isNew) {
+                item.delete();
+                return false;
+            }
+            else {
+                super.remove(item);
+                this.afterRemove(item);
+                return true;
+            }
         }
         /**
          * 移出项目后
@@ -2613,7 +2736,6 @@ var ibas;
     ibas.BO_PROPERTY_NAME_LINESTATUS = "lineStatus";
     /** 需要被重置的属性名称 */
     const NEED_BE_RESET_PROPERTIES = [
-        "_listeners",
         "createDate", "createTime", "updateDate", "updateTime", "logInst", "createUserSign", "updateUserSign", "createActionId", "updateActionId",
         "referenced", "canceled", "deleted", "approvalStatus", "lineStatus", "status", "documentStatus"
     ];
@@ -2692,8 +2814,18 @@ var ibas;
             myRules.execute(this, property);
             super.firePropertyChanged(property);
         }
+        get userFields() {
+            if (ibas.objects.isNull(this.UserFields)) {
+                this.UserFields = new UserFields(this);
+                this.UserFields.registers();
+            }
+            return this.UserFields;
+        }
     }
     ibas.BusinessObject = BusinessObject;
+    const PROPERTY_LISTENER = Symbol("listener");
+    const PROPERTY_PARENT = Symbol("parent");
+    const PROPERTY_RULES = Symbol("rules");
     /**
      * 业务对象集合基类
      */
@@ -2704,7 +2836,7 @@ var ibas;
          */
         constructor(parent) {
             super();
-            this._listener = {
+            this[PROPERTY_LISTENER] = {
                 caller: this,
                 propertyChanged(name) {
                     // this指向业务对象集合基类,arguments[1]指向触发事件的BO
@@ -2730,19 +2862,16 @@ var ibas;
                 this.parent = parent;
             }
         }
-        get listener() {
-            return this._listener;
-        }
         get parent() {
-            return this._parent;
+            return this[PROPERTY_PARENT];
         }
         set parent(value) {
             if (ibas.objects.instanceOf(this.parent, ibas.Bindable)) {
-                this.parent.removeListener(this.listener);
+                this.parent.removeListener(this[PROPERTY_LISTENER]);
             }
-            this._parent = value;
+            this[PROPERTY_PARENT] = value;
             if (ibas.objects.instanceOf(this.parent, ibas.Bindable)) {
-                this.parent.registerListener(this.listener);
+                this.parent.registerListener(this[PROPERTY_LISTENER]);
             }
         }
         /** 父项属性改变时 */
@@ -2828,25 +2957,27 @@ var ibas;
                 }
                 let objectKey = this.parent.getProperty(ibas.BO_PROPERTY_NAME_OBJECTKEY);
                 if (objectKey !== undefined) {
-                    item.setProperty(ibas.BO_PROPERTY_NAME_DOCENTRY, objectKey);
+                    item.setProperty(ibas.BO_PROPERTY_NAME_OBJECTKEY, objectKey);
                 }
                 let code = this.parent.getProperty(ibas.BO_PROPERTY_NAME_CODE);
                 if (code !== undefined) {
-                    item.setProperty(ibas.BO_PROPERTY_NAME_DOCENTRY, code);
+                    item.setProperty(ibas.BO_PROPERTY_NAME_CODE, code);
                 }
             }
-            if (item.lineId !== undefined) {
-                // 存在行编号，为其自动编号
-                let max = 1;
+            // 存在行编号，为其自动编号
+            if (ibas.objects.instanceOf(item, BODocumentLine)
+                || ibas.objects.instanceOf(item, BOMasterDataLine)
+                || ibas.objects.instanceOf(item, BOSimpleLine)) {
+                let max = 0;
                 for (let tmp of this) {
                     let id = tmp.getProperty(ibas.BO_PROPERTY_NAME_LINEID);
-                    if (id !== undefined) {
+                    if (!isNaN(id)) {
                         if (id > max) {
                             max = id;
                         }
                     }
                 }
-                item.setProperty(ibas.BO_PROPERTY_NAME_LINEID, max);
+                item.setProperty(ibas.BO_PROPERTY_NAME_LINEID, max + 1);
             }
             // 处理单据状态
             if (ibas.objects.instanceOf(item, BODocumentLine)) {
@@ -2857,9 +2988,8 @@ var ibas;
                     item.setProperty(ibas.BO_PROPERTY_NAME_LINESTATUS, this.parent.getProperty(ibas.BO_PROPERTY_NAME_LINESTATUS));
                 }
             }
-            let that = this;
             if (ibas.objects.instanceOf(item, ibas.Bindable)) {
-                item.registerListener(this.listener);
+                item.registerListener(this[PROPERTY_LISTENER]);
             }
             this.runRules(null);
         }
@@ -2869,7 +2999,7 @@ var ibas;
          */
         afterRemove(item) {
             if (ibas.objects.instanceOf(item, ibas.Bindable)) {
-                item.removeListener(this.listener);
+                item.removeListener(this[PROPERTY_LISTENER]);
             }
             this.runRules(null);
         }
@@ -2880,13 +3010,13 @@ var ibas;
             if (this.parent.isLoading) {
                 return;
             }
-            if (ibas.objects.isNull(this.myRules)) {
-                this.myRules = ibas.businessRulesManager.getRules(ibas.objects.getType(this.parent));
+            if (ibas.objects.isNull(this[PROPERTY_RULES])) {
+                this[PROPERTY_RULES] = ibas.businessRulesManager.getRules(ibas.objects.getType(this.parent));
             }
-            if (ibas.objects.isNull(this.myRules)) {
+            if (ibas.objects.isNull(this[PROPERTY_RULES])) {
                 return;
             }
-            for (let rule of this.myRules) {
+            for (let rule of this[PROPERTY_RULES]) {
                 if (!(rule instanceof ibas.BusinessRuleCollection)) {
                     continue;
                 }
@@ -3146,6 +3276,220 @@ var ibas;
         }
     }
     ibas.BOSimpleLine = BOSimpleLine;
+    /** 用户字段 */
+    class UserField {
+        get name() {
+            return this.Name;
+        }
+        set name(value) {
+            this.Name = value;
+        }
+        get valueType() {
+            return this.ValueType;
+        }
+        set valueType(value) {
+            this.ValueType = value;
+        }
+        get value() {
+            return this.Value;
+        }
+        set value(value) {
+            this.Value = value;
+        }
+    }
+    ibas.UserField = UserField;
+    class UserFieldInfo {
+    }
+    class UserFieldManager {
+        constructor() {
+            this.userFieldInfos = new Map();
+        }
+        getInfos(type) {
+            let infos = this.userFieldInfos.get(type);
+            if (!ibas.objects.isNull(infos)) {
+                return infos;
+            }
+            return new ibas.ArrayList();
+        }
+        register(type, name, valueType) {
+            let infos = this.userFieldInfos.get(type);
+            if (ibas.objects.isNull(infos)) {
+                infos = new ibas.ArrayList();
+                this.userFieldInfos.set(type, infos);
+            }
+            let info = infos.firstOrDefault(c => c.name === name);
+            if (ibas.objects.isNull(info)) {
+                info = new UserFieldInfo();
+                info.name = name;
+                info.valueType = valueType;
+                infos.add(info);
+            }
+            return info;
+        }
+        create(info) {
+            let userField = null;
+            if (info.valueType === ibas.emDbFieldType.DATE) {
+                userField = new UserField();
+            }
+            else if (info.valueType === ibas.emDbFieldType.NUMERIC) {
+                userField = new UserField();
+            }
+            else if (info.valueType === ibas.emDbFieldType.DECIMAL) {
+                userField = new UserField();
+            }
+            else {
+                userField = new UserField();
+            }
+            return userField;
+        }
+    }
+    const userFieldManager = new UserFieldManager();
+    /** 用户字段集合 */
+    class UserFields extends Array {
+        constructor(bo) {
+            super();
+            this[PROPERTY_PARENT] = bo;
+        }
+        /** 注册全部用户字段 */
+        registers() {
+            for (let item of userFieldManager.getInfos(ibas.objects.getType(this[PROPERTY_PARENT]))) {
+                this.register(item.name, item.valueType);
+            }
+        }
+        /** 注册用户字段 */
+        register(name, valueType) {
+            for (let item of this) {
+                if (item.name === name) {
+                    return item;
+                }
+            }
+            let info = userFieldManager.register(ibas.objects.getType(this[PROPERTY_PARENT]), name, valueType);
+            let userField = userFieldManager.create(info);
+            userField.name = name;
+            userField.valueType = valueType;
+            this.push(userField);
+            return userField;
+        }
+        /** 大小 */
+        size() {
+            return this.length;
+        }
+        /** 变量集合 */
+        forEach() {
+            return this;
+        }
+        get() {
+            let index = arguments[0];
+            let userField = null;
+            if (typeof index === "number") {
+                userField = this[index];
+            }
+            else {
+                for (let item of this) {
+                    if (item.name === index) {
+                        userField = item;
+                        break;
+                    }
+                }
+            }
+            if (ibas.objects.isNull(userField)) {
+                throw new Error(ibas.i18n.prop("sys_not_found_user_field", index));
+            }
+            return userField;
+        }
+    }
+    ibas.UserFields = UserFields;
+    /** 业务对象工具 */
+    let businessobjects;
+    (function (businessobjects) {
+        /**
+         * 业务对象名称
+         * @param boCode 对象编码
+         */
+        function name(boCode) {
+            try {
+                return ibas.objects.getName(ibas.boFactory.classOf(boCode));
+            }
+            catch (error) {
+                return boCode;
+            }
+        }
+        businessobjects.name = name;
+        /** 获取资源 */
+        function resource(boName, field = undefined) {
+            if (ibas.objects.isNull(field)) {
+                // 对象
+                let key = ibas.strings.format("bo_{0}", boName).toLowerCase();
+                let value = ibas.i18n.prop(key);
+                if (value.startsWith("[") && value.endsWith("]")) {
+                    return boName;
+                }
+                else {
+                    return value;
+                }
+            }
+            else {
+                // 属性
+                let key = ibas.strings.format("bo_{0}_{1}", boName, field).toLowerCase();
+                let value = ibas.i18n.prop(key);
+                if (value.startsWith("[") && value.endsWith("]")) {
+                    return field;
+                }
+                else {
+                    return value;
+                }
+            }
+        }
+        /**
+         * 描述业务对象
+         * 如：{[CC_MM_ITEM].[Code = A00001]&[DocEntry = 3]}
+         * @param boKeys 对象标记
+         */
+        function describe(boKeys) {
+            if (ibas.strings.isEmpty(boKeys)) {
+                return boKeys;
+            }
+            if (boKeys.startsWith("{[") && boKeys.endsWith("]}")) {
+                boKeys = boKeys.substring(1, boKeys.length - 1);
+                boKeys = ibas.strings.trim(boKeys);
+                boKeys = ibas.strings.remove(boKeys, "[", "]");
+                let values = boKeys.split(".");
+                if (values.length === 2) {
+                    let vFields = values[1].split("&");
+                    if (vFields.length > 0) {
+                        let boName = name(values[0]);
+                        let builder = new ibas.StringBuilder();
+                        builder.append(resource(boName));
+                        builder.append(": ");
+                        for (let field of vFields) {
+                            field = field.trim();
+                            if (ibas.strings.isEmpty(field)) {
+                                continue;
+                            }
+                            if (builder.length > 2) {
+                                builder.append(", ");
+                            }
+                            let tValues = field.split("=");
+                            if (tValues.length !== 2) {
+                                builder.append(field);
+                            }
+                            else {
+                                builder.append(resource(boName, tValues[0]));
+                                builder.append("-");
+                                builder.append(tValues[1]);
+                            }
+                        }
+                        return builder.toString();
+                    }
+                }
+            }
+            else {
+                return resource(name(boKeys));
+            }
+            return boKeys;
+        }
+        businessobjects.describe = describe;
+    })(businessobjects = ibas.businessobjects || (ibas.businessobjects = {}));
 })(ibas || (ibas = {}));
 /**
  * @license
@@ -3538,6 +3882,7 @@ var ibas;
          */
         toString() {
             let builder = new ibas.StringBuilder();
+            builder.map(undefined, "");
             builder.append("{");
             builder.append(this.alias);
             builder.append(" ");
@@ -3561,6 +3906,8 @@ var ibas;
                     return ">";
                 case ibas.emConditionOperation.IS_NULL:
                     return "is null";
+                case ibas.emConditionOperation.LESS_EQUAL:
+                    return "<=";
                 case ibas.emConditionOperation.LESS_THAN:
                     return "<";
                 case ibas.emConditionOperation.NOT_CONTAIN:
@@ -3837,23 +4184,10 @@ var ibas;
      * 操作信息
      */
     class OperationInformation {
-        get name() {
-            return this._name;
-        }
-        set name(value) {
-            this._name = value;
-        }
-        get content() {
-            return this._content;
-        }
-        set content(value) {
-            this._content = value;
-        }
-        get tag() {
-            return this._tag;
-        }
-        set tag(value) {
-            this._tag = value;
+        constructor() {
+            this.name = arguments[0];
+            this.content = arguments[1];
+            this.tag = arguments[2];
         }
     }
     ibas.OperationInformation = OperationInformation;
@@ -3862,41 +4196,15 @@ var ibas;
      */
     class OperationMessage {
         constructor() {
-            this.resultCode = 0;
-            this.message = "success";
-        }
-        get signID() {
-            return this._signID;
-        }
-        set signID(value) {
-            this._signID = value;
-        }
-        get resultCode() {
-            return this._resultCode;
-        }
-        set resultCode(value) {
-            this._resultCode = value;
-        }
-        get message() {
-            return this._message;
-        }
-        set message(value) {
-            this._message = value;
-        }
-        get time() {
-            if (ibas.objects.isNull(this._time)) {
-                this._time = new Date();
+            if (arguments[0] instanceof Error) {
+                this.resultCode = -1;
+                this.message = arguments[0].message;
             }
-            return this._time;
-        }
-        set time(value) {
-            this._time = value;
-        }
-        get userSign() {
-            return this._userSign;
-        }
-        set userSign(value) {
-            this._userSign = value;
+            else {
+                this.resultCode = 0;
+                this.message = "";
+            }
+            this.time = new Date();
         }
     }
     ibas.OperationMessage = OperationMessage;
@@ -3904,14 +4212,10 @@ var ibas;
      * 操作消息结果
      */
     class OperationResult extends OperationMessage {
-        get resultObjects() {
-            if (ibas.objects.isNull(this._resultObjects)) {
-                this._resultObjects = new ibas.ArrayList();
-            }
-            return this._resultObjects;
-        }
-        set resultObjects(value) {
-            this._resultObjects = value;
+        constructor() {
+            super(arguments[0]);
+            this.resultObjects = new ibas.ArrayList();
+            this.informations = new ibas.ArrayList();
         }
         addResults() {
             if (ibas.objects.isNull(arguments[0])) {
@@ -3925,15 +4229,6 @@ var ibas;
             else {
                 this.resultObjects.add(arguments[0]);
             }
-        }
-        get informations() {
-            if (ibas.objects.isNull(this._informations)) {
-                this._informations = new ibas.ArrayList();
-            }
-            return this._informations;
-        }
-        set informations(value) {
-            this._informations = value;
         }
     }
     ibas.OperationResult = OperationResult;
@@ -3978,11 +4273,15 @@ var ibas;
  */
 var ibas;
 (function (ibas) {
+    /** 断言错误 */
+    class AssertionError extends Error {
+    }
+    ibas.AssertionError = AssertionError;
     /**
      * 单元测试，断言相关
      */
-    let assert;
-    (function (assert) {
+    let asserts;
+    (function (asserts) {
         /**
          * 断言相等
          * @param pars 参数
@@ -4008,10 +4307,10 @@ var ibas;
                 }
             }
             if (unexpected !== actual) {
-                throw new Error(message);
+                throw new AssertionError(message);
             }
         }
-        assert.equals = equals;
+        asserts.equals = equals;
         /**
          * 是否为相等的日期
          * @param unexpected 判断的
@@ -4020,7 +4319,123 @@ var ibas;
         function equalsDate(unexpected, actual) {
             return unexpected.getTime() === actual.getTime();
         }
-    })(assert = ibas.assert || (ibas.assert = {}));
+    })(asserts = ibas.asserts || (ibas.asserts = {}));
+})(ibas || (ibas = {}));
+/**
+ * @license
+ * Copyright Color-Coding Studio. All Rights Reserved.
+ *
+ * Use of this source code is governed by an Apache License, Version 2.0
+ * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
+ */
+var ibas;
+(function (ibas) {
+    /** 单元测试 */
+    class TestCase {
+        /**
+         * 断言相等的实现
+         */
+        assertEquals() {
+            ibas.asserts.equals.apply(this, arguments);
+        }
+        /**
+         * 运行测试
+         * @param result 运行结果
+         */
+        run(result = undefined) {
+            if (ibas.objects.isNull(result)) {
+                result = new TestResult();
+            }
+            for (let item of Object.getOwnPropertyNames(ibas.objects.getType(this).prototype)) {
+                if (ibas.strings.isEmpty(item)) {
+                    continue;
+                }
+                if (!item.startsWith("test")) {
+                    continue;
+                }
+                if (!(this[item] instanceof Function)) {
+                    continue;
+                }
+                try {
+                    ibas.logger.log(ibas.emMessageLevel.WARN, "{0}: begin to run [{1}].", ibas.objects.getTypeName(this), item);
+                    this[item]();
+                }
+                catch (error) {
+                    if (error instanceof ibas.AssertionError) {
+                        // 断言错误
+                        ibas.logger.log(ibas.emMessageLevel.ERROR, "{0}: assertion faild, {1}.", ibas.objects.getTypeName(this), error.message);
+                        result.addFailure(this, error);
+                    }
+                    else {
+                        // 执行错误
+                        ibas.logger.log(ibas.emMessageLevel.ERROR, "{0}: an error has occured, {1}", ibas.objects.getTypeName(this), error.message);
+                        result.addError(this, error);
+                    }
+                }
+            }
+        }
+    }
+    ibas.TestCase = TestCase;
+    const PROPERTY_ERRORS = Symbol("errors");
+    const PROPERTY_FAILURES = Symbol("failures");
+    /** 测试结果 */
+    class TestResult {
+        /** 添加运行错误 */
+        addError(test, error) {
+            if (!(this[PROPERTY_ERRORS] instanceof Array)) {
+                this[PROPERTY_ERRORS] = new ibas.ArrayList();
+            }
+            this[PROPERTY_ERRORS].add(new TestFailure(test, error));
+        }
+        /** 添加断言错误 */
+        addFailure(test, error) {
+            if (!(this[PROPERTY_FAILURES] instanceof Array)) {
+                this[PROPERTY_FAILURES] = new ibas.ArrayList();
+            }
+            this[PROPERTY_FAILURES].add(new TestFailure(test, error));
+        }
+        /** 运行错误 */
+        errors() {
+            return this[PROPERTY_ERRORS];
+        }
+        /** 断言错误 */
+        failures() {
+            return this[PROPERTY_FAILURES];
+        }
+    }
+    ibas.TestResult = TestResult;
+    /** 测试失败 */
+    class TestFailure {
+        constructor(test, error) {
+            this.failedTest = test;
+            this.thrownError = error;
+        }
+    }
+    ibas.TestFailure = TestFailure;
+    let test;
+    (function (test) {
+        /**
+         * 返回程序包的测试用例
+         * @param lib 程序包
+         * @param namespace 分析的命名空间
+         */
+        function cases(lib) {
+            let cases = new ibas.ArrayList();
+            for (let item of Object.getOwnPropertyNames(lib)) {
+                let Type = lib[item];
+                if (!ibas.objects.isAssignableFrom(Type, TestCase)) {
+                    continue;
+                }
+                let tCase = new Type;
+                if (!(tCase instanceof TestCase)) {
+                    continue;
+                }
+                cases.add(tCase);
+            }
+            return cases;
+        }
+        test.cases = cases;
+    })(test = ibas.test || (ibas.test = {}));
 })(ibas || (ibas = {}));
 /**
  * @license
@@ -4035,24 +4450,6 @@ var ibas;
 (function (ibas) {
     /** 远程仓库 */
     class RemoteRepository {
-        get address() {
-            return this._address;
-        }
-        set address(value) {
-            this._address = value;
-        }
-        get token() {
-            return this._token;
-        }
-        set token(value) {
-            this._token = value;
-        } /** 数据转换者 */
-        get converter() {
-            return this._converter;
-        }
-        set converter(value) {
-            this._converter = value;
-        }
         /**
          * 返回方法地址
          * @param method 方法名称
@@ -4102,6 +4499,8 @@ var ibas;
 /// <reference path="./DataDeclaration.ts" />
 var ibas;
 (function (ibas) {
+    const PROPERTY_BOCONVERTER = Symbol("boConverter");
+    const MSG_SIGN_EXCEPTION = "Exception: ";
     /** 数据转换，ibas4java */
     class DataConverter4j {
         /**
@@ -4276,6 +4675,17 @@ var ibas;
                 throw new Error(ibas.i18n.prop("sys_unable_to_convert_data", ibas.objects.getName(ibas.objects.getType(data))));
             }
         }
+        /** 修正消息 */
+        fixMessage(message) {
+            if (ibas.strings.isEmpty(message)) {
+                return message;
+            }
+            let index = message.lastIndexOf(MSG_SIGN_EXCEPTION);
+            if (index > 0) {
+                return message.substring(index + MSG_SIGN_EXCEPTION.length);
+            }
+            return message;
+        }
         /**
          * 解析业务对象数据
          * @param data 目标类型
@@ -4295,6 +4705,9 @@ var ibas;
                 newData.userSign = remote.UserSign;
                 newData.resultCode = remote.ResultCode;
                 newData.message = remote.Message;
+                if (newData.resultCode !== 0) {
+                    newData.message = this.fixMessage(newData.message);
+                }
                 if (remote.ResultObjects instanceof Array) {
                     for (let item of remote.ResultObjects) {
                         newData.resultObjects.add(this.parsing(item, null));
@@ -4324,6 +4737,9 @@ var ibas;
                 newData.time = ibas.dates.valueOf(remote.Time);
                 newData.resultCode = remote.ResultCode;
                 newData.message = remote.Message;
+                if (newData.resultCode !== 0) {
+                    newData.message = this.fixMessage(newData.message);
+                }
                 return newData;
             }
             else if (data.type === ibas.ChildCriteria.name) {
@@ -4477,10 +4893,10 @@ var ibas;
             }
         }
         get boConverter() {
-            if (ibas.objects.isNull(this._boConverter)) {
-                this._boConverter = this.createConverter();
+            if (ibas.objects.isNull(this[PROPERTY_BOCONVERTER])) {
+                this[PROPERTY_BOCONVERTER] = this.createConverter();
             }
-            return this._boConverter;
+            return this[PROPERTY_BOCONVERTER];
         }
     }
     ibas.DataConverter4j = DataConverter4j;
@@ -4514,6 +4930,7 @@ var ibas;
     ibas.PropertyMaps = PropertyMaps;
     /** 远程对象，类型属性名称 */
     ibas.REMOTE_OBJECT_TYPE_PROPERTY_NAME = "type";
+    const PROPERTY_PROPERTYMAPS = Symbol("propertyMaps");
     /** 业务对象的数据转换 */
     class BOConverter {
         /** 获取对象类型 */
@@ -4525,16 +4942,10 @@ var ibas;
             data[ibas.REMOTE_OBJECT_TYPE_PROPERTY_NAME] = type;
         }
         get propertyMaps() {
-            if (ibas.objects.isNull(this._propertyMaps)) {
-                this._propertyMaps = new PropertyMaps;
-                this._propertyMaps.add(new PropertyMap("_new", "isNew"));
-                this._propertyMaps.add(new PropertyMap("_dirty", "isDirty"));
-                this._propertyMaps.add(new PropertyMap("_deleted", "isDeleted"));
-                this._propertyMaps.add(new PropertyMap("_savable", "isSavable"));
-                this._propertyMaps.add(new PropertyMap("_loading", undefined)); // 忽略属性
-                this._propertyMaps.add(new PropertyMap("_listeners", undefined)); // 忽略属性
+            if (ibas.objects.isNull(this[PROPERTY_PROPERTYMAPS])) {
+                this[PROPERTY_PROPERTYMAPS] = new PropertyMaps;
             }
-            return this._propertyMaps;
+            return this[PROPERTY_PROPERTYMAPS];
         }
         /**
          * 解析远程数据
@@ -4600,6 +5011,27 @@ var ibas;
                         for (let item of sValue) {
                             // 创建子项实例并添加到集合
                             this.parsingProperties(item, target[tName].create());
+                        }
+                        // 已处理，继续下一个
+                        continue;
+                    }
+                    else if (tName === "UserFields" && target instanceof ibas.BusinessObject) {
+                        // 用户字段
+                        for (let item of sValue) {
+                            let remote = item;
+                            let userField = target.userFields.register(remote.Name, ibas.enums.valueOf(ibas.emDbFieldType, remote.ValueType));
+                            if (userField.valueType === ibas.emDbFieldType.DATE) {
+                                userField.value = ibas.dates.valueOf(remote.Value);
+                            }
+                            else if (userField.valueType === ibas.emDbFieldType.NUMERIC) {
+                                userField.value = parseInt(remote.Value, 0);
+                            }
+                            else if (userField.valueType === ibas.emDbFieldType.DECIMAL) {
+                                userField.value = parseFloat(remote.Value);
+                            }
+                            else {
+                                userField.value = remote.Value;
+                            }
                         }
                         // 已处理，继续下一个
                         continue;
@@ -4741,7 +5173,10 @@ var ibas;
          * @returns 转换的值
          */
         convertData(boName, property, value) {
-            if (typeof value === "number") {
+            if (boName === ibas.UserField.name && property === "ValueType") {
+                return ibas.enums.toString(ibas.emDbFieldType, value);
+            }
+            else if (typeof value === "number") {
                 // 枚举类型
                 if (property === "DocumentStatus" || property === "LineStatus") {
                     return ibas.enums.toString(ibas.emDocumentStatus, value);
@@ -4769,6 +5204,59 @@ var ibas;
         }
     }
     ibas.BOConverter = BOConverter;
+    /**
+     * 查询方法
+     */
+    let criterias;
+    (function (criterias) {
+        class DataConverter extends DataConverter4j {
+            createConverter() {
+                throw new Error("Method not implemented.");
+            }
+        }
+        /**
+         * 解析查询
+         * @param content 内容
+         */
+        function valueOf(content) {
+            if (ibas.strings.isEmpty(content)) {
+                return null;
+            }
+            if (content.startsWith("{[") && content.endsWith("]}")) {
+                content = content.substring(1, content.length - 1);
+                content = ibas.strings.remove(content, " ", "[", "]");
+                let values = content.split(".");
+                if (values.length === 2) {
+                    let criteria = new ibas.Criteria();
+                    let vFields = values[1].split("&");
+                    if (vFields.length > 0) {
+                        criteria.businessObject = values[0];
+                        for (let field of vFields) {
+                            field = field.trim();
+                            if (ibas.strings.isEmpty(field)) {
+                                continue;
+                            }
+                            let tValues = field.split("=");
+                            if (tValues.length !== 2) {
+                                return null;
+                            }
+                            else {
+                                let condition = criteria.conditions.create();
+                                condition.alias = tValues[0];
+                                condition.value = tValues[1];
+                            }
+                        }
+                        return criteria;
+                    }
+                }
+            }
+            else if (content.startsWith("{") && content.endsWith("}")) {
+                return new DataConverter().parsing(JSON.parse(content), "");
+            }
+            return null;
+        }
+        criterias.valueOf = valueOf;
+    })(criterias = ibas.criterias || (ibas.criterias = {}));
 })(ibas || (ibas = {}));
 /**
  * @license
@@ -5667,24 +6155,13 @@ var ibas;
                         tmpOpRslt.addResults(opRslt);
                         opRslt = tmpOpRslt;
                     }
-                    /*
-                    logger.log(emMessageLevel.DEBUG,
-                        "repository: call method [{2}] sucessful, {0} - {1}.", opRslt.resultCode, opRslt.message, ajaxSetting.url);
-                    */
                     caller.onCompleted.call(ibas.objects.isNull(caller.caller) ? caller : caller.caller, opRslt);
                 }
                 else {
-                    /*
-                    logger.log(emMessageLevel.DEBUG,
-                        "repository: call method [{1}] sucessful, {0}.", textStatus, ajaxSetting.url);
-                    */
                     caller.onCompleted.call(ibas.objects.isNull(caller.caller) ? caller : caller.caller, data);
                 }
             };
             // 调用远程方法
-            /*
-            logger.log(emMessageLevel.DEBUG, "repository: calling method [{0}].", ajaxSetting.url);
-            */
             jQuery.ajax(ajaxSetting);
         }
     }
@@ -5956,18 +6433,21 @@ var ibas;
                             if (ibas.objects.isNull(opRslt)) {
                                 throw new Error(ibas.i18n.prop("sys_data_converter_parsing_faild"));
                             }
-                            /*
-                            logger.log(emMessageLevel.DEBUG,
-                                "repository: call method [{2}] sucessful, {0} - {1}.", opRslt.resultCode, opRslt.message, this.responseURL);
-                            */
                             caller.onCompleted.call(ibas.objects.isNull(caller.caller) ? caller : caller.caller, opRslt);
                         }
                         else {
-                            /*
-                            logger.log(emMessageLevel.DEBUG,
-                                "repository: call method [{1}] sucessful, {0}.", this.statusText, this.responseURL);
-                            */
                             caller.onCompleted.call(ibas.objects.isNull(caller.caller) ? caller : caller.caller, this.response);
+                        }
+                        let headers = request.getAllResponseHeaders();
+                        if (!ibas.strings.isEmpty(headers)) {
+                            headers = headers.replace("\r\n", "\n");
+                            for (let item of headers.split("\n")) {
+                                let values = item.split(":");
+                                if (values.length < 2) {
+                                    continue;
+                                }
+                                opRslt.informations.add(new ibas.OperationInformation(values[0].trim(), values[1].trim()));
+                            }
                         }
                     }
                     else {
@@ -6013,7 +6493,10 @@ var ibas;
                     caller.onCompleted.call(ibas.objects.isNull(caller.caller) ? caller : caller.caller, opRslt);
                 }
             };
-            let data = JSON.stringify(this.converter.convert(caller.criteria, method));
+            let data = caller.criteria;
+            if (!(data instanceof FormData)) {
+                data = JSON.stringify(this.converter.convert(data, method));
+            }
             this.callRemoteMethod(method, data, methodCaller);
         }
         createHttpRequest(method, data) {
@@ -6021,11 +6504,181 @@ var ibas;
             let xhr = new XMLHttpRequest();
             xhr.open("POST", methodUrl, true);
             xhr.responseType = "blob";
-            xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            if (!(data instanceof FormData)) {
+                xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            }
             return xhr;
         }
     }
     ibas.FileRepositoryDownloadAjax = FileRepositoryDownloadAjax;
+})(ibas || (ibas = {}));
+/**
+ * @license
+ * Copyright Color-Coding Studio. All Rights Reserved.
+ *
+ * Use of this source code is governed by an Apache License, Version 2.0
+ * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
+ */
+/// <reference path="../common/Data.ts" />
+/// <reference path="../common/I18N.ts" />
+/// <reference path="../common/Configuration.ts" />
+/// <reference path="./BORepositoryCore.ts" />
+var ibas;
+(function (ibas) {
+    /** 本地仓库 */
+    class LocalRepository {
+    }
+    ibas.LocalRepository = LocalRepository;
+    /** 本地仓库，IndexedDB */
+    class LocalRepositoryIndexedDB extends LocalRepository {
+        /** 打开数据库 */
+        openDB(opener) {
+            if (ibas.strings.isEmpty(this.name)) {
+                opener.onError(new Error(ibas.i18n.prop("sys_invalid_parameter", "name")));
+                return;
+            }
+            if (!ibas.objects.isNull(this.db)) {
+                opener.onSuccess(this.db);
+                return;
+            }
+            let dbFactory = window.indexedDB;
+            if (ibas.objects.isNull(dbFactory)) {
+                opener.onError(new Error(ibas.i18n.prop("sys_invalid_parameter", "indexedDB")));
+                return;
+            }
+            let that = this;
+            let dbRequest = dbFactory.open(this.name, 1);
+            dbRequest.onerror = function (e) {
+                opener.onError(e.currentTarget.error);
+            };
+            dbRequest.onsuccess = function (e) {
+                that.db = e.target.result;
+                opener.onSuccess(that.db);
+            };
+            dbRequest.onupgradeneeded = function (e) {
+                that.db = e.target.result;
+                opener.onSuccess(that.db);
+                dbRequest.onsuccess = null;
+            };
+        }
+        /** 关闭数据库 */
+        closeDB() {
+            if (ibas.objects.isNull(this.db)) {
+                return;
+            }
+            this.db.close();
+            this.db = null;
+        }
+    }
+    ibas.LocalRepositoryIndexedDB = LocalRepositoryIndexedDB;
+    /** 本地业务对象仓库 */
+    class BORepositoryIndexedDB extends LocalRepositoryIndexedDB {
+        /**
+         * 查询数据
+         * @param boName 业务对象名称
+         * @param caller 查询监听者
+         */
+        fetch(boName, caller) {
+            let that = this;
+            this.openDB({
+                onError(error) {
+                    caller.onCompleted(new ibas.OperationResult(error));
+                },
+                onSuccess(db) {
+                    let objectStore = db.transaction(boName, "readonly").objectStore(boName);
+                    let dbRequest = objectStore.openCursor();
+                    dbRequest.onerror = function (e) {
+                        caller.onCompleted(new ibas.OperationResult(e.currentTarget.error));
+                    };
+                    let opRslt = new ibas.OperationResult();
+                    dbRequest.onsuccess = function (e) {
+                        let cursor = e.target.result;
+                        if (cursor) {
+                            let data = cursor.value;
+                            if (!ibas.objects.isNull(that.converter)) {
+                                data = that.converter.parsing(data, boName);
+                            }
+                            if (that.filter(caller.criteria, data)) {
+                                opRslt.resultObjects.add(data);
+                            }
+                            cursor.continue();
+                        }
+                        else {
+                            caller.onCompleted(opRslt);
+                        }
+                    };
+                }
+            });
+        }
+        /**
+         * 过滤数据
+         * @param criteria 查询
+         * @param data 数据
+         * @return true,符合条件；false，不符合条件
+         */
+        filter(criteria, data) {
+            if (ibas.objects.isNull(criteria)) {
+                return true;
+            }
+            if (criteria.conditions.length === 0) {
+                return true;
+            }
+            let judgmentLink = new ibas.BOJudgmentLinkCondition();
+            judgmentLink.parsingConditions(criteria.conditions);
+            return judgmentLink.judge(data);
+        }
+        /**
+         * 保存数据
+         * @param boName 业务对象名称
+         * @param caller 保存监听者
+         */
+        save(boName, caller) {
+            if (ibas.strings.isEmpty(boName)) {
+                boName = "buckets";
+            }
+            let storeParameters = {
+                autoIncrement: true,
+            };
+            let that = this;
+            this.openDB({
+                onError(error) {
+                    caller.onCompleted(new ibas.OperationResult(error));
+                },
+                onSuccess(db) {
+                    let objectStore = null;
+                    if (db.objectStoreNames.contains(boName)) {
+                        objectStore = db.transaction(boName, "readwrite").objectStore(boName);
+                    }
+                    else {
+                        if (ibas.objects.isNull(storeParameters)) {
+                            objectStore = db.createObjectStore(boName);
+                        }
+                        else {
+                            objectStore = db.createObjectStore(boName, storeParameters);
+                        }
+                    }
+                    if (ibas.objects.isNull(objectStore)) {
+                        caller.onCompleted(new ibas.OperationResult(new Error(ibas.i18n.prop("sys_invalid_parameter", "objectStore"))));
+                        return;
+                    }
+                    let data = caller.beSaved;
+                    if (!ibas.objects.isNull(that.converter)) {
+                        data = that.converter.convert(data, boName);
+                    }
+                    let dbRequest = objectStore.put(data);
+                    dbRequest.onerror = function (e) {
+                        caller.onCompleted(new ibas.OperationResult(e.currentTarget.error));
+                    };
+                    dbRequest.onsuccess = function (e) {
+                        let opRslt = new ibas.OperationResult();
+                        opRslt.resultObjects.add(caller.beSaved);
+                        caller.onCompleted(opRslt);
+                    };
+                }
+            });
+        }
+    }
+    ibas.BORepositoryIndexedDB = BORepositoryIndexedDB;
 })(ibas || (ibas = {}));
 /**
  * @license
@@ -6088,27 +6741,6 @@ var ibas;
                 this.token = ibas.config.get(ibas.CONFIG_ITEM_USER_TOKEN);
             }
         }
-        /** 远程地址 */
-        get address() {
-            return this._address;
-        }
-        set address(value) {
-            this._address = value;
-        }
-        /** 访问口令 */
-        get token() {
-            return this._token;
-        }
-        set token(value) {
-            this._token = value;
-        }
-        /** 是否离线 */
-        get offline() {
-            return this._offline;
-        }
-        set offline(value) {
-            this._offline = value;
-        }
         /** 创建只读业务仓库 */
         createReadonlyRepository() {
             if (this.offline) {
@@ -6169,13 +6801,21 @@ var ibas;
 /// <reference path="../common/Configuration.ts" />
 var ibas;
 (function (ibas) {
+    const PROPERTY_STARTTIME = Symbol("startTime");
+    const PROPERTY_ENDTIME = Symbol("endTime");
+    const PROPERTY_LOGGER = Symbol("logger");
+    const PROPERTY_CONFIG = Symbol("config");
     /**
      * 动作
      */
     class Action {
-        /** 构造实现 */
-        constructor() {
-            this.logger = arguments[0];
+        /** 开始时间 */
+        get startTime() {
+            return this[PROPERTY_STARTTIME];
+        }
+        /** 结束时间 */
+        get endTime() {
+            return this[PROPERTY_ENDTIME];
         }
         /**
          * 添加配置
@@ -6183,35 +6823,44 @@ var ibas;
          * @param value 值
          */
         addConfig(key, value) {
-            if (ibas.objects.isNull(this.config)) {
-                this.config = new ibas.Configuration();
+            if (ibas.objects.isNull(this[PROPERTY_CONFIG])) {
+                this[PROPERTY_CONFIG] = new ibas.Configuration();
             }
-            this.config.set(key, value);
+            this[PROPERTY_CONFIG].set(key, value);
             this.log(ibas.emMessageLevel.INFO, "new config item [{1} - {2}].", ibas.objects.isNull(this.name) ? this.id : this.name, key, value);
         }
         getConfig() {
-            if (ibas.objects.isNull(this.config)) {
-                this.config = new ibas.Configuration();
+            if (ibas.objects.isNull(this[PROPERTY_CONFIG])) {
+                this[PROPERTY_CONFIG] = new ibas.Configuration();
             }
-            return this.config.get.apply(this.config, arguments);
+            return this[PROPERTY_CONFIG].get.apply(this[PROPERTY_CONFIG], arguments);
         }
         /** 设置日志记录者 */
         setLogger(logger) {
-            this.logger = logger;
+            this[PROPERTY_LOGGER] = logger;
         }
         log() {
-            if (ibas.objects.isNull(this.logger)) {
+            if (ibas.objects.isNull(this[PROPERTY_LOGGER])) {
                 // 未提供则使用默认
-                this.logger = new ibas.Logger();
+                this.setLogger(new ibas.Logger());
             }
             let pars = [];
-            let heard = ibas.strings.format("[{0}]: ", ibas.objects.isNull(this.name) ? ibas.objects.getName(ibas.objects.getType(this)) : this.name);
+            let heard = ibas.strings.format("{0}: ", ibas.objects.isNull(this.name) ? ibas.objects.getTypeName(this) : this.name);
             if (typeof arguments[0] === "number") {
                 // 类型
                 pars.push(arguments[0]);
                 // 内容
                 pars.push(heard + arguments[1]);
                 for (let index = 2; index < arguments.length; index++) {
+                    pars.push(arguments[index]);
+                }
+            }
+            else if (arguments[0] instanceof Error) {
+                // 类型
+                pars.push(ibas.emMessageLevel.ERROR);
+                // 内容
+                pars.push(heard + arguments[0].message);
+                for (let index = 1; index < arguments.length; index++) {
                     pars.push(arguments[index]);
                 }
             }
@@ -6224,20 +6873,14 @@ var ibas;
                     pars.push(arguments[index]);
                 }
             }
-            return this.logger.log.apply(this.logger, pars);
-        }
-        get startTime() {
-            return this._startTime;
-        }
-        get endTime() {
-            return this._endTime;
+            return this[PROPERTY_LOGGER].log.apply(this[PROPERTY_LOGGER], pars);
         }
         /** 是否运行中 */
         isRunning() {
-            if (ibas.objects.isNull(this._startTime)) {
+            if (ibas.objects.isNull(this[PROPERTY_STARTTIME])) {
                 return false;
             }
-            if (!ibas.objects.isNull(this._endTime)) {
+            if (!ibas.objects.isNull(this[PROPERTY_ENDTIME])) {
                 return false;
             }
             return true;
@@ -6248,8 +6891,8 @@ var ibas;
                 throw new Error("action is running.");
             }
             let done = false;
-            this._startTime = new Date();
-            this._endTime = undefined;
+            this[PROPERTY_STARTTIME] = new Date();
+            this[PROPERTY_ENDTIME] = undefined;
             this.log(ibas.emMessageLevel.INFO, "action is starting at [{0}].", this.startTime.toLocaleString());
             try {
                 done = this.run();
@@ -6268,8 +6911,11 @@ var ibas;
             if (!this.isRunning()) {
                 throw new Error("action is not running.");
             }
-            this._endTime = new Date();
+            this[PROPERTY_ENDTIME] = new Date();
             this.log(ibas.emMessageLevel.INFO, "action was completed at [{0}], during [{1}]s.", this.endTime.toLocaleString(), ibas.dates.difference(ibas.dates.emDifferenceType.SECOND, this.endTime, this.startTime));
+            if (this.onDone instanceof Function) {
+                this.onDone();
+            }
         }
         /** 停止（最好重载） */
         stop() {
@@ -6630,7 +7276,7 @@ var ibas;
                 let value = ibas.numbers.valueOf(context.inputValues.get(property));
                 sum += value;
             }
-            context.outputValues.set(this.result, sum);
+            context.outputValues.set(this.result, ibas.numbers.round(sum));
         }
     }
     ibas.BusinessRuleSummation = BusinessRuleSummation;
@@ -6665,7 +7311,7 @@ var ibas;
                 let value = ibas.numbers.valueOf(context.inputValues.get(property));
                 total -= value;
             }
-            context.outputValues.set(this.result, total);
+            context.outputValues.set(this.result, ibas.numbers.round(total));
         }
     }
     ibas.BusinessRuleSubtraction = BusinessRuleSubtraction;
@@ -6692,7 +7338,7 @@ var ibas;
             let multiplicand = ibas.numbers.valueOf(context.inputValues.get(this.multiplicand));
             let multiplier = ibas.numbers.valueOf(context.inputValues.get(this.multiplier));
             let result = multiplicand * multiplier;
-            context.outputValues.set(this.result, result);
+            context.outputValues.set(this.result, ibas.numbers.round(result));
         }
     }
     ibas.BusinessRuleMultiplication = BusinessRuleMultiplication;
@@ -6719,7 +7365,7 @@ var ibas;
             let dividend = ibas.numbers.valueOf(context.inputValues.get(this.dividend));
             let divisor = ibas.numbers.valueOf(context.inputValues.get(this.divisor));
             let result = dividend / divisor;
-            context.outputValues.set(this.result, result);
+            context.outputValues.set(this.result, ibas.numbers.round(result));
         }
     }
     ibas.BusinessRuleDivision = BusinessRuleDivision;
@@ -6749,18 +7395,18 @@ var ibas;
             let augend = ibas.numbers.valueOf(context.inputValues.get(this.augend));
             let addend = ibas.numbers.valueOf(context.inputValues.get(this.addend));
             if (augend === 0) {
-                context.outputValues.set(this.result, addend);
+                context.outputValues.set(this.result, ibas.numbers.round(addend));
                 return;
             }
             if (addend !== 0 && result === 0) {
                 // 结果 = 加数 + 被加数
                 result = addend + augend;
-                context.outputValues.set(this.result, result);
+                context.outputValues.set(this.result, ibas.numbers.round(result));
             }
             else if (addend === 0 && result !== 0) {
                 // 加数 = 结果 - 被加数
                 addend = result - augend;
-                context.outputValues.set(this.addend, addend);
+                context.outputValues.set(this.addend, ibas.numbers.round(addend));
             }
         }
     }
@@ -6791,18 +7437,18 @@ var ibas;
             let multiplicand = ibas.numbers.valueOf(context.inputValues.get(this.multiplicand));
             let multiplier = ibas.numbers.valueOf(context.inputValues.get(this.multiplier));
             if (multiplicand === 0) {
-                context.outputValues.set(this.result, multiplicand);
+                context.outputValues.set(this.result, ibas.numbers.round(multiplicand));
                 return;
             }
             if (multiplier !== 0 && result === 0) {
                 // 结果 = 乘数 * 被乘数
                 result = multiplier * multiplicand;
-                context.outputValues.set(this.result, result);
+                context.outputValues.set(this.result, ibas.numbers.round(result));
             }
-            else if (multiplier === 0 && result !== 0) {
-                // 加数 = 结果 / 被加数
+            else if (multiplicand !== 0 && result !== 0) {
+                // 乘数 = 结果 / 被乘数
                 multiplier = result / multiplicand;
-                context.outputValues.set(this.multiplier, multiplier);
+                context.outputValues.set(this.multiplier, ibas.numbers.round(multiplier));
             }
         }
     }
@@ -6834,7 +7480,7 @@ var ibas;
                     result += ibas.numbers.valueOf(item);
                 }
             }
-            context.outputValues.set(this.result, result);
+            context.outputValues.set(this.result, ibas.numbers.round(result));
         }
     }
     ibas.BusinessRuleSumElements = BusinessRuleSumElements;
@@ -6962,6 +7608,14 @@ var ibas;
         /** 多选 */
         emChooseType[emChooseType["MULTIPLE"] = 1] = "MULTIPLE";
     })(emChooseType = ibas.emChooseType || (ibas.emChooseType = {}));
+    /** 视图模式 */
+    let emViewMode;
+    (function (emViewMode) {
+        /** 一般 */
+        emViewMode[emViewMode["COMMON"] = 0] = "COMMON";
+        /** 查看 */
+        emViewMode[emViewMode["VIEW"] = 1] = "VIEW";
+    })(emViewMode = ibas.emViewMode || (ibas.emViewMode = {}));
     /** 手指触控移动方向 */
     let emTouchMoveDirection;
     (function (emTouchMoveDirection) {
@@ -7032,18 +7686,19 @@ var ibas;
 /// <reference path="../../bobas/common/Utils.ts" />
 var ibas;
 (function (ibas) {
+    const PROPERTY_LISTENER = Symbol("listener");
     class BrowserEventManager {
         listeners() {
-            if (ibas.objects.isNull(this._listeners)) {
-                this._listeners = new ibas.ArrayList();
+            if (ibas.objects.isNull(this[PROPERTY_LISTENER])) {
+                this[PROPERTY_LISTENER] = new ibas.ArrayList();
             }
             let type = arguments[0];
             if (ibas.objects.isNull(type)) {
-                return this._listeners;
+                return this[PROPERTY_LISTENER];
             }
             else {
                 let result = new ibas.ArrayList();
-                result.add(this._listeners.where((listener) => {
+                result.add(this[PROPERTY_LISTENER].where((listener) => {
                     if (listener.eventType === type) {
                         return true;
                     }
@@ -7053,12 +7708,12 @@ var ibas;
         }
         /** 获取 */
         listener(id) {
-            let IListener = this.listeners().firstOrDefault((item) => {
+            let listener = this.listeners().firstOrDefault((item) => {
                 if (item.id === id) {
                     return true;
                 }
             });
-            return IListener;
+            return listener;
         }
         /** 注册 */
         registerListener(listener) {
@@ -7194,6 +7849,8 @@ var ibas;
         emBrowserEventType[emBrowserEventType["UNLOAD"] = 88] = "UNLOAD";
         emBrowserEventType[emBrowserEventType["VOLUMECHANGE"] = 89] = "VOLUMECHANGE";
         emBrowserEventType[emBrowserEventType["WAITING"] = 90] = "WAITING";
+        /** 自定义事件-扫码,CustomEvent */
+        emBrowserEventType[emBrowserEventType["SCAN"] = 91] = "SCAN";
     })(emBrowserEventType = ibas.emBrowserEventType || (ibas.emBrowserEventType = {}));
     /** 浏览器事件管理员实例 */
     ibas.browserEventManager = new BrowserEventManager();
@@ -7218,15 +7875,34 @@ var ibas;
             if (ibas.strings.isEmpty(fileName)) {
                 fileName = ibas.strings.format("file_{0}", ibas.dates.now().getTime());
             }
-            let url = window.URL.createObjectURL(data);
-            let save_link = document.createElementNS("http://www.w3.org/1999/xhtml", "a");
-            save_link.href = url;
-            save_link.download = fileName;
-            let event = document.createEvent("MouseEvents");
-            event.initMouseEvent("click", true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-            save_link.dispatchEvent(event);
-            window.URL.revokeObjectURL(url);
-            ibas.logger.log(ibas.emMessageLevel.DEBUG, "files: save file as [{0}].", fileName);
+            if (window.Blob) {
+                // ie 10+ (native saveAs FileAPI)
+                if (window.navigator.msSaveOrOpenBlob) {
+                    window.navigator.msSaveOrOpenBlob(data, fileName);
+                    ibas.logger.log(ibas.emMessageLevel.DEBUG, "files: save file as [{0}].", fileName);
+                    return;
+                }
+                else {
+                    let oURL = window.URL || window.webkitURL;
+                    let sBlobUrl = oURL.createObjectURL(data);
+                    let oLink = window.document.createElement("a");
+                    if ("download" in oLink) {
+                        // use an anchor link with download attribute for download
+                        let $body = jQuery(document.body);
+                        let $link = jQuery(oLink).attr({
+                            download: fileName,
+                            href: sBlobUrl,
+                            style: "display:none"
+                        });
+                        $body.append($link);
+                        $link.get(0).click();
+                        $link.remove();
+                        ibas.logger.log(ibas.emMessageLevel.DEBUG, "files: save file as [{0}].", fileName);
+                        return;
+                    }
+                }
+            }
+            throw new Error(ibas.i18n.prop("sys_unsupported_operation"));
         }
         files.save = save;
     })(files = ibas.files || (ibas.files = {}));
@@ -7246,27 +7922,37 @@ var ibas;
     class Element {
     }
     ibas.Element = Element;
+    const PROPERTY_ELEMENTS = Symbol("elements");
     /** 模块 */
     class Module extends Element {
         constructor() {
             super();
         }
-        /** 功能集合 */
-        functions() {
-            if (ibas.objects.isNull(this._functions)) {
-                this._functions = new ibas.ArrayList();
+        /** 元素 */
+        elements() {
+            if (ibas.objects.isNull(this[PROPERTY_ELEMENTS])) {
+                this[PROPERTY_ELEMENTS] = new ibas.ArrayList();
             }
-            return this._functions;
+            let elements = new ibas.ArrayList();
+            for (let item of this[PROPERTY_ELEMENTS]) {
+                if (this.isSkip instanceof Function) {
+                    if (this.isSkip(item)) {
+                        continue;
+                    }
+                }
+                elements.add(item);
+            }
+            return elements;
         }
         /** 注册功能 */
         register(item) {
             if (ibas.objects.isNull(item)) {
                 return;
             }
-            if (ibas.objects.isNull(this._functions)) {
-                this._functions = new ibas.ArrayList();
+            if (ibas.objects.isNull(this[PROPERTY_ELEMENTS])) {
+                this[PROPERTY_ELEMENTS] = new ibas.ArrayList();
             }
-            this._functions.add(item);
+            this[PROPERTY_ELEMENTS].add(item);
         }
     }
     ibas.Module = Module;
@@ -7279,6 +7965,7 @@ var ibas;
         }
     }
     ibas.AbstractFunction = AbstractFunction;
+    const PROPERTY_VIEW = Symbol("view");
     /** 配置项目-平台 */
     ibas.CONFIG_ITEM_PLANTFORM = "plantform";
     /** 功能-应用 */
@@ -7292,18 +7979,18 @@ var ibas;
         }
         /** 应用的视图 */
         get view() {
-            if (ibas.objects.isNull(this._view)) {
+            if (ibas.objects.isNull(this[PROPERTY_VIEW])) {
                 if (ibas.objects.isNull(this.navigation)) {
                     throw new Error(ibas.i18n.prop("sys_invalid_view_navigation", this.name));
                 }
-                this._view = this.navigation.create(this);
-                if (this._view instanceof View) {
-                    this._view.application = this;
+                this[PROPERTY_VIEW] = this.navigation.create(this);
+                if (this[PROPERTY_VIEW] instanceof View) {
+                    this[PROPERTY_VIEW][PROPERTY_APPLICATION] = this;
                     if (!ibas.strings.isEmpty(this.description)) {
-                        this._view.title = this.description;
+                        this[PROPERTY_VIEW].title = this.description;
                     }
                     else {
-                        this._view.title = this.name;
+                        this[PROPERTY_VIEW].title = this.name;
                     }
                     this.registerView();
                 }
@@ -7311,15 +7998,15 @@ var ibas;
                     throw new Error(ibas.i18n.prop("sys_invalid_view", this.name));
                 }
             }
-            return this._view;
+            return this[PROPERTY_VIEW];
         }
         /** 视图是否已显示 */
         isViewShowed() {
-            if (ibas.objects.isNull(this._view)) {
+            if (ibas.objects.isNull(this[PROPERTY_VIEW])) {
                 return false;
             }
-            if (this._view instanceof View) {
-                if (this._view.isDisplayed) {
+            if (this[PROPERTY_VIEW] instanceof View) {
+                if (this[PROPERTY_VIEW].isDisplayed) {
                     return true;
                 }
                 else {
@@ -7330,16 +8017,21 @@ var ibas;
         /** 清理资源（视图关闭并取消引用） */
         destroy() {
             this.close();
-            if (!ibas.objects.isNull(this._view)) {
-                this._view = null;
+            if (!ibas.objects.isNull(this[PROPERTY_VIEW])) {
+                this[PROPERTY_VIEW] = null;
             }
         }
     }
     ibas.AbstractApplication = AbstractApplication;
     /** 地址hash值标记-视图 */
     ibas.URL_HASH_SIGN_VIEWS = "#/views/";
+    const PROPERTY_APPLICATION = Symbol("application");
     /** 视图 */
     class View {
+        /** 应用 */
+        get application() {
+            return this[PROPERTY_APPLICATION];
+        }
         /**
          * 触发视图事件
          * @param event 触发的事件
@@ -7401,19 +8093,6 @@ var ibas;
         get plantform() {
             return ibas.config.get(ibas.CONFIG_ITEM_PLANTFORM, ibas.emPlantform.COMBINATION, ibas.emPlantform);
         }
-        /** 功能集合，仅激活的 */
-        functions() {
-            let list = new Array();
-            for (let item of super.functions()) {
-                if (ibas.objects.instanceOf(item, ModuleFunction)) {
-                    if (!item.activated) {
-                        continue;
-                    }
-                }
-                list.push(item);
-            }
-            return list;
-        }
         /** 默认功能 */
         default() {
             let list = this.functions();
@@ -7421,6 +8100,63 @@ var ibas;
                 return list[0];
             }
             return null;
+        }
+        /** 功能集合，仅激活的 */
+        functions() {
+            let list = new Array();
+            for (let item of super.elements()) {
+                if (!ibas.objects.instanceOf(item, ModuleFunction)) {
+                    continue;
+                }
+                list.push(item);
+            }
+            return list;
+        }
+        /** 应用集合 */
+        applications() {
+            let list = new Array();
+            for (let item of super.elements()) {
+                if (!ibas.objects.instanceOf(item, ibas.Application)) {
+                    continue;
+                }
+                list.push(item);
+            }
+            return list;
+        }
+        /** 服务集合 */
+        services() {
+            let list = new Array();
+            for (let item of super.elements()) {
+                if (!ibas.objects.instanceOf(item, ibas.ServiceMapping)) {
+                    continue;
+                }
+                list.push(item);
+            }
+            return list;
+        }
+        /** 注册实现，需要区分注册内容 */
+        register(item) {
+            if (item instanceof ModuleFunction) {
+                // 注册模块功能
+                if (ibas.strings.isEmpty(item.id)) {
+                    item.id = ibas.uuids.random();
+                }
+                item.navigation = this.navigation();
+            }
+            else if (item instanceof ibas.Application) {
+                // 注册应用
+                if (ibas.strings.isEmpty(item.id)) {
+                    item.id = ibas.uuids.random();
+                }
+                item.navigation = this.navigation();
+                item.viewShower = this.viewShower;
+            }
+            else if (item instanceof ibas.ServiceMapping) {
+                // 注册服务
+                item.navigation = this.navigation();
+                item.viewShower = this.viewShower;
+            }
+            super.register(item);
         }
         /** 添加初始化完成监听 */
         addListener(listener) {
@@ -7453,46 +8189,6 @@ var ibas;
             // 修正模块图标
             if (ibas.objects.isNull(this.icon) || this.icon.length === 0) {
                 this.icon = ibas.config.get(ibas.CONFIG_ITEM_DEFALUT_MODULE_ICON);
-            }
-        }
-        /** 已实例应用集合 */
-        applications() {
-            if (ibas.objects.isNull(this._applications)) {
-                this._applications = new ibas.ArrayList();
-            }
-            return this._applications;
-        }
-        /** 注册实现，需要区分注册内容 */
-        register() {
-            let item = arguments[0];
-            if (item instanceof ModuleFunction) {
-                // 注册模块功能
-                if (ibas.objects.isNull(item.id)) {
-                    item.id = ibas.uuids.random();
-                }
-                item.navigation = this.navigation();
-                item.module = this;
-                item.activated = true;
-                super.register(item);
-            }
-            else if (item instanceof AbstractFunction) {
-                // 注册功能
-                super.register(item);
-            }
-            else if (item instanceof AbstractApplication) {
-                // 注册应用
-                if (ibas.objects.isNull(this._applications)) {
-                    this._applications = new ibas.ArrayList();
-                }
-                item.navigation = this.navigation();
-                item.viewShower = this.viewShower;
-                this._applications.add(item);
-            }
-            else if (item instanceof ibas.ServiceMapping) {
-                // 注册服务
-                item.navigation = this.navigation();
-                item.viewShower = this.viewShower;
-                ibas.servicesManager.register(item);
             }
         }
         /** 设置仓库地址，返回值是否执行默认设置 */
@@ -7599,7 +8295,7 @@ var ibas;
                     if (this.view instanceof ibas.View) {
                         if (this.view.isDisplayed) {
                             // 已显示的视图不在显示
-                            this.proceeding(ibas.emMessageType.WARNING, ibas.i18n.prop("sys_application_view_was_displayed", this.name));
+                            this.proceeding(ibas.emMessageType.WARNING, ibas.i18n.prop("sys_application_view_was_displayed", ibas.strings.isEmpty(this.description) ? this.name : this.description));
                             return;
                         }
                     }
@@ -7624,9 +8320,6 @@ var ibas;
         /** 视图显示后 */
         afterViewShow() {
             if (this.view instanceof ibas.View) {
-                this.view.isDisplayed = true;
-                // 延迟100毫秒激活显示函数
-                setTimeout(this.view.onDisplayed(), 100);
                 ibas.logger.log(ibas.emMessageLevel.DEBUG, "app: [{0} - {1}]'s view displayed.", this.id, this.name);
                 this.viewShowed();
             }
@@ -7643,10 +8336,6 @@ var ibas;
             if (!ibas.objects.isNull(this.view)) {
                 if (!ibas.objects.isNull(this.viewShower)) {
                     this.viewShower.destroy(this.view);
-                    if (this.view instanceof ibas.View) {
-                        this.view.isDisplayed = false;
-                        this.view.onClosed();
-                    }
                 }
             }
         }
@@ -7672,7 +8361,13 @@ var ibas;
             let type = ibas.emMessageType.INFORMATION;
             let msg;
             if (arguments.length === 1) {
-                msg = arguments[0];
+                if (arguments[0] instanceof Error) {
+                    msg = arguments[0].message;
+                    type = ibas.emMessageType.ERROR;
+                }
+                else {
+                    msg = arguments[0];
+                }
             }
             else if (arguments.length === 2) {
                 type = arguments[0];
@@ -7816,27 +8511,6 @@ var ibas;
     }
     ibas.ServiceWithResultApplication = ServiceWithResultApplication;
     /**
-     * 业务对象应用
-     */
-    class BOApplication extends Application {
-        /** 注册视图，重载需要回掉此方法 */
-        registerView() {
-            super.registerView();
-        }
-    }
-    ibas.BOApplication = BOApplication;
-    /**
-     * 业务对象查询应用
-     */
-    class BOQueryApplication extends BOApplication {
-        /** 注册视图，重载需要回掉此方法 */
-        registerView() {
-            super.registerView();
-            this.view.fetchDataEvent = this.fetchData;
-        }
-    }
-    ibas.BOQueryApplication = BOQueryApplication;
-    /**
      * 常驻应用
      */
     class ResidentApplication extends BarApplication {
@@ -7949,13 +8623,13 @@ var ibas;
         }
     }
     ibas.BOServiceProxy = BOServiceProxy;
-    /** 业务对象列表服务代理 */
-    class BOListServiceProxy extends DataServiceProxy {
+    /** 数据表格服务代理 */
+    class DataTableServiceProxy extends DataServiceProxy {
         constructor() {
             super(arguments[0]);
         }
     }
-    ibas.BOListServiceProxy = BOListServiceProxy;
+    ibas.DataTableServiceProxy = DataTableServiceProxy;
     /** 业务对象连接服务代理 */
     class BOLinkServiceProxy extends ServiceProxy {
         constructor() {
@@ -8089,7 +8763,7 @@ var ibas;
                 throw new Error(ibas.i18n.prop("sys_invalid_parameter", "caller.proxy"));
             }
             for (let service of this.getServices(caller)) {
-                if (!ibas.objects.isNull(caller.category)
+                if (!ibas.strings.isEmpty(caller.category)
                     && !(caller.category === service.category
                         || ibas.config.applyVariables(caller.category) === ibas.config.applyVariables(service.category))) {
                     // 类别不符
@@ -8120,7 +8794,9 @@ var ibas;
             if (!this.runService(caller)) {
                 // 服务未运行
                 ibas.logger.log(ibas.emMessageLevel.WARN, "services: not found [{0}]'s choose service.", caller.boCode);
+                return false;
             }
+            return true;
         }
         /** 运行连接服务 */
         runLinkService(caller) {
@@ -8142,8 +8818,10 @@ var ibas;
             // 调用服务
             if (!this.runService(caller)) {
                 // 服务未运行
-                ibas.logger.log(ibas.emMessageLevel.WARN, "services: not found [{0}]'s choose service.", caller.boCode);
+                ibas.logger.log(ibas.emMessageLevel.WARN, "services: not found [{0}]'s link service.", caller.boCode);
+                return false;
             }
+            return true;
         }
         /**
          * 运行应用服务
@@ -8165,7 +8843,9 @@ var ibas;
             if (!this.runService(caller)) {
                 // 服务未运行
                 ibas.logger.log(ibas.emMessageLevel.WARN, "services: not found [{0}]'s application service.", ibas.objects.getName(ibas.objects.getType(caller.proxy)));
+                return false;
             }
+            return true;
         }
         /**
          * 显示可用服务
@@ -8219,9 +8899,33 @@ var ibas;
 var ibas;
 (function (ibas) {
     /**
+     * 业务对象应用
+     */
+    class BOApplication extends ibas.Application {
+        /** 注册视图，重载需要回掉此方法 */
+        registerView() {
+            super.registerView();
+        }
+        /** 视图显示后 */
+        viewShowed() {
+        }
+    }
+    ibas.BOApplication = BOApplication;
+    /**
+     * 业务对象查询应用
+     */
+    class BOQueryApplication extends BOApplication {
+        /** 注册视图，重载需要回掉此方法 */
+        registerView() {
+            super.registerView();
+            this.view.fetchDataEvent = this.fetchData;
+        }
+    }
+    ibas.BOQueryApplication = BOQueryApplication;
+    /**
      * 业务对象选择应用
      */
-    class BOChooseApplication extends ibas.BOQueryApplication {
+    class BOChooseApplication extends BOQueryApplication {
         /** 注册视图，重载需要回掉此方法 */
         registerView() {
             super.registerView();
@@ -8244,13 +8948,17 @@ var ibas;
                 let caller = arguments[0];
                 // 选择服务代理或其子类
                 if (ibas.objects.instanceOf(caller.proxy, ibas.BOChooseServiceProxy)) {
-                    // 设置标题
-                    if (!ibas.strings.isEmpty(caller.title)) {
-                        this.description = caller.title;
-                    }
                     // 设置返回方法
                     if (typeof caller.onCompleted === "function") {
                         this.onCompleted = caller.onCompleted;
+                    }
+                    // 设置标题
+                    if (!ibas.strings.isEmpty(caller.title)) {
+                        this.view.title = caller.title;
+                    }
+                    // 设置视图模式
+                    if (!ibas.objects.isNull(caller.viewMode)) {
+                        this.view.mode = caller.viewMode;
                     }
                     // 设置选择类型
                     let chooseType = caller.chooseType;
@@ -8351,7 +9059,7 @@ var ibas;
     /**
      * 业务对象列表应用
      */
-    class BOListApplication extends ibas.BOApplication {
+    class BOListApplication extends BOApplication {
         /** 注册视图，重载需要回掉此方法 */
         registerView() {
             super.registerView();
@@ -8399,30 +9107,49 @@ var ibas;
     /**
      * 业务对象编辑应用
      */
-    class BOEditApplication extends ibas.BOApplication {
+    class BOEditApplication extends BOApplication {
         /** 注册视图，重载需要回掉此方法 */
         registerView() {
             super.registerView();
             this.view.saveDataEvent = this.saveData;
         }
-        /** 关闭视图 */
-        close() {
-            if (ibas.objects.instanceOf(this.editData, ibas.Bindable)) {
-                // 移出所有事件监听，防止资源不被回收
-                this.editData.removeListener(true);
+        /** 视图显示后 */
+        viewShowed() {
+            // 修改标题
+            if (!ibas.objects.isNull(this.editData)) {
+                let data = this.editData;
+                if (!ibas.objects.isNull(data.approvalStatus)
+                    && data.approvalStatus !== ibas.emApprovalStatus.UNAFFECTED) {
+                    this.view.title = ibas.strings.format("{0} · {1}", this.view.title, ibas.enums.describe(ibas.emApprovalStatus, data.approvalStatus));
+                }
+                else {
+                    this.view.title = this.description;
+                }
             }
-            this.editData = undefined;
-            super.close();
         }
     }
     ibas.BOEditApplication = BOEditApplication;
     /**
      * 业务对象查看应用
      */
-    class BOViewApplication extends ibas.BOApplication {
+    class BOViewApplication extends BOApplication {
         /** 注册视图，重载需要回掉此方法 */
         registerView() {
             super.registerView();
+        }
+        /** 视图显示后 */
+        viewShowed() {
+            // 修改标题
+            if (!ibas.objects.isNull(this.viewData)) {
+                let data = this.viewData;
+                if (!ibas.objects.isNull(data.approvalStatus)
+                    && data.approvalStatus !== ibas.emApprovalStatus.UNAFFECTED) {
+                    this.view.title = ibas.strings.format("{0} · {1}", this.view.title, ibas.enums.describe(ibas.emApprovalStatus, data.approvalStatus));
+                }
+                else {
+                    this.view.title = this.description;
+                }
+            }
         }
     }
     ibas.BOViewApplication = BOViewApplication;
@@ -8432,10 +9159,10 @@ var ibas;
     class BOViewService extends BOViewApplication {
         /** 运行 */
         run() {
-            if (arguments.length === 1) {
-                // 判断是否为选择契约
-                let caller = arguments[0];
-                if (ibas.objects.instanceOf(caller.proxy, ibas.BOLinkServiceProxy)) {
+            if (!ibas.objects.isNull(arguments[0])) {
+                if (ibas.objects.instanceOf(arguments[0].proxy, ibas.BOLinkServiceProxy)) {
+                    // 判断是否为选择契约
+                    let caller = arguments[0];
                     // 链接服务代理或其子类
                     if (caller.boCode === this.boCode
                         || ibas.config.applyVariables(caller.boCode) === ibas.config.applyVariables(this.boCode)) {
@@ -8449,6 +9176,7 @@ var ibas;
                         }
                         else if (caller.linkValue instanceof Array) {
                             criteria = new ibas.Criteria();
+                            criteria.result = 1;
                             for (let item of caller.linkValue) {
                                 if (ibas.objects.instanceOf(item, ibas.Condition)) {
                                     // 过滤无效查询条件
@@ -8460,11 +9188,56 @@ var ibas;
                             }
                         }
                         this.fetchData(criteria);
+                        // 退出后续
+                        return;
+                    }
+                }
+                else if (typeof arguments[0].category === "string") {
+                    // 判断是否为hash参数
+                    let value = decodeURI(arguments[0].category);
+                    if (!ibas.strings.isEmpty(value)) {
+                        let criteria = new ibas.Criteria();
+                        criteria.result = 1;
+                        for (let item of value.split("&")) {
+                            let tmps = item.split("=");
+                            if (tmps.length >= 2) {
+                                let condition = criteria.conditions.create();
+                                condition.alias = tmps[0];
+                                condition.value = tmps[1];
+                            }
+                        }
+                        this.fetchData(criteria);
+                        // 退出后续
+                        return;
                     }
                 }
             }
             // 保持参数原样传递
             super.run.apply(this, arguments);
+        }
+        /** 视图显示后 */
+        viewShowed() {
+            super.viewShowed();
+            // 更新当前hash地址
+            if (this.viewData instanceof ibas.BusinessObject) {
+                let criteria = this.viewData.criteria();
+                if (!ibas.objects.isNull(criteria) && criteria.conditions.length > 0) {
+                    let bulider = new ibas.StringBuilder();
+                    bulider.append(ibas.URL_HASH_SIGN_SERVICES);
+                    bulider.append(this.id);
+                    bulider.append("/");
+                    for (let item of criteria.conditions) {
+                        if (bulider.length > 3) {
+                            bulider.append("&");
+                        }
+                        bulider.append(item.alias);
+                        bulider.append("=");
+                        bulider.append(item.value);
+                    }
+                    // 发送登录连接请求后,清除地址栏中的查询参数信息,并且不保留浏览器历史记录
+                    window.history.replaceState(null, null, encodeURI(bulider.toString()));
+                }
+            }
         }
     }
     ibas.BOViewService = BOViewService;
@@ -8499,6 +9272,8 @@ var ibas;
         }
     }
     ibas.BODialogView = BODialogView;
+    /** 配置项目-自动查询 */
+    ibas.CONFIG_ITEM_AUTO_QUERY = "autoQuery";
     /** 业务对象查询视图 */
     class BOQueryView extends BOView {
         /** 查询标识 */
@@ -8508,6 +9283,10 @@ var ibas;
         /** 使用的查询 */
         get usingCriteria() {
             return this.lastCriteria;
+        }
+        /** 自动查询 */
+        get autoQuery() {
+            return ibas.config.get(ibas.CONFIG_ITEM_AUTO_QUERY, false);
         }
         /** 查询数据 */
         query(criteria) {
@@ -8525,6 +9304,10 @@ var ibas;
         /** 使用的查询 */
         get usingCriteria() {
             return this.lastCriteria;
+        }
+        /** 自动查询 */
+        get autoQuery() {
+            return false;
         }
         /** 查询数据 */
         query(criteria) {
@@ -8608,10 +9391,6 @@ var ibas;
                 if (ibas.objects.instanceOf(arguments[0], ibas.KeyValue)) {
                     variable = arguments[0];
                 }
-                else if (arguments[0].modules instanceof Function) {
-                    // 系统观察者
-                    this.watcher = arguments[0];
-                }
             }
             else if (arguments.length === 2) {
                 variable = new ibas.KeyValue();
@@ -8651,16 +9430,6 @@ var ibas;
             }
             return value.value;
         }
-        getWatcher() {
-            if (ibas.objects.isNull(this.watcher)) {
-                return {
-                    modules() {
-                        return new ibas.ArrayList();
-                    }
-                };
-            }
-            return this.watcher;
-        }
     }
     ibas.VariablesManager = VariablesManager;
     /** 变量管理员实例 */
@@ -8685,12 +9454,14 @@ var ibas;
 /// <reference path="./bobas/common/Utils.ts" />
 /// <reference path="./bobas/common/Waiter.ts" />
 /// <reference path="./bobas/debug/Assert.ts" />
+/// <reference path="./bobas/debug/TestCase.ts" />
 /// <reference path="./bobas/bo/BusinessObjectCore.ts" />
 /// <reference path="./bobas/bo/BusinessObject.ts" />
 /// <reference path="./bobas/repository/DataDeclaration.ts" />
 /// <reference path="./bobas/repository/DataConverter.ts" />
 /// <reference path="./bobas/repository/BORepositoryCore.ts" />
 /// <reference path="./bobas/repository/BORepositoryAjax.ts" />
+/// <reference path="./bobas/repository/BORepositoryLocal.ts" />
 /// <reference path="./bobas/repository/BORepository.ts" />
 /// <reference path="./bobas/expression/Expression.ts" />
 /// <reference path="./bobas/expression/JudgmentExpression.ts" />
