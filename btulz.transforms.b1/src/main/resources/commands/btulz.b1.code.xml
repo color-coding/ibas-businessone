@@ -23,7 +23,7 @@
     <Item Content="-GroupId=${VALUE}" Description="组标记" Value="org.colorcoding" />
     <Item Content="-ArtifactId=${VALUE}" Description="项目标记" Value="b1" />
     <Item Content="-ProjectVersion=${VALUE}" Description="项目标记" Value="0.1.0" />
-    <Item Content="-ProjectUrl=${VALUE}" Description="项目地址" Value="https://colorcoding.org" />
+    <Item Content="-ProjectUrl=${VALUE}" Description="项目地址" Value="http://colorcoding.org" />
     <Item Content="-DomainName=${VALUE}" Description="项目名称" Value="DataInteraction" />
     <Item Content="-BusinessObjects=${VALUE}" Description="使用的业务对象（;分隔多个）,单据类型需要明确子类型" Value="Items;BusinessPartners;Document_Orders;Document_PurchaseOrders;" />
     <Item Content="-Parameters=[${VALUE}]" Description="其他参数">
