@@ -15,7 +15,6 @@ import org.colorcoding.ibas.bobas.common.ICriteria;
 import org.colorcoding.ibas.bobas.common.ISorts;
 import org.colorcoding.ibas.bobas.common.ISqlQuery;
 import org.colorcoding.ibas.bobas.common.SqlQuery;
-import org.colorcoding.ibas.bobas.db.BOAdapter4Db;
 import org.colorcoding.ibas.bobas.db.DbAdapterFactory;
 import org.colorcoding.ibas.bobas.db.IDbAdapter;
 import org.colorcoding.ibas.bobas.db.ISqlScripts;
@@ -37,13 +36,14 @@ public class B1Adapter implements IB1Adapter {
 	public static IB1Adapter create(ICompany company) {
 		Integer dbHana = -1;
 		try {
-			dbHana = (Integer) SBOCOMConstants.class.getField("BoDataServerTypes_dst_HANADB").get(SBOCOMConstants.class);
+			dbHana = (Integer) SBOCOMConstants.class.getField("BoDataServerTypes_dst_HANADB")
+					.get(SBOCOMConstants.class);
 		} catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
 			return new B1Adapter(company, new BOAdapter());
 		}
 		if (dbHana != -1 && company.getDbServerType() == dbHana) {
 			IDbAdapter dbAdapter = DbAdapterFactory.create().createAdapter("hana");
-			return new B1Adapter(company, (BOAdapter4Db) dbAdapter.createBOAdapter());
+			return new B1Adapter(company, (BOAdapter) dbAdapter.createBOAdapter());
 		}
 		return new B1Adapter(company, new BOAdapter());
 	}
@@ -52,18 +52,18 @@ public class B1Adapter implements IB1Adapter {
 		this.setB1Company(b1Company);
 	}
 
-	public B1Adapter(ICompany b1Company, BOAdapter4Db adapter) {
+	public B1Adapter(ICompany b1Company, BOAdapter adapter) {
 		this(b1Company);
 		this.setAdapter(adapter);
 	}
 
-	private BOAdapter4Db adapter;
+	private BOAdapter adapter;
 
-	protected BOAdapter4Db getAdapter() {
+	protected BOAdapter getAdapter() {
 		return adapter;
 	}
 
-	private void setAdapter(BOAdapter4Db adapter) {
+	private void setAdapter(BOAdapter adapter) {
 		this.adapter = adapter;
 	}
 
@@ -181,7 +181,7 @@ public class B1Adapter implements IB1Adapter {
 	}
 }
 
-class BOAdapter extends BOAdapter4Db {
+class BOAdapter extends org.colorcoding.ibas.bobas.db.BOAdapter {
 
 	private ISqlScripts sqlScripts = null;
 
