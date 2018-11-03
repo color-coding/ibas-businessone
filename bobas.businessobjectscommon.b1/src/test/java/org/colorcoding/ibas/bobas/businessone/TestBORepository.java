@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
 import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerJson;
 import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerXml;
@@ -18,6 +19,7 @@ import org.colorcoding.ibas.bobas.common.IOperationResult;
 import org.colorcoding.ibas.bobas.common.ISort;
 import org.colorcoding.ibas.bobas.common.SortType;
 import org.colorcoding.ibas.bobas.core.RepositoryException;
+import org.colorcoding.ibas.bobas.data.DataTable;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 
 import com.sap.smb.sbo.api.ICompany;
@@ -58,9 +60,11 @@ public class TestBORepository extends TestCase {
 				b1Company.getBusinessObjectXmlSchema(SBOCOMConstants.BoObjectTypes_BoRecordset));
 		System.out.println("schema: " + fileGroup + "schema.xml");
 		IRecordset recordset = SBOCOMUtil.newRecordset(b1Company);
-		recordset.doQuery("Select * from OITM");
+		recordset.doQuery("Select top 10 * from OITM");
 		recordset.saveXML(fileGroup + "data.xml");
 		System.out.println("data: " + fileGroup + "data.xml");
+		DataTable dataTable = B1DataConvert.toDataTable(recordset);
+		System.out.println("dataTable: cloum " + dataTable.getColumns().size() + " row " + dataTable.getRows().size());
 
 		fileGroup = MyConfiguration.getWorkFolder() + File.separator + "items_";
 		IItems item = SBOCOMUtil.getItems(b1Company, String.valueOf(recordset.getFields().item("ItemCode").getValue()));
@@ -87,6 +91,35 @@ public class TestBORepository extends TestCase {
 		serializerJson.getSchema(IDocuments.class, outputStream);
 		outputStream.close();
 		System.out.println("schema: " + fileGroup + "schema_json.json");
+	}
+
+	public void testQuery() throws RepositoryException, SBOCOMException {
+		BORepositoryDemo boRepository = new BORepositoryDemo();
+		boRepository.openRepository();
+		ICompany b1Company = boRepository.getCompany();
+		IRecordset recordset = SBOCOMUtil.newRecordset(b1Company);
+		recordset.doQuery("Select * from OQCN");
+		while (!recordset.isEoF()) {
+			System.out.print("Group: ");
+			System.out.print(recordset.getFields().item("CategoryId").getValue());
+			System.out.print(" ");
+			System.out.print(recordset.getFields().item("CatName").getValue());
+			System.out.println();
+			recordset.moveNext();
+		}
+		recordset.doQuery("Select * from OUQR");
+		while (!recordset.isEoF()) {
+			System.out.print("Query: ");
+			System.out.print(recordset.getFields().item("IntrnalKey").getValue());
+			System.out.print(" ");
+			System.out.print(recordset.getFields().item("QCategory").getValue());
+			System.out.print(" ");
+			System.out.print(recordset.getFields().item("QName").getValue());
+			System.out.print(" ");
+			System.out.print(recordset.getFields().item("QString").getValue());
+			System.out.println();
+			recordset.moveNext();
+		}
 	}
 
 	public void testFetch() throws IOException, ValidateException, RepositoryException {

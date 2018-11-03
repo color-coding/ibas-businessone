@@ -6,7 +6,14 @@ import java.util.Date;
 import java.util.Iterator;
 
 import org.colorcoding.ibas.bobas.data.DataConvert;
+import org.colorcoding.ibas.bobas.data.DataTable;
 import org.colorcoding.ibas.bobas.data.DateTime;
+import org.colorcoding.ibas.bobas.data.IDataTableColumn;
+import org.colorcoding.ibas.bobas.data.IDataTableRow;
+
+import com.sap.smb.sbo.api.IField;
+import com.sap.smb.sbo.api.IRecordset;
+import com.sap.smb.sbo.api.SBOCOMConstants;
 
 public class B1DataConvert {
 
@@ -39,6 +46,48 @@ public class B1DataConvert {
 		}
 		SimpleDateFormat dateFormat = new SimpleDateFormat(format);
 		return dateFormat.format(value);
+	}
+
+	public static DataTable toDataTable(IRecordset recordset) {
+		DataTable dataTable = new DataTable();
+		// 创建列
+		for (int i = 0; i < recordset.getFields().getCount(); i++) {
+			IField field = recordset.getFields().item(i);
+			IDataTableColumn column = dataTable.getColumns().create();
+			column.setName(field.getName());
+			column.setDataType(typeOf(field.getType(), field.getSubType()));
+			column.setDescription(field.getDescription());
+		}
+		// 赋值
+		while (!recordset.isEoF()) {
+			IDataTableRow row = dataTable.getRows().create();
+			for (int i = 0; i < recordset.getFields().getCount(); i++) {
+				IField field = recordset.getFields().item(i);
+				row.setValue(i, field.getValue());
+			}
+			recordset.moveNext();
+		}
+		// 游标开始
+		recordset.moveFirst();
+		return dataTable;
+	}
+
+	public static Class<?> typeOf(Integer type, Integer subType) {
+		if (Integer.compare(type, SBOCOMConstants.BoFieldTypes_db_Alpha) == 0) {
+			return String.class;
+		} else if (Integer.compare(type, SBOCOMConstants.BoFieldTypes_db_Date) == 0) {
+			if (Integer.compare(subType, SBOCOMConstants.BoFldSubTypes_st_Time) == 0) {
+				return Integer.class;
+			}
+			return Date.class;
+		} else if (Integer.compare(type, SBOCOMConstants.BoFieldTypes_db_Float) == 0) {
+			return Float.class;
+		} else if (Integer.compare(type, SBOCOMConstants.BoFieldTypes_db_Memo) == 0) {
+			return String.class;
+		} else if (Integer.compare(type, SBOCOMConstants.BoFieldTypes_db_Numeric) == 0) {
+			return Integer.class;
+		}
+		return Object.class;
 	}
 
 	public static final String METHOD_ITEM = "item";
