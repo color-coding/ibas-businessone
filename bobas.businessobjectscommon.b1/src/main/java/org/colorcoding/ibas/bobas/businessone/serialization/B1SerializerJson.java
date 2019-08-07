@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
@@ -56,18 +57,11 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 
 	@Override
 	public void validate(JsonSchema schema, InputStream data) throws ValidateException {
-		try {
-			JsonNode jsonData = JsonLoader.fromReader(new InputStreamReader(data));
+		try (Reader reader = new InputStreamReader(data)) {
+			JsonNode jsonData = JsonLoader.fromReader(reader);
 			this.validate(schema, jsonData);
 		} catch (IOException e) {
 			throw new ValidateException(e);
-		} finally {
-			if (data != null) {
-				try {
-					data.close();
-				} catch (IOException e) {
-				}
-			}
 		}
 	}
 
@@ -86,12 +80,14 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 
 	@Override
 	public JsonSchema getSchema(Class<?> type) throws SerializationException {
-		try {
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 			this.getSchema(type, outputStream);
-			JsonNode jsonSchema = JsonLoader
-					.fromReader(new InputStreamReader(new ByteArrayInputStream(outputStream.toByteArray())));
-			return JsonSchemaFactory.byDefault().getJsonSchema(jsonSchema);
+			try (InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray())) {
+				try (Reader reader = new InputStreamReader(inputStream)) {
+					JsonNode jsonSchema = JsonLoader.fromReader(reader);
+					return JsonSchemaFactory.byDefault().getJsonSchema(jsonSchema);
+				}
+			}
 		} catch (IOException | ProcessingException e) {
 			throw new SerializationException(e);
 		}

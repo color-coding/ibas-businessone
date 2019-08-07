@@ -15,6 +15,9 @@ ts.eclipse.ide.core.prefs
 # log file
 *_log_*.txt
 
+# mac os files
+.DS_Store
+
 # release folder
 /release/
 /target/

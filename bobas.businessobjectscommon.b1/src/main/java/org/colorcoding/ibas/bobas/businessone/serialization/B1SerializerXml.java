@@ -49,13 +49,14 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 
 	@Override
 	public Schema getSchema(Class<?> type) throws SerializationException {
-		try {
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 			this.getSchema(type, outputStream);
 			SchemaFactory factory = SchemaFactory.newInstance(XML_FILE_NAMESPACE);
-			Source xsdSource = new StreamSource(new ByteArrayInputStream(outputStream.toByteArray()));
-			return factory.newSchema(xsdSource);
-		} catch (SAXException e) {
+			try (InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray())) {
+				Source xsdSource = new StreamSource(inputStream);
+				return factory.newSchema(xsdSource);
+			}
+		} catch (SAXException | IOException e) {
 			throw new SerializationException(e);
 		}
 	}

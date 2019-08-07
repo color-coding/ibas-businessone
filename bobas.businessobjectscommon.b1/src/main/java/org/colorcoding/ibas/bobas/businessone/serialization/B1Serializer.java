@@ -3,7 +3,6 @@ package org.colorcoding.ibas.bobas.businessone.serialization;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -65,23 +64,15 @@ public abstract class B1Serializer<S> extends Serializer<S> implements IB1Serial
 	}
 
 	public <T> DataWrapping wrap(T data, ElementRoot element) throws SerializationException {
-		ByteArrayOutputStream outputStream = null;
-		try {
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 			if (MyConfiguration.isDebugMode()) {
 				Logger.log(MessageLevel.DEBUG, MSG_B1_SERIALIZER_WRAPPING_DATA,
 						data == null ? "Unknown" : data.getClass().getName());
 			}
-			outputStream = new ByteArrayOutputStream();
 			this.serialize(data, outputStream, false, element);
 			return new DataWrapping(new String(outputStream.toByteArray(), "utf-8"));
-		} catch (UnsupportedEncodingException e) {
+		} catch (IOException e) {
 			throw new SerializationException(e);
-		} finally {
-			try {
-				if (outputStream != null)
-					outputStream.close();
-			} catch (IOException e) {
-			}
 		}
 	}
 

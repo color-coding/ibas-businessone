@@ -135,7 +135,9 @@ public class B1Adapter implements IB1Adapter {
 	}
 
 	protected Document newDocument(String xmlData) throws SAXException, IOException, ParserConfigurationException {
-		return this.newDocument(new ByteArrayInputStream(xmlData.getBytes()));
+		try (InputStream stream = new ByteArrayInputStream(xmlData.getBytes("utf-8"))) {
+			return this.newDocument(stream);
+		}
 	}
 
 	protected Document newDocument(InputStream stream) throws SAXException, IOException, ParserConfigurationException {
