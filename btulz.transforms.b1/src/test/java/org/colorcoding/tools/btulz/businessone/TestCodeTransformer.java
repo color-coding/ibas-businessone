@@ -25,7 +25,8 @@ public class TestCodeTransformer extends TestCase {
 
 	public void testTransform() throws Exception {
 		CodeTransformer codeTransformer = new CodeTransformer();
-		codeTransformer.setTemplateFolder("ibas_b1_service");
+		codeTransformer.setTemplateFolder(Environment.getWorkingFolder()
+				+ "/../../src/main/resources/code/ibas_b1_service".replace("/", File.separator));
 		codeTransformer.setOutputFolder(Environment.getWorkingFolder() + File.separator + "out");
 		codeTransformer.setGroupId("org.colorcoding");
 		codeTransformer.setArtifactId("b1");

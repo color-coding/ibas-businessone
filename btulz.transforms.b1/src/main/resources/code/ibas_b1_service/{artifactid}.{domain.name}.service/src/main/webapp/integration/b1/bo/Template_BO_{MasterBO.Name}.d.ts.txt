@@ -16,7 +16,7 @@ import { IUserFields } from "./UserFields";
 export interface I${Model.getName()} {
 $END_MODEL_MODELTYPE_IS_UNSPECIFIED$
 $BEGIN_MODEL_PROPERTY$
-    ${Property.getName(LowerCamelCase)}: ${Property.getDeclaredType()};
+    ${Property.getName(LowerCamelCase)}: ${Property.output(ts.type)};
 $END_MODEL_PROPERTY$
 }
 $END_BO_MODEL$
@@ -26,7 +26,7 @@ $BEGIN_BOITEMS$
 $BEGIN_BO_MODEL$
 export interface ${Model.getName()} {
 $BEGIN_MODEL_PROPERTY$
-    ${Property.getName(LowerCamelCase)}: ${Property.getDeclaredType()};
+    ${Property.getName(LowerCamelCase)}: ${Property.output(ts.type)};
 $END_MODEL_PROPERTY$
 }
 $END_BO_MODEL$
