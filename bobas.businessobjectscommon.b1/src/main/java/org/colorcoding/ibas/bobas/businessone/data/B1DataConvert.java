@@ -63,7 +63,15 @@ public class B1DataConvert {
 			IDataTableRow row = dataTable.getRows().create();
 			for (int i = 0; i < recordset.getFields().getCount(); i++) {
 				IField field = recordset.getFields().item(i);
-				row.setValue(i, field.getValue());
+				if (dataTable.getColumns().get(i).getDataType() == Double.class) {
+					try {
+						row.setValue(i, field.getValueDouble());
+					} catch (Exception e) {
+						row.setValue(i, field.getValue());
+					}
+				} else {
+					row.setValue(i, field.getValue());
+				}
 			}
 			recordset.moveNext();
 		}
@@ -81,7 +89,7 @@ public class B1DataConvert {
 			}
 			return Date.class;
 		} else if (Integer.compare(type, SBOCOMConstants.BoFieldTypes_db_Float) == 0) {
-			return Float.class;
+			return Double.class;
 		} else if (Integer.compare(type, SBOCOMConstants.BoFieldTypes_db_Memo) == 0) {
 			return String.class;
 		} else if (Integer.compare(type, SBOCOMConstants.BoFieldTypes_db_Numeric) == 0) {
