@@ -102,6 +102,15 @@ if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/lib/ ]
 then
   cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/lib/* ${WORK_FOLDER}/release
 fi
+mvn -q clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b110.xml
+if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ]
+then
+  cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ${WORK_FOLDER}/release
+fi
+if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/lib/ ]
+then
+  cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/lib/* ${WORK_FOLDER}/release
+fi
 
 echo --输出直接调用shell脚本
 cp -r ${WORK_FOLDER}/btulz.transforms.b1/src/main/commands/btulz.shell.sh.txt ${WORK_FOLDER}/release/btulz.shell.sh
