@@ -4,9 +4,10 @@
   xmlns:ns2="http://colorcoding.org/btulz/shell/commands">
   <Item Content="java" Editable="false" />
   <Item Content="-jar" Description="执行jar包"/>
-  <Item Content="btulz.transforms.b1-0.1.0-${VALUE}.jar" Description="使用jar包" Value="9.2">
+  <Item Content="btulz.transforms.b1-0.1.0-${VALUE}.jar" Description="使用jar包" Value="9.3">
     <ValidValues>
       <ValidValue Description="DI-API-10" Value="10" />
+      <ValidValue Description="DI-API-9.3" Value="9.3" />
       <ValidValue Description="DI-API-9.2" Value="9.2" />
       <ValidValue Description="DI-API-9.1" Value="9.1" />
       <ValidValue Description="DI-API-8.8" Value="8.8" />

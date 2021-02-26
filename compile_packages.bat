@@ -52,15 +52,23 @@ for /f %%m in (%WORK_FOLDER%compile_order.txt) do (
 )
 echo --开始编译额外内容
 call "%MAVEN_HOME%\bin\mvn" -q clean install -f %WORK_FOLDER%btulz.transforms.b1\pom.xml
+REM compile b1 8.8
 call "%MAVEN_HOME%\bin\mvn" -q clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b188.xml
 if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >nul
 if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release >nul
+REM compile b1 9.1
 call "%MAVEN_HOME%\bin\mvn" -q clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b191.xml
 if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >nul
 if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release >nul
+REM compile b1 9.2
 call "%MAVEN_HOME%\bin\mvn" -q clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b192.xml
 if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >nul
 if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release >nul
+REM compile b1 9.3
+call "%MAVEN_HOME%\bin\mvn" -q clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b193.xml
+if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >nul
+if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release >nul
+REM compile b1 10
 call "%MAVEN_HOME%\bin\mvn" -q clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b110.xml
 if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >nul
 if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release >nul

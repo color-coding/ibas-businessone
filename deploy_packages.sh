@@ -102,6 +102,18 @@ if [ -e ${WORK_FOLDER}/${FILE_POM} ]; then
       -Dpackaging=jar
   fi
 fi
+FILE_POM=btulz.transforms.b1/pom.b193.xml
+FILE_JAR=btulz.transforms.b1-0.1.0-9.3.jar
+if [ -e ${WORK_FOLDER}/${FILE_POM} ]; then
+  if [ -e ${WORK_FOLDER}/release/${FILE_JAR} ]; then
+    mvn deploy:deploy-file \
+      -Dfile=${WORK_FOLDER}/release/${FILE_JAR} \
+      -DpomFile=${WORK_FOLDER}/${FILE_POM} \
+      -Durl=${REPOSITORY_URL} \
+      -DrepositoryId=${REPOSITORY_ID} \
+      -Dpackaging=jar
+  fi
+fi
 FILE_POM=btulz.transforms.b1/pom.b110.xml
 FILE_JAR=btulz.transforms.b1-0.1.0-10.jar
 if [ -e ${WORK_FOLDER}/${FILE_POM} ]; then

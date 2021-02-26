@@ -23,7 +23,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<ibas.version>0.1.2</ibas.version>
-		<b1.version>9.2</b1.version>
+		<b1.version>9.3</b1.version>
 		<jackson.version>2.2.3</jackson.version>
 	</properties>
 	<build>

@@ -75,6 +75,7 @@ do
 done < ${WORK_FOLDER}/compile_order.txt | sed 's/\r//g'
 echo --开始编译额外内容
 mvn -q clean install -f ${WORK_FOLDER}/btulz.transforms.b1/pom.xml
+# complie b1 8.8
 mvn -q clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b188.xml
 if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ]
 then
@@ -84,6 +85,7 @@ if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/lib/ ]
 then 
   cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/lib/* ${WORK_FOLDER}/release
 fi
+# complie b1 9.1
 mvn -q clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b191.xml
 if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ]
 then
@@ -93,6 +95,7 @@ if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/lib/ ]
 then
   cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/lib/* ${WORK_FOLDER}/release
 fi
+# complie b1 9.2
 mvn -q clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b192.xml
 if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ]
 then
@@ -102,6 +105,17 @@ if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/lib/ ]
 then
   cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/lib/* ${WORK_FOLDER}/release
 fi
+# complie b1 9.3
+mvn -q clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b193.xml
+if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ]
+then
+  cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ${WORK_FOLDER}/release
+fi
+if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/lib/ ]
+then
+  cp -r ${WORK_FOLDER}/btulz.transforms.b1/target/lib/* ${WORK_FOLDER}/release
+fi
+# complie b1 10
 mvn -q clean package install -Dmaven.test.skip=true -f ${WORK_FOLDER}/btulz.transforms.b1/pom.b110.xml
 if [ -e ${WORK_FOLDER}/btulz.transforms.b1/target/btulz.transforms.b1-*.jar ]
 then

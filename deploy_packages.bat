@@ -100,6 +100,19 @@ if exist %WORK_FOLDER%%FILE_POM% (
     )
   )
 )
+set FILE_POM=btulz.transforms.b1\pom.b193.xml
+set FILE_JAR=btulz.transforms.b1-0.1.0-9.3.jar
+if exist %WORK_FOLDER%%FILE_POM% (
+  if exist %WORK_FOLDER%release\%FILE_JAR% (
+    call mvn deploy:deploy-file ^
+      -Dfile=%WORK_FOLDER%release\%FILE_JAR% ^
+      -DpomFile=%WORK_FOLDER%%FILE_POM% ^
+      -Durl=%REPOSITORY_URL% ^
+      -DrepositoryId=%REPOSITORY_ID% ^
+      -Dpackaging=jar
+    )
+  )
+)
 set FILE_POM=btulz.transforms.b1\pom.b110.xml
 set FILE_JAR=btulz.transforms.b1-0.1.0-10.jar
 if exist %WORK_FOLDER%%FILE_POM% (
