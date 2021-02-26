@@ -184,6 +184,8 @@ public class BORepositoryBusinessOne implements IB1Connection {
 			} else {
 				return false;
 			}
+		} catch (Error e) {
+			throw new RepositoryException(e);
 		} catch (Exception e) {
 			throw new RepositoryException(e);
 		}
@@ -293,6 +295,8 @@ public class BORepositoryBusinessOne implements IB1Connection {
 			return recordset;
 		} catch (RepositoryException e) {
 			throw e;
+		} catch (Error e) {
+			throw new RepositoryException(e);
 		} catch (Exception e) {
 			throw new RepositoryException(e);
 		}
