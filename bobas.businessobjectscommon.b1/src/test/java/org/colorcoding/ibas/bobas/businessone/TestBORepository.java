@@ -25,6 +25,7 @@ import org.colorcoding.ibas.bobas.serialization.ValidateException;
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IDocuments;
 import com.sap.smb.sbo.api.IItems;
+import com.sap.smb.sbo.api.IJournalEntries;
 import com.sap.smb.sbo.api.IProductionOrders;
 import com.sap.smb.sbo.api.IRecordset;
 import com.sap.smb.sbo.api.SBOCOMConstants;
@@ -73,7 +74,17 @@ public class TestBORepository extends TestCase {
 		this.saveFile(fileGroup + "schema_b1.xml",
 				b1Company.getBusinessObjectXmlSchema(SBOCOMConstants.BoObjectTypes_oItems));
 		System.out.println("schema: " + fileGroup + "schema_b1.xml");
+
+		fileGroup = MyConfiguration.getWorkFolder() + File.separator + "journalentries_";
+		IJournalEntries journalEntries = SBOCOMUtil.getJournalEntries(b1Company, 2000);
+		journalEntries.saveXML(fileGroup + "data.xml");
+		System.out.println("data: " + fileGroup + "data.xml");
+		this.saveFile(fileGroup + "schema_b1.xml",
+				b1Company.getBusinessObjectXmlSchema(SBOCOMConstants.BoObjectTypes_oJournalEntries));
+		System.out.println("schema: " + fileGroup + "schema_b1.xml");
+
 		// xml序列化测试
+		fileGroup = MyConfiguration.getWorkFolder() + File.separator + "items_";
 		IB1Serializer<?> serializerXml = new B1SerializerXml();
 		FileOutputStream outputStream = new FileOutputStream(fileGroup + "schema_xml.xml");
 		serializerXml.getSchema(IItems.class, outputStream);
@@ -178,6 +189,40 @@ public class TestBORepository extends TestCase {
 			System.out.println(String.format("data: %sproductionorders_data_%s.json", fileGroup, i));
 			serializerJson.validate(IProductionOrders.class, data.getContent());
 		}
+		criteria = new Criteria();
+		sort = criteria.getSorts().create();
+		sort.setAlias("TransId");
+		sort.setSortType(SortType.DESCENDING);
+		criteria.setResultCount(1);
+		operationResult = boRepository.fetchJournalEntries(criteria, this.getToken());
+		assertEquals(operationResult.getMessage(), 0, operationResult.getResultCode());
+		System.out.println("json journal entries:");
+		for (int i = 0; i < operationResult.getResultObjects().size(); i++) {
+			DataWrapping data = operationResult.getResultObjects().get(i);
+			this.saveFile(String.format("%sjournalentries_data_%s.json", fileGroup, i), data.getContent());
+			System.out.println(String.format("data: %sjournalentries_data_%s.json", fileGroup, i));
+			serializerJson.validate(IJournalEntries.class, data.getContent());
+		}
+	}
+
+	private final static String DATA_STRING = "{\"type\":\"JournalEntries\",\"jdtNum\":2050,\"memo\":\"记提固定资产折旧\",\"lines\":[{\"accountCode\":\"55010202\",\"debit\":1000.0},{\"accountCode\":\"150101\",\"credit\":500.0},{\"accountCode\":\"150103\",\"credit\":200.0},{\"accountCode\":\"150104\",\"credit\":200.0},{\"accountCode\":\"150202\",\"credit\":100.0}]}";
+
+	public void testB1DataSave() throws RepositoryException {
+		BORepositoryDemo boRepository = new BORepositoryDemo();
+		boRepository.openRepository();
+		ICompany b1Company = boRepository.getCompany();
+		// json序列化测试
+		IB1Serializer<?> serializerJson = new B1SerializerJson();
+		Object data = serializerJson.deserialize(DATA_STRING, b1Company);
+		if (data instanceof IJournalEntries) {
+			IJournalEntries journalEntries = (IJournalEntries) data;
+			if (journalEntries.add() == 0) {
+				System.out.println(String.format("JournalEntries: %s", b1Company.getNewObjectKey()));
+			} else {
+				System.err.println(b1Company.getLastErrorDescription());
+			}
+		}
+
 	}
 
 }

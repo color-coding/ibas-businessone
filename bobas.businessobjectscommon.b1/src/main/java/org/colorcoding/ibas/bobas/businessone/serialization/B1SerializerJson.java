@@ -7,13 +7,19 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
+import org.colorcoding.ibas.bobas.i18n.I18N;
+import org.colorcoding.ibas.bobas.message.Logger;
+import org.colorcoding.ibas.bobas.message.MessageLevel;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 import org.colorcoding.ibas.bobas.serialization.structure.Element;
@@ -23,13 +29,16 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jackson.JsonLoader;
 import com.github.fge.jsonschema.core.exceptions.ProcessingException;
 import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IFields;
 import com.sap.smb.sbo.api.IValidValues;
+import com.sap.smb.sbo.api.SBOCOMUtil;
 
 public class B1SerializerJson extends B1Serializer<JsonSchema> {
 
@@ -115,6 +124,134 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 				} catch (IOException e) {
 				}
 			}
+		}
+	}
+
+	@Override
+	public Object deserialize(InputStream inputStream, ICompany company) throws SerializationException {
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			JsonNode rootNode = mapper.readTree(inputStream);
+			JsonNode jsonNode = rootNode.path("type");
+			if (jsonNode.isMissingNode() || B1DataConvert.isNullOrEmpty(jsonNode.textValue())) {
+				throw new IndexOutOfBoundsException("type node");
+			}
+			String className = jsonNode.textValue();
+			// 如果有主键值，则更新数据
+			Element[] classKeys = this.getB1EntryKeys(className, company);
+			if (classKeys != null && classKeys.length > 0) {
+				boolean done = true;
+				StringBuilder builder = new StringBuilder();
+				for (Element element : classKeys) {
+					jsonNode = rootNode.path(this.nameElement(element.getName()));
+					if (jsonNode.isMissingNode()) {
+						done = false;
+						break;
+					}
+					if (B1DataConvert.isNullOrEmpty(jsonNode.asText())) {
+						done = false;
+						break;
+					}
+					if (builder.length() > 0) {
+						builder.append(" && ");
+					}
+					builder.append(this.nameElement(element.getName()));
+					builder.append(" = ");
+					builder.append(jsonNode.asText());
+				}
+				if (done) {
+					for (Method method : SBOCOMUtil.class.getMethods()) {
+						if (method.getName().equalsIgnoreCase("get" + className)
+								&& classKeys.length != method.getParameterCount()) {
+							Object[] params = new Object[classKeys.length + 1];
+							params[0] = company;
+							for (int i = 0; i < classKeys.length; i++) {
+								params[i + 1] = this.nodeValue(rootNode.path(this.nameElement(classKeys[i].getName())),
+										method.getParameterTypes()[i + 1]);
+							}
+							Object data = method.invoke(null, params);
+							if (data != null) {
+								Logger.log(MessageLevel.DEBUG, "serializer: got [%s]'s data [%s].", className,
+										builder.toString());
+								this.deserialize(data, rootNode, getElement(data.getClass()));
+								return data;
+							} else {
+								Logger.log(MessageLevel.DEBUG, "serializer: not found [%s]'s data [%s].", className,
+										builder.toString());
+							}
+						}
+					}
+				}
+			}
+			for (Method method : SBOCOMUtil.class.getMethods()) {
+				if (method.getName().equalsIgnoreCase("new" + className)) {
+					Object data = method.invoke(null, company);
+					if (data == null) {
+						throw new SerializationException(I18N.prop("msg_unrecognized_data", className));
+					}
+					this.deserialize(data, rootNode, getElement(data.getClass()));
+					return data;
+				}
+			}
+			throw new SerializationException(I18N.prop("msg_unrecognized_data", className));
+		} catch (Exception e) {
+			throw new SerializationException(e);
+		}
+
+	}
+
+	protected void deserialize(Object data, JsonNode rootNode, Element rootElement) throws SerializationException {
+		Iterator<Entry<String, JsonNode>> nodes = rootNode.fields();
+		while (nodes.hasNext()) {
+			Entry<String, JsonNode> node = nodes.next();
+			if ("type".equals(node.getKey())) {
+				continue;
+			}
+			Element element = rootElement.getChilds().firstOrDefault(c -> c.getName().equalsIgnoreCase(node.getKey()));
+			if (element == null) {
+				Logger.log(MessageLevel.DEBUG, "serializer: not found [%s]'s property [%s].", rootElement.getName(),
+						node.getKey());
+				continue;
+			}
+			if (element.isCollection()) {
+				try {
+					if (node.getValue().isArray()) {
+						Method method = data.getClass().getMethod("get" + element.getName());
+						Object cData = method.invoke(data);
+						method = cData.getClass().getMethod("add");
+						for (JsonNode cNode : node.getValue()) {
+							this.deserialize(cData, cNode, element);
+							method.invoke(cData);
+						}
+					}
+				} catch (Exception e) {
+					throw new SerializationException(e);
+				}
+			} else {
+				try {
+					Method method = data.getClass().getMethod("set" + element.getName(), element.getType());
+					method.invoke(data, this.nodeValue(node.getValue(), element.getType()));
+				} catch (NoSuchMethodException e) {
+					Logger.log(MessageLevel.DEBUG, "serializer: not found [%s]'s property [%s].", rootElement.getName(),
+							node.getKey());
+				} catch (Exception e) {
+					throw new SerializationException(e);
+				}
+			}
+		}
+	}
+
+	protected Object nodeValue(JsonNode node, Class<?> type) {
+		if (type == Boolean.class) {
+			return node.asBoolean();
+		} else if (type == Double.class) {
+			return node.asDouble();
+		} else if (type == Integer.class) {
+			return node.asInt();
+		} else if (type == Long.class) {
+			return node.asLong();
+		} else {
+			return node.asText();
 		}
 	}
 

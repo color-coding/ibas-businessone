@@ -29,6 +29,7 @@ import javax.xml.validation.Validator;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
+import org.colorcoding.ibas.bobas.i18n.I18N;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 import org.colorcoding.ibas.bobas.serialization.structure.Element;
@@ -37,6 +38,7 @@ import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IFields;
 import com.sap.smb.sbo.api.IValidValues;
 
@@ -368,6 +370,11 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 				domParent.appendChild(domItem);
 			}
 		}
+	}
+
+	@Override
+	public Object deserialize(InputStream inputStream, ICompany company) throws SerializationException {
+		throw new SerializationException(I18N.prop("msg_bobas_not_supported"));
 	}
 
 }

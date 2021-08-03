@@ -14,6 +14,7 @@ import com.sap.smb.sbo.api.IBusinessPartners;
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IDocuments;
 import com.sap.smb.sbo.api.IItems;
+import com.sap.smb.sbo.api.IJournalEntries;
 import com.sap.smb.sbo.api.IProductionOrders;
 import com.sap.smb.sbo.api.IRecordset;
 import com.sap.smb.sbo.api.SBOCOMConstants;
@@ -371,6 +372,64 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 				}
 			}
 			System.gc();
+		}
+	}
+
+	// --------------------------------------------------------------------------------------------//
+
+	/**
+	 * 查询-JournalEntries
+	 * 
+	 * @param criteria 查询
+	 * @param token    口令
+	 * @return 操作结果（已被封装）
+	 */
+	public OperationResult<DataWrapping> fetchJournalEntries(ICriteria criteria, String token) {
+		try {
+			this.setUserToken(token);
+			OperationResult<DataWrapping> operationResult = new OperationResult<>();
+			for (IJournalEntries item : this.fetchJournalEntries(criteria)) {
+				operationResult.addResultObjects(this.getB1Serializer().wrap(item));
+				item.release();
+			}
+			return operationResult;
+		} catch (Exception e) {
+			Logger.log(e);
+			return new OperationResult<>(e);
+		} finally {
+			System.gc();
+		}
+	}
+
+	/**
+	 * 查询-JournalEntries
+	 * 
+	 * @param criteria 查询
+	 * @return 查询结果
+	 */
+	public List<IJournalEntries> fetchJournalEntries(ICriteria criteria)
+			throws SBOCOMException, ParsingException, RepositoryException {
+		IRecordset recordset = null;
+		boolean open = false;
+		try {
+			open = this.openRepository();
+			List<IJournalEntries> datas = new ArrayList<>();
+			recordset = this
+					.query(this.getB1Adapter().parseSqlQuery(criteria, SBOCOMConstants.BoObjectTypes_oJournalEntries));
+			while (!recordset.isEoF()) {
+				IJournalEntries data = SBOCOMUtil.getJournalEntries(this.getB1Company(),
+						(Integer) recordset.getFields().item("TransId").getValue());
+				datas.add(data);
+				recordset.moveNext();
+			}
+			return datas;
+		} finally {
+			if (recordset != null) {
+				recordset.release();
+			}
+			if (open) {
+				this.closeRepository();
+			}
 		}
 	}
 }

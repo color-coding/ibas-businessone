@@ -1,5 +1,6 @@
 package org.colorcoding.ibas.bobas.businessone.data;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -10,12 +11,31 @@ import org.colorcoding.ibas.bobas.data.DataTable;
 import org.colorcoding.ibas.bobas.data.DateTime;
 import org.colorcoding.ibas.bobas.data.IDataTableColumn;
 import org.colorcoding.ibas.bobas.data.IDataTableRow;
+import org.colorcoding.ibas.bobas.message.Logger;
+import org.colorcoding.ibas.bobas.message.MessageLevel;
 
 import com.sap.smb.sbo.api.IField;
 import com.sap.smb.sbo.api.IRecordset;
 import com.sap.smb.sbo.api.SBOCOMConstants;
+import com.sap.smb.sbo.wrapper.com.ComFailException;
 
 public class B1DataConvert {
+
+	/**
+	 * 判断字符串是否为空值
+	 * 
+	 * @param value
+	 * @return
+	 */
+	public static boolean isNullOrEmpty(String value) {
+		if (value == null) {
+			return true;
+		}
+		if (value.isEmpty()) {
+			return true;
+		}
+		return false;
+	}
 
 	public static Object convert(Class<?> type, Object value) {
 		if (type == Date.class) {
@@ -129,6 +149,16 @@ public class B1DataConvert {
 									methodLine.invoke(value, index);
 									index++;
 									return value;
+								} catch (InvocationTargetException e) {
+									if (e.getCause() instanceof ComFailException) {
+										if (e.getCause().getMessage() != null && e.getCause().getMessage()
+												.contains("Description: Invalid row number")) {
+											Logger.log(MessageLevel.WARN, e);
+											index++;
+											return null;
+										}
+									}
+									throw new RuntimeException(e);
 								} catch (Exception e) {
 									throw new RuntimeException(e);
 								}
@@ -152,6 +182,16 @@ public class B1DataConvert {
 								try {
 									index++;
 									return methodItem.invoke(value, index - 1);
+								} catch (InvocationTargetException e) {
+									if (e.getCause() instanceof ComFailException) {
+										if (e.getCause().getMessage() != null && e.getCause().getMessage()
+												.contains("Description: Invalid row number")) {
+											Logger.log(MessageLevel.WARN, e);
+											index++;
+											return null;
+										}
+									}
+									throw new RuntimeException(e);
 								} catch (Exception e) {
 									throw new RuntimeException(e);
 								}

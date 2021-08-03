@@ -24,6 +24,8 @@
         <add key="B1DbPassword" value="1q2w3e" />
         <!-- 配置项目-B1-数据库使用信任 -->
         <add key="B1DbUseTrusted" value="false" />
+        <!-- 配置项目-B1-口令 -->
+        <add key="B1Token" value="1q2w3e" />
         <!-- 配置项目-是否格式化输出 -->
         <add key="FormattedOutput" value="true"  />
     </appSettings>
