@@ -176,6 +176,7 @@ public class BORepositoryBusinessOne implements IB1Connection {
 		try {
 			if (this.b1Company != null && !this.b1Company.isConnected()) {
 				B1CompanyPool.release(this.b1Company);
+				this.b1Company = null;
 			}
 			if (this.b1Company == null) {
 				this.b1Company = B1CompanyPool.use(this);

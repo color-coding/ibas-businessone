@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!DOCTYPE CommandBuilder>
+<ns2:CommandBuilder Description="生成代码" 
+    xmlns:ns2="http://colorcoding.org/btulz/shell/commands">
+    <Item Content="java" Editable="false" />
+    <Item Content="-Dfile.encoding=utf-8" Description="使用utf-8编码方式" Editable="false" />
+    <Item Content="-jar" Description="执行jar包" />
+    <Item Content="btulz.transforms.b1-0.1.0-${VALUE}.jar" Description="包名称" Value="9.3">
+        <ValidValues>
+          <ValidValue Description="DI-API-10" Value="10" />
+          <ValidValue Description="DI-API-9.3" Value="9.3" />
+          <ValidValue Description="DI-API-9.2" Value="9.2" />
+          <ValidValue Description="DI-API-9.1" Value="9.1" />
+          <ValidValue Description="DI-API-8.8" Value="8.8" />
+        </ValidValues>
+    </Item>
+    <Item Content="code" Description="子命令" Editable="false" />
+    <Item Content="-TemplateFolder=${VALUE}" Description="使用的模板" Value="ibas_b1_webapp">
+        <ValidValues>
+          <ValidValue Description="应用服务" Value="ibas_b1_webapp" />
+        </ValidValues>
+    </Item>
+    <Item Content="-OutputFolder=${VALUE}" Description="输出目录" Value="${WORK_FOLDER}temp">
+        <ValidValues ClassName="javax.swing.JFileChooser"/>
+    </Item>
+    <Item Content="-GroupId=${VALUE}" Description="组标记" Value="org.colorcoding" />
+    <Item Content="-ArtifactId=${VALUE}" Description="项目标记" Value="ibas" />
+    <Item Content="-ProjectVersion=${VALUE}" Description="项目标记" Value="0.1.0" />
+    <Item Content="-ProjectUrl=${VALUE}" Description="项目地址" Value="http://colorcoding.org" />
+    <Item Content="-DomainName=${VALUE}" Description="项目名称" Value="B1WebApp" />
+    <Item Content="-Parameters=[${VALUE}]" Description="其他参数">
+        <Items>
+            <Item Content=",{&quot;name&quot;:&quot;ibasVersion&quot;,&quot;value&quot;:&quot;${VALUE}&quot;}" Description="ibas版本" Value="0.1.2" />
+            <Item Content=",{&quot;name&quot;:&quot;b1Version&quot;,&quot;value&quot;:&quot;${VALUE}&quot;}" Description="b1版本" Value="0.1.0" />
+            <Item Content=",{&quot;name&quot;:&quot;ProjectId&quot;,&quot;value&quot;:&quot;${VALUE}&quot;}" Description="项目标识">
+                <ValidValues ClassName="java.util.UUID"/>
+            </Item>
+        </Items>
+    </Item>
+    <Item Content="-Release" Description="释放资源" Editable="false" Optional="true" />
+</ns2:CommandBuilder>

@@ -1,9 +1,10 @@
 package org.colorcoding.tools.btulz.businessone.transformer;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.reflect.Method;
 
+import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
+import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
 import org.colorcoding.ibas.bobas.businessone.db.B1CompanyPool;
 import org.colorcoding.ibas.bobas.businessone.db.IB1Connection;
 import org.colorcoding.tools.btulz.Environment;
@@ -20,6 +21,8 @@ import org.colorcoding.tools.btulz.model.data.emModelType;
 import org.colorcoding.tools.btulz.transformer.MultiTransformException;
 import org.colorcoding.tools.btulz.transformer.TransformException;
 import org.colorcoding.tools.btulz.transformer.Transformer;
+import org.colorcoding.tools.btulz.util.ArrayList;
+import org.colorcoding.tools.btulz.util.List;
 
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IRecordset;
@@ -159,11 +162,29 @@ public class DsTransformer extends Transformer implements IB1Connection {
 	}
 
 	public void addDomains(File file) throws TransformException, MultiTransformException {
-		XmlTransformer xmlTransformer = new XmlTransformer();
-		xmlTransformer.setInterruptOnError(true);
-		xmlTransformer.load(file, false);
-		for (IDomain domain : xmlTransformer.getWorkingDomains()) {
-			this.getDomains().add((Domain) domain);
+		if (file.isDirectory()) {
+			File[] files = file.listFiles();
+			if (files != null) {
+				for (File item : files) {
+					String name = item.getName().toLowerCase();
+					if (!name.startsWith("b1_") || !name.endsWith(".xml")) {
+						continue;
+					}
+					XmlTransformer xmlTransformer = new XmlTransformer();
+					xmlTransformer.setInterruptOnError(true);
+					xmlTransformer.load(item, false);
+					for (IDomain domain : xmlTransformer.getWorkingDomains()) {
+						this.getDomains().add((Domain) domain);
+					}
+				}
+			}
+		} else if (file.isFile()) {
+			XmlTransformer xmlTransformer = new XmlTransformer();
+			xmlTransformer.setInterruptOnError(true);
+			xmlTransformer.load(file, false);
+			for (IDomain domain : xmlTransformer.getWorkingDomains()) {
+				this.getDomains().add((Domain) domain);
+			}
 		}
 	}
 
@@ -227,6 +248,35 @@ public class DsTransformer extends Transformer implements IB1Connection {
 							if (property.getDefaultValue() != null && !property.getDefaultValue().isEmpty()) {
 								userField.setDefaultValue(property.getDefaultValue());
 							}
+							if (property.getLinkedSystemObject() != null
+									&& !property.getLinkedSystemObject().isEmpty()) {
+								try {
+									Method method = IUserFieldsMD.class.getMethod("setLinkedSystemObject",
+											Integer.class);
+									if (B1DataConvert.isNumeric(property.getLinkedSystemObject())) {
+										method.invoke(userField, Integer.valueOf(property.getLinkedSystemObject()));
+									} else {
+										method.invoke(userField, Enumeration.valueOf("UDFLinkedSystemObjectTypesEnum",
+												property.getLinkedSystemObject()));
+									}
+								} catch (Exception e) {
+								}
+							}
+
+							if (property.getLinkedTable() != null && !property.getLinkedTable().isEmpty()) {
+								try {
+									Method method = IUserFieldsMD.class.getMethod("setLinkedTable", String.class);
+									method.invoke(userField, property.getLinkedTable());
+								} catch (Exception e) {
+								}
+							}
+							if (property.getLinkedUDO() != null && !property.getLinkedUDO().isEmpty()) {
+								try {
+									Method method = IUserFieldsMD.class.getMethod("setLinkedUDO", String.class);
+									method.invoke(userField, property.getLinkedUDO());
+								} catch (Exception e) {
+								}
+							}
 							// 处理可选值
 							for (ValidValue validValue : property.getValidValues()) {
 								userField.getValidValues().setValue(validValue.getValue());
@@ -244,30 +294,80 @@ public class DsTransformer extends Transformer implements IB1Connection {
 							System.gc();
 							IUserFieldsMD userField = SBOCOMUtil.newUserFieldsMD(b1Company);
 							if (userField.getByKey(tableName, fieldId)) {
-								userField.setDescription(property.getDescription());
-								userField.setEditSize(property.getEditSize());
-								if (property.getDefaultValue() != null && !property.getDefaultValue().isEmpty()) {
-									userField.setDefaultValue(property.getDefaultValue());
-								}
-								// 处理可选值
-								for (ValidValue validValue : property.getValidValues()) {
-									boolean done = true;
+								if (property.isDeletion()) {
+									if (userField.remove() != 0) {
+										throw new TransformException(String.format("%s - %s",
+												b1Company.getLastErrorCode(), b1Company.getLastErrorDescription()));
+									}
+								} else {
+									userField.setDescription(property.getDescription());
+									userField.setEditSize(property.getEditSize());
+									if (property.getDefaultValue() != null && !property.getDefaultValue().isEmpty()) {
+										userField.setDefaultValue(property.getDefaultValue());
+									}
+									// 处理可选值
+									List<String> hasValues = new ArrayList<>();
+									// 更新已存在可选值
 									for (int i = 0; i < userField.getValidValues().getCount(); i++) {
 										userField.getValidValues().setCurrentLine(i);
-										if (validValue.getValue()
-												.equalsIgnoreCase(userField.getValidValues().getValue())) {
-											done = false;
+										hasValues.add(userField.getValidValues().getValue());
+										ValidValue validValue = property.getValidValues().firstOrDefault(
+												c -> c.getValue().equals(userField.getValidValues().getValue()));
+										if (validValue != null) {
+											if (!validValue.getDescription()
+													.equals(userField.getValidValues().getDescription())) {
+												userField.getValidValues().setDescription(validValue.getDescription());
+											}
+										} else {
+											userField.getValidValues().delete();
 										}
 									}
-									if (done) {
-										userField.getValidValues().setValue(validValue.getValue());
-										userField.getValidValues().setDescription(validValue.getDescription());
-										userField.getValidValues().add();
+									// 添加新的
+									userField.getValidValues()
+											.setCurrentLine(userField.getValidValues().getCount() - 1);
+									for (ValidValue validValue : property.getValidValues()) {
+										if (hasValues.firstOrDefault(c -> validValue.getValue().equals(c)) == null) {
+											userField.getValidValues().setValue(validValue.getValue());
+											userField.getValidValues().setDescription(validValue.getDescription());
+											userField.getValidValues().add();
+										}
 									}
-								}
-								if (userField.update() != 0) {
-									throw new TransformException(String.format("%s - %s", b1Company.getLastErrorCode(),
-											b1Company.getLastErrorDescription()));
+									// 处理链接值
+									try {
+										Method method = IUserFieldsMD.class.getMethod("getLinkedUDO");
+										String linkValue = String
+												.valueOf(method.invoke(userField, property.getLinkedUDO()));
+										if (!linkValue.equals(property.getLinkedUDO())) {
+											method = IUserFieldsMD.class.getMethod("setLinkedUDO", String.class);
+											method.invoke(userField, property.getLinkedUDO());
+										}
+									} catch (Exception e) {
+									}
+									try {
+										Method method = IUserFieldsMD.class.getMethod("getLinkedTable");
+										String linkValue = String
+												.valueOf(method.invoke(userField, property.getLinkedTable()));
+										if (!linkValue.equals(property.getLinkedTable())) {
+											method = IUserFieldsMD.class.getMethod("setLinkedTable", String.class);
+											method.invoke(userField, property.getLinkedTable());
+										}
+									} catch (Exception e) {
+									}
+									try {
+										Method method = IUserFieldsMD.class.getMethod("getLinkedSystemObject");
+										String linkValue = String
+												.valueOf(method.invoke(userField, property.getLinkedSystemObject()));
+										if (!linkValue.equals(property.getLinkedSystemObject())) {
+											method = IUserFieldsMD.class.getMethod("setLinkedSystemObject",
+													Integer.class);
+											method.invoke(userField, property.getLinkedSystemObject());
+										}
+									} catch (Exception e) {
+									}
+									if (userField.update() != 0) {
+										throw new TransformException(String.format("%s - %s",
+												b1Company.getLastErrorCode(), b1Company.getLastErrorDescription()));
+									}
 								}
 								userField.release();
 								System.gc();

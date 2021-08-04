@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +23,7 @@ import org.colorcoding.ibas.bobas.message.MessageLevel;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 import org.colorcoding.ibas.bobas.serialization.structure.Element;
-import org.colorcoding.ibas.bobas.serialization.structure.ElementField;
+import org.colorcoding.ibas.bobas.serialization.structure.ElementMethod;
 import org.colorcoding.ibas.bobas.serialization.structure.ElementRoot;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -34,6 +34,7 @@ import org.xml.sax.SAXException;
 
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.SBOCOMConstants;
+import com.sap.smb.sbo.api.SBOCOMUtil;
 
 public abstract class B1Serializer<S> implements IB1Serializer<S> {
 
@@ -41,7 +42,7 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 
 	private volatile static Map<Class<?>, ElementRoot> elements = new HashMap<>();
 
-	protected static synchronized ElementRoot getElement(Class<?> clazz) {
+	public static synchronized ElementRoot getElement(Class<?> clazz) {
 		ElementRoot element = elements.get(clazz);
 		if (element != null) {
 			return element;
@@ -135,26 +136,37 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 	 * @param className 对象名称
 	 * @param company   公司
 	 * @return
-	 * @throws InvocationTargetException
-	 * @throws IllegalArgumentException
-	 * @throws IllegalAccessException
-	 * @throws ParserConfigurationException
-	 * @throws SAXException
-	 * @throws DOMException
-	 * @throws ClassNotFoundException
 	 */
-	protected Element[] getB1EntryKeys(String className, ICompany company)
-			throws IllegalAccessException, IllegalArgumentException, InvocationTargetException,
-			ParserConfigurationException, SAXException, ClassNotFoundException, DOMException {
-		if (!ENTRY_KEYS.containsKey(className)) {
-			for (Field field : SBOCOMConstants.class.getFields()) {
-				if (field.getName().startsWith("BoObjectTypes_") && field.getName().endsWith("o" + className)) {
-					ENTRY_KEYS.put(className,
-							this.getB1EntryKeys(company.getBusinessObjectXmlSchema((Integer) (field.get(null)))));
+	@Override
+	public Element[] getEntityKeys(String className, ICompany company) {
+		try {
+			if (!ENTRY_KEYS.containsKey(className)) {
+				for (Field field : SBOCOMConstants.class.getFields()) {
+					if (field.getName().startsWith("BoObjectTypes_") && field.getName().endsWith("o" + className)) {
+						Element[] keys = this
+								.getEntityKeys(company.getBusinessObjectXmlSchema((Integer) (field.get(null))));
+						// 补充类型
+						if (keys != null && keys.length > 0) {
+							for (Method method : SBOCOMUtil.class.getMethods()) {
+								if (method.getName().equalsIgnoreCase("get" + className)
+										&& keys.length + 1 == method.getParameterCount()) {
+									for (int i = 0; i < keys.length; i++) {
+										Element element = keys[i];
+										element.setType(method.getParameterTypes()[i + 1]);
+									}
+									break;
+								}
+							}
+						}
+						ENTRY_KEYS.put(className, keys);
+						break;
+					}
 				}
 			}
+			return ENTRY_KEYS.get(className);
+		} catch (Exception e) {
+			throw new SerializationException(e);
 		}
-		return ENTRY_KEYS.get(className);
 	}
 
 	private static final Element[] EMPTY_ELEMENTS = new Element[] {};
@@ -169,7 +181,7 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 	 * @throws DOMException
 	 * @throws ClassNotFoundException
 	 */
-	protected Element[] getB1EntryKeys(String schema)
+	protected Element[] getEntityKeys(String schema)
 			throws ParserConfigurationException, SAXException, ClassNotFoundException, DOMException {
 		try (InputStream stream = new ByteArrayInputStream(schema.getBytes("utf-16"))) {
 			DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -195,7 +207,7 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 				ArrayList<Element> keys = new ArrayList<>();
 				for (int ii = 0; ii < kNode.getChildNodes().getLength(); ii++) {
 					Node cNode = kNode.getChildNodes().item(ii);
-					Element element = new ElementField();
+					Element element = new ElementMethod();
 					aNode = cNode.getAttributes().getNamedItem("name");
 					if (aNode == null) {
 						throw new IndexOutOfBoundsException();
@@ -213,6 +225,52 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 			Logger.log(e);
 		}
 		return EMPTY_ELEMENTS;
+	}
+
+	/**
+	 * 获取实体
+	 * 
+	 * @param className 名称
+	 * @param keyValues 主键值
+	 * @param company   公司
+	 * @return
+	 */
+	@Override
+	public Object getEntity(String className, Object[] keyValues, ICompany company) throws SerializationException {
+		Element[] keys = this.getEntityKeys(className, company);
+		if (keys == null || keys.length == 0 || keys.length != keyValues.length) {
+			throw new IndexOutOfBoundsException("entity key values.");
+		}
+		StringBuilder builder = new StringBuilder();
+		Class<?>[] types = new Class<?>[keys.length + 1];
+		Object[] params = new Object[keys.length + 1];
+		params[0] = company;
+		types[0] = ICompany.class;
+		for (int i = 0; i < keys.length; i++) {
+			params[i + 1] = keyValues[i];
+			types[i + 1] = keys[i].getType();
+			if (builder.length() > 0) {
+				builder.append(" && ");
+			}
+			builder.append(keys[i].getName());
+			builder.append(" = ");
+			builder.append(keyValues[i]);
+		}
+		try {
+			Method method = SBOCOMUtil.class.getMethod("get" + className, types);
+			Object data = method.invoke(null, params);
+			if (data != null) {
+				Logger.log(MessageLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className, builder.toString());
+			} else {
+				Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
+						builder.toString());
+			}
+			return data;
+		} catch (NoSuchMethodException e) {
+			return null;
+		} catch (Exception e) {
+			throw new SerializationException(e);
+		}
 	}
 
 	@Override

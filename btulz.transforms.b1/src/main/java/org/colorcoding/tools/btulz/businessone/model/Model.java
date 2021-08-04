@@ -12,6 +12,14 @@ public class Model extends org.colorcoding.tools.btulz.model.Model {
 		this.properties = new Properties();
 	}
 
+	@Override
+	public String getMapped() {
+		if (super.getMapped() == null) {
+			return this.getName();
+		}
+		return super.getMapped();
+	}
+
 	@XmlAttribute(name = "System")
 	private boolean system;
 

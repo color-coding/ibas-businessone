@@ -20,6 +20,10 @@ import com.sap.smb.sbo.api.SBOCOMConstants;
 import com.sap.smb.sbo.wrapper.com.ComFailException;
 
 public class B1DataConvert {
+	/**
+	 * 分割符
+	 */
+	public static final String SEPARATOR = "	";
 
 	/**
 	 * 判断字符串是否为空值
@@ -35,6 +39,24 @@ public class B1DataConvert {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * 判断字符串是否为数字
+	 * 
+	 * @param value
+	 * @return
+	 */
+	public static boolean isNumeric(String value) {
+		if (value == null || value.isEmpty()) {
+			return false;
+		}
+		for (int i = 0; i < value.length(); i++) {
+			if (!Character.isDigit(value.charAt(i))) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public static Object convert(Class<?> type, Object value) {

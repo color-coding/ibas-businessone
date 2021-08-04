@@ -137,63 +137,35 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 				throw new IndexOutOfBoundsException("type node");
 			}
 			String className = jsonNode.textValue();
-			// 如果有主键值，则更新数据
-			Element[] classKeys = this.getB1EntryKeys(className, company);
+			Element[] classKeys = this.getEntityKeys(className, company);
 			if (classKeys != null && classKeys.length > 0) {
-				boolean done = true;
-				StringBuilder builder = new StringBuilder();
-				for (Element element : classKeys) {
+				// 如果有主键值，则更新数据
+				Object[] keyValues = new Object[classKeys.length];
+				for (int i = 0; i < classKeys.length; i++) {
+					Element element = classKeys[i];
 					jsonNode = rootNode.path(this.nameElement(element.getName()));
 					if (jsonNode.isMissingNode()) {
-						done = false;
 						break;
 					}
 					if (B1DataConvert.isNullOrEmpty(jsonNode.asText())) {
-						done = false;
 						break;
 					}
-					if (builder.length() > 0) {
-						builder.append(" && ");
-					}
-					builder.append(this.nameElement(element.getName()));
-					builder.append(" = ");
-					builder.append(jsonNode.asText());
+					keyValues[i] = this.nodeValue(rootNode.path(this.nameElement(classKeys[i].getName())),
+							element.getType());
 				}
-				if (done) {
-					for (Method method : SBOCOMUtil.class.getMethods()) {
-						if (method.getName().equalsIgnoreCase("get" + className)
-								&& classKeys.length != method.getParameterCount()) {
-							Object[] params = new Object[classKeys.length + 1];
-							params[0] = company;
-							for (int i = 0; i < classKeys.length; i++) {
-								params[i + 1] = this.nodeValue(rootNode.path(this.nameElement(classKeys[i].getName())),
-										method.getParameterTypes()[i + 1]);
-							}
-							Object data = method.invoke(null, params);
-							if (data != null) {
-								Logger.log(MessageLevel.DEBUG, "serializer: got [%s]'s data [%s].", className,
-										builder.toString());
-								this.deserialize(data, rootNode, getElement(data.getClass()));
-								return data;
-							} else {
-								Logger.log(MessageLevel.DEBUG, "serializer: not found [%s]'s data [%s].", className,
-										builder.toString());
-							}
-						}
-					}
-				}
-			}
-			for (Method method : SBOCOMUtil.class.getMethods()) {
-				if (method.getName().equalsIgnoreCase("new" + className)) {
-					Object data = method.invoke(null, company);
-					if (data == null) {
-						throw new SerializationException(I18N.prop("msg_unrecognized_data", className));
-					}
+				Object data = this.getEntity(className, keyValues, company);
+				if (data != null) {
 					this.deserialize(data, rootNode, getElement(data.getClass()));
 					return data;
 				}
 			}
-			throw new SerializationException(I18N.prop("msg_unrecognized_data", className));
+			Method method = SBOCOMUtil.class.getMethod("new" + className, ICompany.class);
+			Object data = method.invoke(null, company);
+			if (data == null) {
+				throw new SerializationException(I18N.prop("msg_unrecognized_data", className));
+			}
+			this.deserialize(data, rootNode, getElement(data.getClass()));
+			return data;
 		} catch (Exception e) {
 			throw new SerializationException(e);
 		}
@@ -209,7 +181,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			}
 			Element element = rootElement.getChilds().firstOrDefault(c -> c.getName().equalsIgnoreCase(node.getKey()));
 			if (element == null) {
-				Logger.log(MessageLevel.DEBUG, "serializer: not found [%s]'s property [%s].", rootElement.getName(),
+				Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].", rootElement.getName(),
 						node.getKey());
 				continue;
 			}
@@ -218,11 +190,21 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					if (node.getValue().isArray()) {
 						Method method = data.getClass().getMethod("get" + element.getName());
 						Object cData = method.invoke(data);
+						/*
+						 * method = cData.getClass().getMethod("getCount"); Object count =
+						 * method.invoke(cData); if (count instanceof Integer && (Integer) count > 0) {
+						 * method = cData.getClass().getMethod("setCurrentLine", Integer.class);
+						 * method.invoke(cData, (Integer) count - 1); }
+						 */
 						method = cData.getClass().getMethod("add");
 						for (JsonNode cNode : node.getValue()) {
 							this.deserialize(cData, cNode, element);
 							method.invoke(cData);
 						}
+					} else {
+						Logger.log(MessageLevel.WARN,
+								"b1 serializer: element [%s] is collection, but node [%s] is not array.",
+								element.getName(), node.getKey());
 					}
 				} catch (Exception e) {
 					throw new SerializationException(e);
@@ -232,8 +214,8 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					Method method = data.getClass().getMethod("set" + element.getName(), element.getType());
 					method.invoke(data, this.nodeValue(node.getValue(), element.getType()));
 				} catch (NoSuchMethodException e) {
-					Logger.log(MessageLevel.DEBUG, "serializer: not found [%s]'s property [%s].", rootElement.getName(),
-							node.getKey());
+					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].",
+							rootElement.getName(), node.getKey());
 				} catch (Exception e) {
 					throw new SerializationException(e);
 				}

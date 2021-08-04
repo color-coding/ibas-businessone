@@ -1,4 +1,4 @@
-package org.colorcoding.ibas.bobas.businessone.db;
+package org.colorcoding.ibas.bobas.businessone.data;
 
 public class B1Exception extends Exception {
 

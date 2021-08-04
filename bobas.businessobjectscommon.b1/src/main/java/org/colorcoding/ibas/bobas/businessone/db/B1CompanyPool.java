@@ -1,15 +1,17 @@
 package org.colorcoding.ibas.bobas.businessone.db;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
+import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
+import org.colorcoding.ibas.bobas.businessone.data.B1Exception;
 import org.colorcoding.ibas.bobas.message.Logger;
 import org.colorcoding.ibas.bobas.message.MessageLevel;
 
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.SBOCOMConstants;
 import com.sap.smb.sbo.api.SBOCOMUtil;
+import com.sap.smb.sbo.wrapper.com.ComException;
 
 public class B1CompanyPool {
 
@@ -18,6 +20,7 @@ public class B1CompanyPool {
 	protected static final String MSG_B1_COMPANY_WAITING = "b1 company: [%s|%s] is waiting.";
 	protected static final String MSG_B1_COMPANY_RECYCLED = "b1 company: [%s|%s] was recycled.";
 	protected static final String MSG_B1_COMPANY_RELEASED = "b1 company: [%s|%s] was released.";
+	protected static final String MSG_B1_COMPANY_DATATIME = "b1 company: [%s|%s] datetime [%s %s].";
 
 	public static final int POOL_SIZE = MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_COMPANY_POOL_SIZE,
 			1);
@@ -41,7 +44,10 @@ public class B1CompanyPool {
 			if (company.isConnected()) {
 				company.disconnect();
 			}
-			company.release();
+			try {
+				company.release();
+			} catch (Throwable ex) {
+			}
 		}
 		System.gc();
 		Logger.log(MessageLevel.INFO, message);
@@ -68,14 +74,7 @@ public class B1CompanyPool {
 		company.setPassword(connection.getPassword());
 		// 数据库相关
 		if (connection.getDbServerType() <= 0) {
-			for (Field field : SBOCOMConstants.class.getFields()) {
-				if (field.getName().startsWith("BoDataServerTypes_dst_MSSQL")) {
-					try {
-						company.setDbServerType((Integer) field.get(SBOCOMConstants.class));
-					} catch (Exception e) {
-					}
-				}
-			}
+			company.setDbServerType(SBOCOMConstants.BoDataServerTypes_dst_MSSQL2008);
 		} else {
 			company.setDbServerType(connection.getDbServerType());
 		}
@@ -91,7 +90,12 @@ public class B1CompanyPool {
 		// 许可证服务
 		if (connection.getLicenseServer() == null || connection.getLicenseServer().isEmpty()) {
 			if (connection.getServer() != null && !connection.getServer().isEmpty()) {
-				company.setLicenseServer(String.format("%s:30000", connection.getServer()));
+				if (connection.getServer().indexOf(":") > 0) {
+					company.setLicenseServer(String.format("%s:30000", connection.getServer()).substring(0,
+							connection.getServer().indexOf(":")));
+				} else {
+					company.setLicenseServer(String.format("%s:30000", connection.getServer()));
+				}
 			}
 		} else {
 			company.setLicenseServer(connection.getLicenseServer());
@@ -99,21 +103,29 @@ public class B1CompanyPool {
 		try {
 			// 低版本兼容设置
 			Method method = ICompany.class.getMethod("setSLDServer", String.class);
-			if (method != null) {
-				if (connection.getSLDServer() == null || connection.getSLDServer().isEmpty()) {
-					if (connection.getServer() != null && !connection.getServer().isEmpty()) {
+			if (connection.getSLDServer() == null || connection.getSLDServer().isEmpty()) {
+				if (connection.getServer() != null && !connection.getServer().isEmpty()) {
+					if (connection.getServer().indexOf(":") > 0) {
+						method.invoke(company, String.format("%s:40000", connection.getServer()).substring(0,
+								connection.getServer().indexOf(":")));
+					} else {
 						method.invoke(company, String.format("%s:40000", connection.getServer()));
 					}
-				} else {
-					method.invoke(company, connection.getSLDServer());
 				}
+			} else {
+				method.invoke(company, connection.getSLDServer());
 			}
-		} catch (Exception e) {
+		} catch (Throwable e) {
 		}
 		Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_CONNECTING, company.getServer(), company.getCompanyDB());
 		if (company.connect() != 0) {
-			throw new B1Exception(
-					String.format("%s - %s", company.getLastErrorCode(), company.getLastErrorDescription()));
+			int code = company.getLastErrorCode();
+			String description = company.getLastErrorDescription();
+			try {
+				company.release();
+			} catch (Throwable ex) {
+			}
+			throw new B1Exception(String.format("%s - %s", code, description));
 		} else {
 			Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_CONNECTED, company.getServer(), company.getCompanyDB());
 		}
@@ -135,24 +147,41 @@ public class B1CompanyPool {
 					if (wrapping == null) {
 						continue;
 					}
-					if (wrapping.getCompany() == null) {
-						this.wrappings[i] = null;
-					}
 					ICompany company = wrapping.getCompany();
-					if (!company.isConnected()) {
+					if (company == null) {
 						this.wrappings[i] = null;
-					}
-					if (!company.getServer().equalsIgnoreCase(connection.getServer())) {
 						continue;
 					}
-					if (!company.getCompanyDB().equalsIgnoreCase(connection.getCompanyDB())) {
-						continue;
+					try {
+						// 检查链接是否有效
+						if (!company.isConnected()) {
+							this.wrappings[i] = null;
+							company.release();
+							continue;
+						}
+						if (!company.getServer().equalsIgnoreCase(connection.getServer())) {
+							continue;
+						}
+						if (!company.getCompanyDB().equalsIgnoreCase(connection.getCompanyDB())) {
+							continue;
+						}
+						if (!company.getUserName().equalsIgnoreCase(connection.getUserName())) {
+							continue;
+						}
+						Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_DATATIME, connection.getServer(),
+								connection.getCompanyDB(), B1DataConvert.toString(company.getDBServerDate()),
+								company.getDBServerTime());
+						this.wrappings[i] = null;
+						return company;
+					} catch (ComException | Error e) {
+						this.wrappings[i] = null;
+						try {
+							company.release();
+						} catch (Throwable ex) {
+							Logger.log(MessageLevel.ERROR, e.toString());
+						}
+						Logger.log(MessageLevel.ERROR, e.toString());
 					}
-					if (!company.getUserName().equalsIgnoreCase(connection.getUserName())) {
-						continue;
-					}
-					this.wrappings[i] = null;
-					return company;
 				}
 				Logger.log(MessageLevel.DEBUG, MSG_B1_COMPANY_WAITING, connection.getServer(),
 						connection.getCompanyDB());
@@ -164,6 +193,7 @@ public class B1CompanyPool {
 			}
 		}
 		return this.createCompany(connection);
+
 	}
 
 	public boolean recycling(ICompany company) {

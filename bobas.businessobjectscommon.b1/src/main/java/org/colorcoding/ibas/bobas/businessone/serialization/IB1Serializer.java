@@ -7,6 +7,7 @@ import java.util.List;
 import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
+import org.colorcoding.ibas.bobas.serialization.structure.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -136,4 +137,23 @@ public interface IB1Serializer<S> {
 	 * @return 新对象实例
 	 */
 	Object deserialize(InputSource inputSource, ICompany company) throws SerializationException;
+
+	/**
+	 * 获取实体主键
+	 * 
+	 * @param className 名称
+	 * @param company   公司（提供schema）
+	 * @return
+	 */
+	Element[] getEntityKeys(String className, ICompany company) throws SerializationException;
+
+	/**
+	 * 获取实体
+	 * 
+	 * @param className 名称
+	 * @param keyValues 主键值
+	 * @param company   公司
+	 * @return
+	 */
+	Object getEntity(String className, Object[] keyValues, ICompany company) throws SerializationException;
 }

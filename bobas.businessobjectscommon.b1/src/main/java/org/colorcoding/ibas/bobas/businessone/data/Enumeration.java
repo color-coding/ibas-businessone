@@ -15,6 +15,8 @@ import com.sap.smb.sbo.api.SBOCOMConstants;
 
 public class Enumeration {
 
+	public static final String GROUP_BO_OBJECT_TYPES = "BoObjectTypes";
+
 	private volatile static Map<String, List<KeyValue>> valueMap;
 
 	private static Map<String, List<KeyValue>> getValueMap() {
@@ -38,6 +40,9 @@ public class Enumeration {
 			try {
 				String group = field.getName().substring(0, index);
 				String name = field.getName().substring(index + 1);
+				if (name != null && name.startsWith("o")) {
+					name = name.substring(1);
+				}
 				Object value = field.get(SBOCOMConstants.class);
 				if (!(value instanceof Integer)) {
 					continue;
@@ -60,10 +65,8 @@ public class Enumeration {
 	/**
 	 * 转换值
 	 * 
-	 * @param type
-	 *            类型
-	 * @param value
-	 *            字符
+	 * @param type  类型
+	 * @param value 字符
 	 * @return 枚举值
 	 */
 	public static Integer valueOf(String type, String value) {
@@ -97,8 +100,7 @@ public class Enumeration {
 	/**
 	 * 对象类型编码
 	 * 
-	 * @param type
-	 *            类型
+	 * @param type 类型
 	 * @return
 	 */
 	public static Integer valueOf(Class<?> type) {
@@ -107,9 +109,43 @@ public class Enumeration {
 			if (type.isInterface() && name.startsWith("I")) {
 				name = name.substring(1);
 			}
-			return valueOf("BoObjectTypes", String.format("o%s", name));
+			return valueOf(GROUP_BO_OBJECT_TYPES, String.format("o%s", name));
 		}
 		throw new DataConvertException(
 				I18N.prop("msg_bobas_data_type_not_support", type == null ? "UNKNOWN" : type.getName()));
+	}
+
+	/**
+	 * 对象类型名称
+	 * 
+	 * @param type  组
+	 * @param value 类型id
+	 * @return
+	 */
+	public static String nameOf(String type, Integer value) {
+		List<KeyValue> values = getValueMap().get(type);
+		if (values != null) {
+			for (KeyValue keyValue : values) {
+				if (keyValue.getValue().equals(value)) {
+					return (String) keyValue.getKey();
+				}
+			}
+		}
+		return String.valueOf(value);
+	}
+
+	/**
+	 * 对象类型名称
+	 * 
+	 * @param type  组
+	 * @param value 类型id
+	 * @return
+	 */
+	public static String nameOf(String type, String value) {
+		try {
+			return nameOf(type, Integer.valueOf(value));
+		} catch (NumberFormatException e) {
+			return value;
+		}
 	}
 }
