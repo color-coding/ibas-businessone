@@ -1,0 +1,103 @@
+/**
+ * @license
+ * Copyright Color-Coding Studio. All Rights Reserved.
+ *
+ * Use of this source code is governed by an Apache License, Version 2.0
+ * that can be found in the LICENSE file at http://www.apache.org/licenses/LICENSE-2.0
+ */
+/// <reference path="../../3rdparty/ibas/index.d.ts" />
+/// <reference path="../../3rdparty/businessone/index.d.ts" />
+/// <reference path="../../3rdparty/integration/index.d.ts" />
+/// <reference path="../../3rdparty/thirdpartyapp/index.d.ts" />
+/** 模块名称 */
+const MODULE_BUSINESS_ONE_NAME: string = "BusinessOne";
+/** 配置项-应用配置 */
+const CONFIG_MODULE_BUSINESS_ONE: string = "BONE_APP";
+/** 配置项-B1-数据地址 */
+const CONFIG_MODULE_BUSINESS_ONE_DATA_URL: string = "BONE_DATA_URL";
+/** 配置项-B1-视图地址 */
+const CONFIG_MODULE_BUSINESS_ONE_VIEW_URL: string = "BONE_VIEW_URL";
+/** 配置项-B1-令牌 */
+const CONFIG_MODULE_BUSINESS_ONE_TOKEN: string = "BONE_VIEW_TOKEN";
+/** 数据交互 */
+export abstract class B1Action extends integration.action.IntegrationAction {
+    /** 资源文件 */
+    resources(): string {
+        return "resources/languages.json";
+    }
+    /**
+     * 执行（判断配置，及加载JS）
+     */
+    protected execute(): boolean | void {
+        if (ibas.strings.isEmpty(this.getConfig(CONFIG_MODULE_BUSINESS_ONE_VIEW_URL))) {
+            let boRepository: thirdpartyapp.bo.BORepositoryThirdPartyApp = new thirdpartyapp.bo.BORepositoryThirdPartyApp();
+            boRepository.fetchApplicationSetting({
+                application: this.getConfig(CONFIG_MODULE_BUSINESS_ONE, "MDL_2RD_BONE"),
+                onCompleted: (opRslt) => {
+                    try {
+                        if (opRslt.resultCode !== 0) {
+                            throw new Error(opRslt.message);
+                        }
+                        if (opRslt.resultObjects.length === 0) {
+                            throw new Error(ibas.strings.format("not found application config [{0}].", this.getConfig(CONFIG_MODULE_BUSINESS_ONE, "MDL_2RD_BONE")));
+                        }
+                        for (let item of opRslt.resultObjects) {
+                            for (let pItem of item.settingItems) {
+                                if (ibas.strings.isEmpty(pItem.value)) {
+                                    continue;
+                                }
+                                if (ibas.strings.equals("ViewUrl", pItem.name)) {
+                                    this.addConfig(CONFIG_MODULE_BUSINESS_ONE_VIEW_URL, pItem.value);
+                                } else if (ibas.strings.equals("DataUrl", pItem.name)) {
+                                    this.addConfig(CONFIG_MODULE_BUSINESS_ONE_DATA_URL, pItem.value);
+                                } else if (ibas.strings.equals("Token", pItem.name)) {
+                                    this.addConfig(CONFIG_MODULE_BUSINESS_ONE_TOKEN, pItem.value);
+                                }
+                            }
+                        }
+                        this.execute();
+                    } catch (error) {
+                        this.log(error);
+                        this.done();
+                    }
+                }
+            });
+        } else {
+            if (!ibas.strings.isEmpty(this.getConfig(CONFIG_MODULE_BUSINESS_ONE_DATA_URL))) {
+                this.addConfig(
+                    ibas.strings.format(ibas.CONFIG_ITEM_TEMPLATE_REMOTE_REPOSITORY_ADDRESS,
+                        ibas.strings.format(ibas.MODULE_REPOSITORY_NAME_TEMPLATE, MODULE_BUSINESS_ONE_NAME)),
+                    ibas.urls.normalize(this.getConfig(CONFIG_MODULE_BUSINESS_ONE_DATA_URL)));
+            }
+            if (!ibas.strings.isEmpty(this.getConfig(CONFIG_MODULE_BUSINESS_ONE_TOKEN))) {
+                this.addConfig(
+                    ibas.strings.format(ibas.CONFIG_ITEM_TEMPLATE_USER_TOKEN,
+                        ibas.strings.format(ibas.MODULE_REPOSITORY_NAME_TEMPLATE, MODULE_BUSINESS_ONE_NAME)),
+                    this.getConfig(CONFIG_MODULE_BUSINESS_ONE_TOKEN));
+            }
+            ibas.requires.require(
+                {
+                    context: ibas.requires.naming(MODULE_BUSINESS_ONE_NAME),
+                    baseUrl: ibas.urls.normalize(this.getConfig(CONFIG_MODULE_BUSINESS_ONE_VIEW_URL)),
+                    waitSeconds: ibas.config.get(ibas.requires.CONFIG_ITEM_WAIT_SECONDS, 30),
+                },
+                "index" + (ibas.config.get(ibas.CONFIG_ITEM_USE_MINIMUM_LIBRARY) === true ? ibas.SIGN_MIN_LIBRARY : ""),
+                () => {
+                    try {
+                        return this.go();
+                    } catch (error) {
+                        this.log(error);
+                        this.done();
+                    }
+                },
+                (error: Error) => {
+                    this.log(error);
+                    this.done();
+                }
+            );
+        }
+        return false;
+    }
+
+    protected abstract go(): void;
+}

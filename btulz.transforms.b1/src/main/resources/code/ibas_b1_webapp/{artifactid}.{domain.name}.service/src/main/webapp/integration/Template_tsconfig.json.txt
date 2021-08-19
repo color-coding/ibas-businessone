@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "amd",
+    "target": "es6",
+    "noImplicitAny": false,
+    "removeComments": true,
+    "sourceMap": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "../3rdparty/ibas/index.d.ts",
+    "../3rdparty/shell/index.d.ts",
+    "../3rdparty/integration/index.d.ts",
+    "../3rdparty/businessone/index.d.ts",
+    "../3rdparty/thirdpartyapp/index.d.ts",
+    "../3rdparty/initialfantasy/index.d.ts"
+  ],
+  "files": [
+  ]
+}

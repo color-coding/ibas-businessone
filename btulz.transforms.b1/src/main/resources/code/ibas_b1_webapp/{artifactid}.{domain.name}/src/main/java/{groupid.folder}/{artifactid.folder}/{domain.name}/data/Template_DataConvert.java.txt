@@ -1,0 +1,11 @@
+package ${GroupId}.${ArtifactId}.${Domain.getName().toLowerCase()}.data;
+
+import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
+
+/**
+* 数据转换
+* 
+*/
+public class DataConvert extends B1DataConvert {
+
+}

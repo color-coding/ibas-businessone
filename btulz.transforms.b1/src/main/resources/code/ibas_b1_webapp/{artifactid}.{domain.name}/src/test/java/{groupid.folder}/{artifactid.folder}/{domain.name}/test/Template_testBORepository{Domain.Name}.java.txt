@@ -1,0 +1,8 @@
+package ${GroupId}.${ArtifactId}.${Domain.getName().toLowerCase()}.test;
+
+import junit.framework.TestCase;
+
+public class testBORepository${Domain.getName()} extends TestCase {
+
+
+}

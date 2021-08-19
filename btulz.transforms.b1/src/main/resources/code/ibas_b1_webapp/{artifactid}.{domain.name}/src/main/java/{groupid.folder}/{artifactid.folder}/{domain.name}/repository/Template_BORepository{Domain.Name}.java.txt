@@ -1,0 +1,17 @@
+package ${GroupId}.${ArtifactId}.${Domain.getName().toLowerCase()}.repository;
+
+import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
+import org.colorcoding.ibas.bobas.businessone.repository.BORepositoryBusinessOne;
+import org.colorcoding.ibas.bobas.core.RepositoryException;
+import org.colorcoding.ibas.bobas.db.ParsingException;
+import org.colorcoding.ibas.bobas.message.Logger;
+import org.colorcoding.ibas.bobas.common.*;
+import org.colorcoding.ibas.bobas.data.*;
+import com.sap.smb.sbo.api.*;
+
+/**
+* ${Domain.getName()}仓库
+*/
+public class BORepository${Domain.getName()} extends BORepositoryBusinessOne {
+
+}
