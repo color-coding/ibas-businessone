@@ -36,6 +36,7 @@ import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.sap.smb.sbo.api.ICompany;
+import com.sap.smb.sbo.api.ICompanyService;
 import com.sap.smb.sbo.api.IFields;
 import com.sap.smb.sbo.api.IValidValues;
 import com.sap.smb.sbo.api.SBOCOMUtil;
@@ -159,8 +160,15 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					return data;
 				}
 			}
-			Method method = SBOCOMUtil.class.getMethod("new" + className, ICompany.class);
-			Object data = method.invoke(null, company);
+
+			Object data;
+			try {
+				Method method = SBOCOMUtil.class.getMethod("new" + className, ICompany.class);
+				data = method.invoke(null, company);
+			} catch (NoSuchMethodException e) {
+				Method method = SBOCOMUtil.class.getMethod("new" + className + "Service", ICompanyService.class);
+				data = method.invoke(null, company.getCompanyService());
+			}
 			if (data == null) {
 				throw new SerializationException(I18N.prop("msg_unrecognized_data", className));
 			}
