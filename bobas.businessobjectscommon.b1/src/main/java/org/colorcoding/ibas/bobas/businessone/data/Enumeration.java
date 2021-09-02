@@ -16,6 +16,7 @@ import com.sap.smb.sbo.api.SBOCOMConstants;
 public class Enumeration {
 
 	public static final String GROUP_BO_OBJECT_TYPES = "BoObjectTypes";
+	public static final String GROUP_SERVICE_DATA_INTERFACES = "sServiceDataInterfaces";
 
 	private volatile static Map<String, List<KeyValue>> valueMap;
 
@@ -72,9 +73,25 @@ public class Enumeration {
 	public static Integer valueOf(String type, String value) {
 		List<KeyValue> values = getValueMap().get(type);
 		if (values != null) {
-			for (KeyValue keyValue : values) {
-				if (keyValue.getKey().equals(value)) {
-					return (Integer) keyValue.getValue();
+			if (value.startsWith("*")) {
+				value = value.substring(1, value.length());
+				for (KeyValue keyValue : values) {
+					if (keyValue.getKey().endsWith(value)) {
+						return (Integer) keyValue.getValue();
+					}
+				}
+			} else if (value.endsWith("*")) {
+				value = value.substring(0, value.length() - 1);
+				for (KeyValue keyValue : values) {
+					if (keyValue.getKey().startsWith(value)) {
+						return (Integer) keyValue.getValue();
+					}
+				}
+			} else {
+				for (KeyValue keyValue : values) {
+					if (keyValue.getKey().equals(value)) {
+						return (Integer) keyValue.getValue();
+					}
 				}
 			}
 		}
@@ -108,8 +125,11 @@ public class Enumeration {
 			String name = type.getSimpleName();
 			if (type.isInterface() && name.startsWith("I")) {
 				name = name.substring(1);
+				return valueOf(GROUP_BO_OBJECT_TYPES, String.format("o%s", name));
+			} else if (!type.isInterface() && name.endsWith("sService")) {
+				name = name.substring(0, name.indexOf("sService"));
+				return valueOf(name + GROUP_SERVICE_DATA_INTERFACES, String.format("*%s", name));
 			}
-			return valueOf(GROUP_BO_OBJECT_TYPES, String.format("o%s", name));
 		}
 		throw new DataConvertException(
 				I18N.prop("msg_bobas_data_type_not_support", type == null ? "UNKNOWN" : type.getName()));

@@ -205,9 +205,11 @@ public class TestBORepository extends TestCase {
 		}
 	}
 
-	private final static String DATA_STRING = "{\"type\":\"JournalEntries\",\"jdtNum\":2090,\"memo\":\"记提固定资产折旧\",\"lines\":[{\"accountCode\":\"55010202\",\"debit\":1000.0},{\"accountCode\":\"150101\",\"credit\":500.0},{\"accountCode\":\"150103\",\"credit\":200.0},{\"accountCode\":\"150104\",\"credit\":200.0},{\"accountCode\":\"150202\",\"credit\":100.0}]}";
+	private static String DATA_STRING = "{\"type\":\"JournalEntries\",\"jdtNum\":2090,\"memo\":\"记提固定资产折旧\",\"lines\":[{\"accountCode\":\"55010202\",\"debit\":1000.0},{\"accountCode\":\"150101\",\"credit\":500.0},{\"accountCode\":\"150103\",\"credit\":200.0},{\"accountCode\":\"150104\",\"credit\":200.0},{\"accountCode\":\"150202\",\"credit\":100.0}]}";
 
-	public void testB1DataSave() throws RepositoryException {
+	public void testB1DataSave() throws RepositoryException, SBOCOMException {
+		DATA_STRING = "{\"type\":\"ProfitCenter\",\"inWhichDimension\":2,\"centerCode\":\"A00141\",\"centerName\":\"马鹏鹏\"}";
+
 		BORepositoryDemo boRepository = new BORepositoryDemo();
 		boRepository.openRepository();
 		ICompany b1Company = boRepository.getCompany();

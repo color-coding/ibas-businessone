@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
+import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
 import org.colorcoding.ibas.bobas.i18n.I18N;
 import org.colorcoding.ibas.bobas.message.Logger;
 import org.colorcoding.ibas.bobas.message.MessageLevel;
@@ -160,19 +162,32 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					return data;
 				}
 			}
-
+			ElementRoot element;
 			Object data;
 			try {
 				Method method = SBOCOMUtil.class.getMethod("new" + className, ICompany.class);
 				data = method.invoke(null, company);
 			} catch (NoSuchMethodException e) {
-				Method method = SBOCOMUtil.class.getMethod("new" + className + "Service", ICompanyService.class);
+				Method method = SBOCOMUtil.class.getMethod("new" + className + "sService", ICompanyService.class);
 				data = method.invoke(null, company.getCompanyService());
+				if (data == null) {
+					throw new SerializationException(I18N.prop("msg_unrecognized_data", className));
+				}
+				method = data.getClass().getMethod("getDataInterface", Integer.class);
+				data = method.invoke(data, Enumeration.valueOf(data.getClass()));
+				// com组件代理对象转为一般类
+				Class<?> clazz = Class.forName(String.format("com.sap.smb.sbo.api.%s", className));
+				if (clazz == null) {
+					throw new SerializationException(I18N.prop("msg_unrecognized_data", className));
+				}
+				Constructor<?> constructor = clazz.getConstructor(Object.class);
+				data = constructor.newInstance(data);
 			}
 			if (data == null) {
 				throw new SerializationException(I18N.prop("msg_unrecognized_data", className));
 			}
-			this.deserialize(data, rootNode, getElement(data.getClass()));
+			element = getElement(data.getClass());
+			this.deserialize(data, rootNode, element);
 			return data;
 		} catch (Exception e) {
 			throw new SerializationException(e);
@@ -240,6 +255,8 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			return node.asInt();
 		} else if (type == Long.class) {
 			return node.asLong();
+		} else if (type == Date.class) {
+			return B1DataConvert.convert(Date.class, node.asText());
 		} else {
 			return node.asText();
 		}

@@ -90,6 +90,8 @@ public class B1DataConvert {
 		return dateFormat.format(value);
 	}
 
+	private final static Date NULL_DATE = new Date(-2209190400000l);
+
 	public static DataTable toDataTable(IRecordset recordset) {
 		DataTable dataTable = new DataTable();
 		// 创建列
@@ -108,6 +110,15 @@ public class B1DataConvert {
 				if (dataTable.getColumns().get(i).getDataType() == Double.class) {
 					try {
 						row.setValue(i, field.getValueDouble());
+					} catch (Exception e) {
+						row.setValue(i, field.getValue());
+					}
+				} else if (dataTable.getColumns().get(i).getDataType() == Date.class) {
+					try {
+						row.setValue(i, field.getValueDate());
+						if (NULL_DATE.equals(row.getValue(i))) {
+							row.setValue(i, null);
+						}
 					} catch (Exception e) {
 						row.setValue(i, field.getValue());
 					}

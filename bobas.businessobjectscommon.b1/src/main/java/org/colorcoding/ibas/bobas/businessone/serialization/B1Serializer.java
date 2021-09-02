@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +17,8 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
+import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
+import org.colorcoding.ibas.bobas.data.DataConvertException;
 import org.colorcoding.ibas.bobas.message.Logger;
 import org.colorcoding.ibas.bobas.message.MessageLevel;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
@@ -33,7 +34,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.sap.smb.sbo.api.ICompany;
-import com.sap.smb.sbo.api.SBOCOMConstants;
 import com.sap.smb.sbo.api.SBOCOMUtil;
 
 public abstract class B1Serializer<S> implements IB1Serializer<S> {
@@ -141,26 +141,23 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 	public Element[] getEntityKeys(String className, ICompany company) {
 		try {
 			if (!ENTRY_KEYS.containsKey(className)) {
-				for (Field field : SBOCOMConstants.class.getFields()) {
-					if (field.getName().startsWith("BoObjectTypes_") && field.getName().endsWith("o" + className)) {
-						Element[] keys = this
-								.getEntityKeys(company.getBusinessObjectXmlSchema((Integer) (field.get(null))));
-						// 补充类型
-						if (keys != null && keys.length > 0) {
-							for (Method method : SBOCOMUtil.class.getMethods()) {
-								if (method.getName().equalsIgnoreCase("get" + className)
-										&& keys.length + 1 == method.getParameterCount()) {
-									for (int i = 0; i < keys.length; i++) {
-										Element element = keys[i];
-										element.setType(method.getParameterTypes()[i + 1]);
-									}
-									break;
+				try {
+					Element[] keys = this.getEntityKeys(company.getBusinessObjectXmlSchema(
+							Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className)));
+					if (keys != null && keys.length > 0) {
+						for (Method method : SBOCOMUtil.class.getMethods()) {
+							if (method.getName().equalsIgnoreCase("get" + className)
+									&& keys.length + 1 == method.getParameterCount()) {
+								for (int i = 0; i < keys.length; i++) {
+									Element element = keys[i];
+									element.setType(method.getParameterTypes()[i + 1]);
 								}
+								break;
 							}
 						}
 						ENTRY_KEYS.put(className, keys);
-						break;
 					}
+				} catch (DataConvertException e) {
 				}
 			}
 			return ENTRY_KEYS.get(className);
