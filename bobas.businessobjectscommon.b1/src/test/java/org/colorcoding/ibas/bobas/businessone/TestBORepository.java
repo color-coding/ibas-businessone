@@ -205,10 +205,11 @@ public class TestBORepository extends TestCase {
 		}
 	}
 
-	private static String DATA_STRING = "{\"type\":\"JournalEntries\",\"jdtNum\":2090,\"memo\":\"记提固定资产折旧\",\"lines\":[{\"accountCode\":\"55010202\",\"debit\":1000.0},{\"accountCode\":\"150101\",\"credit\":500.0},{\"accountCode\":\"150103\",\"credit\":200.0},{\"accountCode\":\"150104\",\"credit\":200.0},{\"accountCode\":\"150202\",\"credit\":100.0}]}";
+	private static String DATA_STRING = "{\"type\":\"JournalEntries\",\"memo\":\"朱鹏飞报销#10\",\"lines\":[{\"accountCode\":\"540101\",\"debit\":9.9,\"userFields\":{\"fields\":[{\"name\":\"U_FPH\",\"value\":\"H123456789\"},{\"name\":\"U_Date\",\"value\":\"2022-01-01\"},{\"name\":\"U_Qty\",\"value\":9.9}]}},{\"accountCode\":\"100101\",\"credit\":9.9}]}";
 
 	public void testB1DataSave() throws RepositoryException, SBOCOMException {
-		DATA_STRING = "{\"type\":\"ProfitCenter\",\"inWhichDimension\":2,\"centerCode\":\"A00141\",\"centerName\":\"马鹏鹏\"}";
+		// DATA_STRING =
+		// "{\"type\":\"ProfitCenter\",\"inWhichDimension\":2,\"centerCode\":\"A00141\",\"centerName\":\"马鹏鹏\"}";
 
 		BORepositoryDemo boRepository = new BORepositoryDemo();
 		boRepository.openRepository();

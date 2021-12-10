@@ -19,6 +19,7 @@ import java.util.Map.Entry;
 
 import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
+import org.colorcoding.ibas.bobas.data.DataConvert;
 import org.colorcoding.ibas.bobas.i18n.I18N;
 import org.colorcoding.ibas.bobas.message.Logger;
 import org.colorcoding.ibas.bobas.message.MessageLevel;
@@ -39,7 +40,9 @@ import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.ICompanyService;
+import com.sap.smb.sbo.api.IField;
 import com.sap.smb.sbo.api.IFields;
+import com.sap.smb.sbo.api.IUserFields;
 import com.sap.smb.sbo.api.IValidValues;
 import com.sap.smb.sbo.api.SBOCOMUtil;
 
@@ -229,6 +232,31 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 								"b1 serializer: element [%s] is collection, but node [%s] is not array.",
 								element.getName(), node.getKey());
 					}
+				} catch (Exception e) {
+					throw new SerializationException(e);
+				}
+			} else if (element.getType() == IUserFields.class) {
+				// 自定义字段
+				try {
+					Method method = data.getClass().getMethod("get" + element.getName());
+					IUserFields userFields = (IUserFields) method.invoke(data);
+					JsonNode userNode = node.getValue().get("fields");
+					if (userFields.getFields().getCount() > 0 && !userNode.isNull() && userNode.isArray()) {
+						for (JsonNode jsonNode : userNode) {
+							String name = jsonNode.get("name").textValue();
+							if (!DataConvert.isNullOrEmpty(name)) {
+								IField field = userFields.getFields().item(name);
+								if (field != null) {
+									this.deserialize(field, jsonNode, element.getChilds().get(0));
+								}
+							}
+						}
+					} else {
+						Logger.log(MessageLevel.DEBUG, "b1 serializer: not define user fields.");
+					}
+				} catch (NoSuchMethodException e) {
+					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].",
+							rootElement.getName(), node.getKey());
 				} catch (Exception e) {
 					throw new SerializationException(e);
 				}
