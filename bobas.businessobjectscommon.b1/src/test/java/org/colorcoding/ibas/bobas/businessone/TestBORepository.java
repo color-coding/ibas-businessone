@@ -2,6 +2,7 @@ package org.colorcoding.ibas.bobas.businessone;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -20,6 +21,7 @@ import org.colorcoding.ibas.bobas.common.ISort;
 import org.colorcoding.ibas.bobas.common.SortType;
 import org.colorcoding.ibas.bobas.core.RepositoryException;
 import org.colorcoding.ibas.bobas.data.DataTable;
+import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 
 import com.sap.smb.sbo.api.ICompany;
@@ -102,6 +104,11 @@ public class TestBORepository extends TestCase {
 		serializerJson.getSchema(IDocuments.class, outputStream);
 		outputStream.close();
 		System.out.println("schema: " + fileGroup + "schema_json.json");
+		IDocuments order = SBOCOMUtil.getDocuments(b1Company, SBOCOMConstants.BoObjectTypes_Document_oOrders, 1);
+		outputStream = new FileOutputStream(fileGroup + "data_json.json");
+		serializerJson.serialize(order, outputStream);
+		outputStream.close();
+		System.out.println("data: " + fileGroup + "data_json.json");
 	}
 
 	public void testQuery() throws RepositoryException, SBOCOMException {
@@ -205,9 +212,11 @@ public class TestBORepository extends TestCase {
 		}
 	}
 
-	private static String DATA_STRING = "{\"type\":\"JournalEntries\",\"memo\":\"朱鹏飞报销#10\",\"lines\":[{\"accountCode\":\"540101\",\"debit\":9.9,\"userFields\":{\"fields\":[{\"name\":\"U_FPH\",\"value\":\"H123456789\"},{\"name\":\"U_Date\",\"value\":\"2022-01-01\"},{\"name\":\"U_Qty\",\"value\":9.9}]}},{\"accountCode\":\"100101\",\"credit\":9.9}]}";
+	private static String DATA_STRING_JE = "{\"type\":\"JournalEntries\",\"memo\":\"朱鹏飞报销#10\",\"lines\":[{\"accountCode\":\"540101\",\"debit\":9.9,\"userFields\":{\"fields\":[{\"name\":\"U_FPH\",\"value\":\"H123456789\"},{\"name\":\"U_Date\",\"value\":\"2022-01-01\"},{\"name\":\"U_Qty\",\"value\":9.9}]}},{\"accountCode\":\"100101\",\"credit\":9.9}]}";
+	private static String DATA_STRING_SO = "{\"type\":\"Orders\",\"address\":\"100021\\rCN01北京朝阳路\\r1000号6号楼304室\",\"cardCode\":\"C20000\",\"cardName\":\"北京龙发电子贸易公司\",\"docDueDate\":\"2022-01-10\",\"lines\":[{\"itemCode\":\"A00001\",\"itemDescription\":\"IBM Infoprint 1312 喷墨打印机\",\"quantity\":5.0}]}";
 
-	public void testB1DataSave() throws RepositoryException, SBOCOMException {
+	public void testB1DataSave()
+			throws RepositoryException, SBOCOMException, SerializationException, FileNotFoundException {
 		// DATA_STRING =
 		// "{\"type\":\"ProfitCenter\",\"inWhichDimension\":2,\"centerCode\":\"A00141\",\"centerName\":\"马鹏鹏\"}";
 
@@ -216,11 +225,21 @@ public class TestBORepository extends TestCase {
 		ICompany b1Company = boRepository.getCompany();
 		// json序列化测试
 		IB1Serializer<?> serializerJson = new B1SerializerJson();
-		Object data = serializerJson.deserialize(DATA_STRING, b1Company);
+		Object data = serializerJson.deserialize(DATA_STRING_JE, b1Company);
 		if (data instanceof IJournalEntries) {
 			IJournalEntries journalEntries = (IJournalEntries) data;
 			if (journalEntries.add() == 0) {
 				System.out.println(String.format("JournalEntries: %s", b1Company.getNewObjectKey()));
+			} else {
+				System.err.println(b1Company.getLastErrorDescription());
+			}
+		}
+		// json反序列化单据
+		data = serializerJson.deserialize(DATA_STRING_SO, b1Company);
+		if (data instanceof IDocuments) {
+			IDocuments order = (IDocuments) data;
+			if (order.add() == 0) {
+				System.out.println(String.format("order: %s", b1Company.getNewObjectKey()));
 			} else {
 				System.err.println(b1Company.getLastErrorDescription());
 			}

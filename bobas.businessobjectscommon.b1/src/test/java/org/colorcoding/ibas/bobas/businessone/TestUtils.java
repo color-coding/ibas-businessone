@@ -18,6 +18,8 @@ public class TestUtils extends TestCase {
 	public void testDataConvert() {
 		assertEquals(SBOCOMConstants.BoDataServerTypes_dst_MSSQL2012,
 				Enumeration.valueOf("BoDataServerTypes", "dst_MSSQL2012"));
+		System.out.println(Enumeration.isDocuments("Orders"));
+		System.out.println(Enumeration.isDocuments(SBOCOMConstants.BoObjectTypes_Document_oDrafts));
 	}
 
 	public void testJson() throws IOException {

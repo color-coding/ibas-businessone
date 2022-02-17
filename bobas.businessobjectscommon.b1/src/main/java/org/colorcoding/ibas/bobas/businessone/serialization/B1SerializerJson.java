@@ -168,8 +168,14 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			ElementRoot element;
 			Object data;
 			try {
-				Method method = SBOCOMUtil.class.getMethod("new" + className, ICompany.class);
-				data = method.invoke(null, company);
+				if (Enumeration.isDocuments(className)) {
+					// 单据类型，需要指定子类型
+					data = SBOCOMUtil.newDocuments(company,
+							Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className));
+				} else {
+					Method method = SBOCOMUtil.class.getMethod("new" + className, ICompany.class);
+					data = method.invoke(null, company);
+				}
 			} catch (NoSuchMethodException e) {
 				Method method = SBOCOMUtil.class.getMethod("new" + className + "sService", ICompanyService.class);
 				data = method.invoke(null, company.getCompanyService());

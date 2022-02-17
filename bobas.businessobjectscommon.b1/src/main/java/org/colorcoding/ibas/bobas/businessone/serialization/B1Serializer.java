@@ -145,17 +145,26 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 					Element[] keys = this.getEntityKeys(company.getBusinessObjectXmlSchema(
 							Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className)));
 					if (keys != null && keys.length > 0) {
-						for (Method method : SBOCOMUtil.class.getMethods()) {
-							if (method.getName().equalsIgnoreCase("get" + className)
-									&& keys.length + 1 == method.getParameterCount()) {
-								for (int i = 0; i < keys.length; i++) {
-									Element element = keys[i];
-									element.setType(method.getParameterTypes()[i + 1]);
-								}
-								break;
+						if (Enumeration.isDocuments(className)) {
+							for (int i = 0; i < keys.length; i++) {
+								Element element = keys[i];
+								element.setType(Integer.class);
 							}
+							ENTRY_KEYS.put(className, keys);
+						} else {
+							for (Method method : SBOCOMUtil.class.getMethods()) {
+								if (method.getName().equalsIgnoreCase("get" + className)
+										&& keys.length + 1 == method.getParameterCount()) {
+									for (int i = 0; i < keys.length; i++) {
+										Element element = keys[i];
+										element.setType(method.getParameterTypes()[i + 1]);
+									}
+									break;
+								}
+							}
+							ENTRY_KEYS.put(className, keys);
 						}
-						ENTRY_KEYS.put(className, keys);
+
 					}
 				} catch (DataConvertException e) {
 				}
@@ -254,15 +263,30 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 			builder.append(keyValues[i]);
 		}
 		try {
-			Method method = SBOCOMUtil.class.getMethod("get" + className, types);
-			Object data = method.invoke(null, params);
-			if (data != null) {
-				Logger.log(MessageLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className, builder.toString());
+			if (Enumeration.isDocuments(className)) {
+				Object data = SBOCOMUtil.getDocuments(company,
+						Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className), (Integer) keyValues[0]);
+				if (data != null) {
+					Logger.log(MessageLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
+							builder.toString());
+				} else {
+					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
+							builder.toString());
+				}
+				return data;
 			} else {
-				Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
-						builder.toString());
+				Method method = SBOCOMUtil.class.getMethod("get" + className, types);
+				Object data = method.invoke(null, params);
+				if (data != null) {
+					Logger.log(MessageLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
+							builder.toString());
+				} else {
+					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
+							builder.toString());
+				}
+				return data;
 			}
-			return data;
+
 		} catch (NoSuchMethodException e) {
 			return null;
 		} catch (Exception e) {

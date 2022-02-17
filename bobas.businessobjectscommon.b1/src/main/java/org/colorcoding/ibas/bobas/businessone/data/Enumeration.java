@@ -65,7 +65,7 @@ public class Enumeration {
 
 	/**
 	 * 转换值
-	 * 
+	 *
 	 * @param type  类型
 	 * @param value 字符
 	 * @return 枚举值
@@ -88,6 +88,9 @@ public class Enumeration {
 					}
 				}
 			} else {
+				if (isDocuments(value) && !value.startsWith("Document_o")) {
+					value = "Document_o" + value;
+				}
 				for (KeyValue keyValue : values) {
 					if (keyValue.getKey().equals(value)) {
 						return (Integer) keyValue.getValue();
@@ -116,7 +119,7 @@ public class Enumeration {
 
 	/**
 	 * 对象类型编码
-	 * 
+	 *
 	 * @param type 类型
 	 * @return
 	 */
@@ -125,7 +128,11 @@ public class Enumeration {
 			String name = type.getSimpleName();
 			if (type.isInterface() && name.startsWith("I")) {
 				name = name.substring(1);
-				return valueOf(GROUP_BO_OBJECT_TYPES, String.format("o%s", name));
+				if (isDocuments(name)) {
+					return valueOf(GROUP_BO_OBJECT_TYPES, String.format("Document_o%s", name));
+				} else {
+					return valueOf(GROUP_BO_OBJECT_TYPES, String.format("o%s", name));
+				}
 			} else if (!type.isInterface() && name.endsWith("sService")) {
 				name = name.substring(0, name.indexOf("sService"));
 				return valueOf(name + GROUP_SERVICE_DATA_INTERFACES, String.format("*%s", name));
@@ -137,7 +144,7 @@ public class Enumeration {
 
 	/**
 	 * 对象类型名称
-	 * 
+	 *
 	 * @param type  组
 	 * @param value 类型id
 	 * @return
@@ -156,7 +163,7 @@ public class Enumeration {
 
 	/**
 	 * 对象类型名称
-	 * 
+	 *
 	 * @param type  组
 	 * @param value 类型id
 	 * @return
@@ -167,5 +174,33 @@ public class Enumeration {
 		} catch (NumberFormatException e) {
 			return value;
 		}
+	}
+
+	public static boolean isDocuments(String name) {
+		if ("Documents".equals(name)) {
+			throw new RuntimeException(I18N.prop("msg_please_use_document_subtype"));
+		}
+		List<KeyValue> values = getValueMap().get(GROUP_BO_OBJECT_TYPES);
+		if (values != null) {
+			if (!name.startsWith("Document_o")) {
+				name = "Document_o" + name;
+			}
+			for (KeyValue keyValue : values) {
+				if (keyValue.getKey().equals(name)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public static boolean isDocuments(Integer type) {
+		String name = nameOf(GROUP_BO_OBJECT_TYPES, type);
+		if (!B1DataConvert.isNullOrEmpty(name)) {
+			if (name.startsWith("Document_o")) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
