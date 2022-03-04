@@ -4,7 +4,7 @@
     xmlns:ns2="http://colorcoding.org/btulz/shell/commands">
     <Item Content="java" Editable="false" />
     <Item Content="-Dfile.encoding=utf-8" Description="使用utf-8编码方式" Editable="false" />
-    <Item Content="-jar" Description="执行jar包" />
+    <Item Content="-jar" Description="执行jar包" Editable="false" />
     <Item Content="btulz.transforms.b1-0.1.0-${VALUE}.jar" Description="包名称" Value="9.3">
         <ValidValues>
           <ValidValue Description="DI-API-10" Value="10" />

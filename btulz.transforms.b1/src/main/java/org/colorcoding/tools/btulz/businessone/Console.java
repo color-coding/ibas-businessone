@@ -2,6 +2,7 @@ package org.colorcoding.tools.btulz.businessone;
 
 import org.colorcoding.tools.btulz.businessone.command.Command4Code;
 import org.colorcoding.tools.btulz.businessone.command.Command4Ds;
+import org.colorcoding.tools.btulz.businessone.command.Command4Out;
 import org.colorcoding.tools.btulz.command.CommandsManager;
 
 public class Console {
@@ -15,6 +16,7 @@ public class Console {
 					// 注册发布的命令
 					commandsManager.register(Command4Code.class);
 					commandsManager.register(Command4Ds.class);
+					commandsManager.register(Command4Out.class);
 				}
 			}
 		}
