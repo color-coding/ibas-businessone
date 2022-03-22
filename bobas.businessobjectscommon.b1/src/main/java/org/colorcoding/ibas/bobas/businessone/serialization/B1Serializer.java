@@ -145,7 +145,7 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 					Element[] keys = this.getEntityKeys(company.getBusinessObjectXmlSchema(
 							Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className)));
 					if (keys != null && keys.length > 0) {
-						if (Enumeration.isDocuments(className)) {
+						if (Enumeration.isDocuments(className) || Enumeration.isPayments(className)) {
 							for (int i = 0; i < keys.length; i++) {
 								Element element = keys[i];
 								element.setType(Integer.class);
@@ -265,6 +265,17 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 		try {
 			if (Enumeration.isDocuments(className)) {
 				Object data = SBOCOMUtil.getDocuments(company,
+						Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className), (Integer) keyValues[0]);
+				if (data != null) {
+					Logger.log(MessageLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
+							builder.toString());
+				} else {
+					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
+							builder.toString());
+				}
+				return data;
+			} else if (Enumeration.isPayments(className)) {
+				Object data = SBOCOMUtil.getPayments(company,
 						Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className), (Integer) keyValues[0]);
 				if (data != null) {
 					Logger.log(MessageLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,

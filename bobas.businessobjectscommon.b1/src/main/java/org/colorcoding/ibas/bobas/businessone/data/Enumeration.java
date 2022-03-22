@@ -126,16 +126,20 @@ public class Enumeration {
 	public static Integer valueOf(Class<?> type) {
 		if (type != null && type.getName().startsWith("com.sap.smb.sbo.api.")) {
 			String name = type.getSimpleName();
-			if (type.isInterface() && name.startsWith("I")) {
-				name = name.substring(1);
-				if (isDocuments(name)) {
-					return valueOf(GROUP_BO_OBJECT_TYPES, String.format("Document_o%s", name));
-				} else {
-					return valueOf(GROUP_BO_OBJECT_TYPES, String.format("o%s", name));
-				}
-			} else if (!type.isInterface() && name.endsWith("sService")) {
+			if (!type.isInterface() && name.endsWith("sService")) {
 				name = name.substring(0, name.indexOf("sService"));
 				return valueOf(name + GROUP_SERVICE_DATA_INTERFACES, String.format("*%s", name));
+			} else {
+				if (type.isInterface() && name.startsWith("I")) {
+					name = name.substring(1);
+				}
+				if (isDocuments(name)) {
+					return valueOf(GROUP_BO_OBJECT_TYPES, String.format("Document_o%s", name));
+				} else if (isPayments(name)) {
+					return valueOf(GROUP_BO_OBJECT_TYPES, String.format("Incoming%s", name));
+				} else {
+					return valueOf(GROUP_BO_OBJECT_TYPES, String.format("%s", name));
+				}
 			}
 		}
 		throw new DataConvertException(
@@ -200,6 +204,26 @@ public class Enumeration {
 			if (name.startsWith("Document_o")) {
 				return true;
 			}
+		}
+		return false;
+	}
+
+	public static boolean isPayments(String name) {
+		if ("IncomingPayments".equalsIgnoreCase(name)) {
+			return true;
+		} else if ("VendorPayments".equalsIgnoreCase(name)) {
+			return true;
+		} else if ("Payments".equalsIgnoreCase(name)) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean isPayments(Integer type) {
+		if (Integer.compare(SBOCOMConstants.BoObjectTypes_oIncomingPayments, type) == 0) {
+			return true;
+		} else if (Integer.compare(SBOCOMConstants.BoObjectTypes_oVendorPayments, type) == 0) {
+			return true;
 		}
 		return false;
 	}

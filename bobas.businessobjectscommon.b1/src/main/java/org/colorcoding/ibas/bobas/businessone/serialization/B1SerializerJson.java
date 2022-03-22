@@ -172,12 +172,21 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					// 单据类型，需要指定子类型
 					data = SBOCOMUtil.newDocuments(company,
 							Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className));
+				} else if (Enumeration.isPayments(className)) {
+					// 付款类型，需要指定子类型
+					data = SBOCOMUtil.newPayments(company,
+							Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className));
 				} else {
 					Method method = SBOCOMUtil.class.getMethod("new" + className, ICompany.class);
 					data = method.invoke(null, company);
 				}
 			} catch (NoSuchMethodException e) {
-				Method method = SBOCOMUtil.class.getMethod("new" + className + "sService", ICompanyService.class);
+				Method method = null;
+				try {
+					method = SBOCOMUtil.class.getMethod("new" + className + "sService", ICompanyService.class);
+				} catch (NoSuchMethodException e2) {
+					throw new SerializationException(I18N.prop("msg_unrecognized_type", className));
+				}
 				data = method.invoke(null, company.getCompanyService());
 				if (data == null) {
 					throw new SerializationException(I18N.prop("msg_unrecognized_data", className));
@@ -201,7 +210,6 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 		} catch (Exception e) {
 			throw new SerializationException(e);
 		}
-
 	}
 
 	protected void deserialize(Object data, JsonNode rootNode, Element rootElement) throws SerializationException {
