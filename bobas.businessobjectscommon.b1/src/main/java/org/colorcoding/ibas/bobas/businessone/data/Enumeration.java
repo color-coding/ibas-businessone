@@ -227,4 +227,18 @@ public class Enumeration {
 		}
 		return false;
 	}
+
+	public static boolean isUserTable(String name) {
+		if ("UserTables".equalsIgnoreCase(name)) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean isUserTable(Integer type) {
+		if (Integer.compare(SBOCOMConstants.BoObjectTypes_oUserTables, type) == 0) {
+			return true;
+		}
+		return false;
+	}
 }

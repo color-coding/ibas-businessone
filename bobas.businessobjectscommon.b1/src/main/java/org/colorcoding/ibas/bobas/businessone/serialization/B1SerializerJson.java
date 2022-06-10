@@ -165,8 +165,8 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					return data;
 				}
 			}
-			ElementRoot element;
-			Object data;
+			ElementRoot element = null;
+			Object data = null;
 			try {
 				if (Enumeration.isDocuments(className)) {
 					// 单据类型，需要指定子类型
@@ -176,6 +176,12 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					// 付款类型，需要指定子类型
 					data = SBOCOMUtil.newPayments(company,
 							Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className));
+				} else if (Enumeration.isUserTable(className)) {
+					// 自定义表
+					jsonNode = rootNode.path(this.nameElement(classKeys[0].getName()));
+					if (!jsonNode.isMissingNode() && !B1DataConvert.isNullOrEmpty(jsonNode.asText())) {
+						data = company.getUserTables().item(jsonNode.asText());
+					}
 				} else {
 					Method method = SBOCOMUtil.class.getMethod("new" + className, ICompany.class);
 					data = method.invoke(null, company);

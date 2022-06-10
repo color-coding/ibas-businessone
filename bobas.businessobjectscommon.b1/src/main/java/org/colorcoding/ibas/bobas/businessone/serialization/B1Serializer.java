@@ -34,6 +34,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.sap.smb.sbo.api.ICompany;
+import com.sap.smb.sbo.api.IUserTable;
 import com.sap.smb.sbo.api.SBOCOMUtil;
 
 public abstract class B1Serializer<S> implements IB1Serializer<S> {
@@ -142,29 +143,40 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 		try {
 			if (!ENTRY_KEYS.containsKey(className)) {
 				try {
-					Element[] keys = this.getEntityKeys(company.getBusinessObjectXmlSchema(
-							Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className)));
-					if (keys != null && keys.length > 0) {
-						if (Enumeration.isDocuments(className) || Enumeration.isPayments(className)) {
-							for (int i = 0; i < keys.length; i++) {
-								Element element = keys[i];
-								element.setType(Integer.class);
-							}
-							ENTRY_KEYS.put(className, keys);
-						} else {
-							for (Method method : SBOCOMUtil.class.getMethods()) {
-								if (method.getName().equalsIgnoreCase("get" + className)
-										&& keys.length + 1 == method.getParameterCount()) {
-									for (int i = 0; i < keys.length; i++) {
-										Element element = keys[i];
-										element.setType(method.getParameterTypes()[i + 1]);
-									}
-									break;
+					if (Enumeration.isUserTable(className)) {
+						// 自定义表
+						Element eleTable = new ElementMethod();
+						eleTable.setName("TableName");
+						eleTable.setType(String.class);
+						Element eleCode = new ElementMethod();
+						eleCode.setName("Code");
+						eleCode.setType(String.class);
+						ENTRY_KEYS.put(className, new Element[] { eleTable, eleCode });
+					} else {
+						// 其他对象
+						Element[] keys = this.getEntityKeys(company.getBusinessObjectXmlSchema(
+								Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className)));
+						if (keys != null && keys.length > 0) {
+							if (Enumeration.isDocuments(className) || Enumeration.isPayments(className)) {
+								for (int i = 0; i < keys.length; i++) {
+									Element element = keys[i];
+									element.setType(Integer.class);
 								}
+								ENTRY_KEYS.put(className, keys);
+							} else {
+								for (Method method : SBOCOMUtil.class.getMethods()) {
+									if (method.getName().equalsIgnoreCase("get" + className)
+											&& keys.length + 1 == method.getParameterCount()) {
+										for (int i = 0; i < keys.length; i++) {
+											Element element = keys[i];
+											element.setType(method.getParameterTypes()[i + 1]);
+										}
+										break;
+									}
+								}
+								ENTRY_KEYS.put(className, keys);
 							}
-							ENTRY_KEYS.put(className, keys);
 						}
-
 					}
 				} catch (DataConvertException e) {
 				}
@@ -285,6 +297,18 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 							builder.toString());
 				}
 				return data;
+			} else if (Enumeration.isUserTable(className)) {
+				IUserTable table = company.getUserTables().item(keyValues[0]);
+				if (keyValues[1] != null) {
+					if (table.getByKey(String.valueOf(keyValues[1]))) {
+						Logger.log(MessageLevel.DEBUG, "b1 serializer: got table [%s]'s data [%s].", keyValues[0],
+								keyValues[1]);
+					} else {
+						Logger.log(MessageLevel.DEBUG, "b1 serializer: not found table [%s]'s data [%s].", keyValues[0],
+								keyValues[1]);
+					}
+				}
+				return table;
 			} else {
 				Method method = SBOCOMUtil.class.getMethod("get" + className, types);
 				Object data = method.invoke(null, params);
