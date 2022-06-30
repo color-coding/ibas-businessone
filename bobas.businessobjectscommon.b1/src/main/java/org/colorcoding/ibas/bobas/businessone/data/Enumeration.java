@@ -16,6 +16,7 @@ import com.sap.smb.sbo.api.SBOCOMConstants;
 public class Enumeration {
 
 	public static final String GROUP_BO_OBJECT_TYPES = "BoObjectTypes";
+	public static final String GROUP_SERVICE_TYPES = "ServiceTypes";
 	public static final String GROUP_SERVICE_DATA_INTERFACES = "sServiceDataInterfaces";
 
 	private volatile static Map<String, List<KeyValue>> valueMap;

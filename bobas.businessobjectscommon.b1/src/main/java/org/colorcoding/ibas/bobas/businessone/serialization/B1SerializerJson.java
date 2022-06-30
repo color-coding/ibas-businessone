@@ -231,7 +231,51 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 						node.getKey());
 				continue;
 			}
-			if (element.isCollection()) {
+			if (element.getName().equalsIgnoreCase("UserFields")) {
+				// 自定义字段
+				try {
+					JsonNode fieldsNode = null;
+					IFields fields = null;
+					Element fieldElement = null;
+					if (element.getType() == IUserFields.class) {
+						Method method = data.getClass().getMethod("get" + element.getName());
+						IUserFields userFields = (IUserFields) method.invoke(data);
+						fields = userFields.getFields();
+						fieldsNode = node.getValue().get("fields");
+						fieldElement = element.getChilds().get(0);
+					} else if (element.getType() == IFields.class) {
+						Method method = data.getClass().getMethod("get" + element.getName());
+						fields = (IFields) method.invoke(data);
+						fieldsNode = node.getValue();
+						fieldElement = element.getChilds().get(0);
+					} else if (element.getType() == IField.class) {
+						Method method = data.getClass().getMethod("get" + element.getName());
+						fields = (IFields) method.invoke(data);
+						fieldsNode = node.getValue();
+						fieldElement = element;
+					} else {
+						throw new NoSuchFieldException(element.getName());
+					}
+					if (fields.getCount() > 0 && !fieldsNode.isNull() && fieldsNode.isArray()) {
+						for (JsonNode jsonNode : fieldsNode) {
+							String name = jsonNode.get("name").textValue();
+							if (!DataConvert.isNullOrEmpty(name)) {
+								IField field = fields.item(name);
+								if (field != null) {
+									this.deserialize(field, jsonNode, fieldElement);
+								}
+							}
+						}
+					} else {
+						Logger.log(MessageLevel.DEBUG, "b1 serializer: not define user fields.");
+					}
+				} catch (NoSuchMethodException e) {
+					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].",
+							rootElement.getName(), node.getKey());
+				} catch (Exception e) {
+					throw new SerializationException(e);
+				}
+			} else if (element.isCollection()) {
 				try {
 					if (node.getValue().isArray()) {
 						Method method = data.getClass().getMethod("get" + element.getName());
@@ -252,31 +296,6 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 								"b1 serializer: element [%s] is collection, but node [%s] is not array.",
 								element.getName(), node.getKey());
 					}
-				} catch (Exception e) {
-					throw new SerializationException(e);
-				}
-			} else if (element.getType() == IUserFields.class) {
-				// 自定义字段
-				try {
-					Method method = data.getClass().getMethod("get" + element.getName());
-					IUserFields userFields = (IUserFields) method.invoke(data);
-					JsonNode userNode = node.getValue().get("fields");
-					if (userFields.getFields().getCount() > 0 && !userNode.isNull() && userNode.isArray()) {
-						for (JsonNode jsonNode : userNode) {
-							String name = jsonNode.get("name").textValue();
-							if (!DataConvert.isNullOrEmpty(name)) {
-								IField field = userFields.getFields().item(name);
-								if (field != null) {
-									this.deserialize(field, jsonNode, element.getChilds().get(0));
-								}
-							}
-						}
-					} else {
-						Logger.log(MessageLevel.DEBUG, "b1 serializer: not define user fields.");
-					}
-				} catch (NoSuchMethodException e) {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].",
-							rootElement.getName(), node.getKey());
 				} catch (Exception e) {
 					throw new SerializationException(e);
 				}

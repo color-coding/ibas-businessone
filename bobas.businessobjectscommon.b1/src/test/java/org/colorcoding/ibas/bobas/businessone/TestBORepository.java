@@ -29,6 +29,8 @@ import com.sap.smb.sbo.api.IDocuments;
 import com.sap.smb.sbo.api.IItems;
 import com.sap.smb.sbo.api.IJournalEntries;
 import com.sap.smb.sbo.api.IProductionOrders;
+import com.sap.smb.sbo.api.IProject;
+import com.sap.smb.sbo.api.IProjectsService;
 import com.sap.smb.sbo.api.IRecordset;
 import com.sap.smb.sbo.api.IUserTable;
 import com.sap.smb.sbo.api.SBOCOMConstants;
@@ -216,19 +218,24 @@ public class TestBORepository extends TestCase {
 	private static String DATA_STRING_JE = "{\"type\":\"JournalEntries\",\"memo\":\"朱鹏飞报销#10\",\"lines\":[{\"accountCode\":\"540101\",\"debit\":9.9,\"userFields\":{\"fields\":[{\"name\":\"U_FPH\",\"value\":\"H123456789\"},{\"name\":\"U_Date\",\"value\":\"2022-01-01\"},{\"name\":\"U_Qty\",\"value\":9.9}]}},{\"accountCode\":\"100101\",\"credit\":9.9}]}";
 	private static String DATA_STRING_SO = "{\"type\":\"Orders\",\"address\":\"100021\\rCN01北京朝阳路\\r1000号6号楼304室\",\"cardCode\":\"C20000\",\"cardName\":\"北京龙发电子贸易公司\",\"docDueDate\":\"2022-01-10\",\"lines\":[{\"itemCode\":\"A00001\",\"itemDescription\":\"IBM Infoprint 1312 喷墨打印机\",\"quantity\":5.0}]}";
 	private static String DATA_STRING_UDO = "{\"type\": \"UserTables\",\"tableName\": \"AVA_GP_SETTING\",\"code\": \"A002\",\"name\": \"A002\",\"userFields\": {\"fields\": [{\"name\": \"U_AccCode\",\"value\": 1}]}}";
+	private static String DATA_STRING_PRJ = "{\"type\":\"Project\",\"code\":\"P0000002\",\"name\":\"测试项目2\"}";
+	private static String DATA_STRING_DIM = "{\"type\":\"ProfitCenter\",\"inWhichDimension\":2,\"centerCode\":\"A00141\",\"centerName\":\"马鹏鹏\"}";
 
 	public void testB1DataSave()
 			throws RepositoryException, SBOCOMException, SerializationException, FileNotFoundException {
-		// DATA_STRING =
-		// "{\"type\":\"ProfitCenter\",\"inWhichDimension\":2,\"centerCode\":\"A00141\",\"centerName\":\"马鹏鹏\"}";
-
 		BORepositoryDemo boRepository = new BORepositoryDemo();
 		boRepository.openRepository();
 		ICompany b1Company = boRepository.getCompany();
 		// json序列化测试
 		IB1Serializer<?> serializerJson = new B1SerializerJson();
+		// json反序列化项目
+		Object data = serializerJson.deserialize(DATA_STRING_PRJ, b1Company);
+		if (data instanceof IProject) {
+			IProjectsService projectsService = SBOCOMUtil.newProjectsService(b1Company.getCompanyService());
+			projectsService.addProject((IProject) data);
+		}
 		// json反序列化凭单
-		Object data = serializerJson.deserialize(DATA_STRING_JE, b1Company);
+		data = serializerJson.deserialize(DATA_STRING_JE, b1Company);
 		if (data instanceof IJournalEntries) {
 			IJournalEntries journalEntries = (IJournalEntries) data;
 			if (journalEntries.add() == 0) {
