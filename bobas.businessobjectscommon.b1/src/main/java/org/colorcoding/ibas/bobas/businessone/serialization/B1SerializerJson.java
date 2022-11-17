@@ -168,7 +168,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			ElementRoot element = null;
 			Object data = null;
 			try {
-				if (Enumeration.isDocuments(className)) {
+				if (Enumeration.isDocuments(className) && !Enumeration.isPayments(className)) {
 					// 单据类型，需要指定子类型
 					data = SBOCOMUtil.newDocuments(company,
 							Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className));

@@ -275,7 +275,7 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 			builder.append(keyValues[i]);
 		}
 		try {
-			if (Enumeration.isDocuments(className)) {
+			if (Enumeration.isDocuments(className) && !Enumeration.isPayments(className)) {
 				Object data = SBOCOMUtil.getDocuments(company,
 						Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className), (Integer) keyValues[0]);
 				if (data != null) {

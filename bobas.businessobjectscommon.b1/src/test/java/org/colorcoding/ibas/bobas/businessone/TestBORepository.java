@@ -28,6 +28,7 @@ import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IDocuments;
 import com.sap.smb.sbo.api.IItems;
 import com.sap.smb.sbo.api.IJournalEntries;
+import com.sap.smb.sbo.api.IPayments;
 import com.sap.smb.sbo.api.IProductionOrders;
 import com.sap.smb.sbo.api.IProject;
 import com.sap.smb.sbo.api.IProjectsService;
@@ -220,6 +221,7 @@ public class TestBORepository extends TestCase {
 	private static String DATA_STRING_UDO = "{\"type\": \"UserTables\",\"tableName\": \"AVA_GP_SETTING\",\"code\": \"A002\",\"name\": \"A002\",\"userFields\": {\"fields\": [{\"name\": \"U_AccCode\",\"value\": 1}]}}";
 	private static String DATA_STRING_PRJ = "{\"type\":\"Project\",\"code\":\"P0000002\",\"name\":\"测试项目2\"}";
 	private static String DATA_STRING_DIM = "{\"type\":\"ProfitCenter\",\"inWhichDimension\":2,\"centerCode\":\"A00141\",\"centerName\":\"马鹏鹏\"}";
+	private static String DATA_STRING_PAY = "{\"type\":\"PaymentsDrafts\",\"docType\":0,\"docObjectCode\":0,\"cardCode\":\"C20000\",\"cardName\":\"北京龙发电子贸易公司\",\"docDate\":\"2022-11-16T00:00:00.000Z\",\"dueDate\":\"2022-11-16T00:00:00.000Z\",\"taxDate\":\"2022-11-16T00:00:00.000Z\",\"remarks\":\"22222222\",\"applyVAT\":1,\"transferAccount\":\"112201\",\"controlAccount\":\"112201\",\"deductionSum\":500,\"docCurrency\":\"CNY\"}";
 
 	public void testB1DataSave()
 			throws RepositoryException, SBOCOMException, SerializationException, FileNotFoundException {
@@ -227,9 +229,20 @@ public class TestBORepository extends TestCase {
 		boRepository.openRepository();
 		ICompany b1Company = boRepository.getCompany();
 		// json序列化测试
+		Object data;
 		IB1Serializer<?> serializerJson = new B1SerializerJson();
+		// json反序列化付款
+		data = serializerJson.deserialize(DATA_STRING_PAY, b1Company);
+		if (data instanceof IPayments) {
+			IPayments payment = (IPayments) data;
+			if (payment.add() == 0) {
+				System.out.println(String.format("payment: %s", b1Company.getNewObjectKey()));
+			} else {
+				System.err.println(b1Company.getLastErrorDescription());
+			}
+		}
 		// json反序列化项目
-		Object data = serializerJson.deserialize(DATA_STRING_PRJ, b1Company);
+		data = serializerJson.deserialize(DATA_STRING_PRJ, b1Company);
 		if (data instanceof IProject) {
 			IProjectsService projectsService = SBOCOMUtil.newProjectsService(b1Company.getCompanyService());
 			projectsService.addProject((IProject) data);

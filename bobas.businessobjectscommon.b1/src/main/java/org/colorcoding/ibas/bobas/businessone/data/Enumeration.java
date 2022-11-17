@@ -214,6 +214,8 @@ public class Enumeration {
 			return true;
 		} else if ("VendorPayments".equalsIgnoreCase(name)) {
 			return true;
+		} else if ("PaymentsDrafts".equalsIgnoreCase(name)) {
+			return true;
 		} else if ("Payments".equalsIgnoreCase(name)) {
 			return true;
 		}
@@ -224,6 +226,8 @@ public class Enumeration {
 		if (Integer.compare(SBOCOMConstants.BoObjectTypes_oIncomingPayments, type) == 0) {
 			return true;
 		} else if (Integer.compare(SBOCOMConstants.BoObjectTypes_oVendorPayments, type) == 0) {
+			return true;
+		} else if (Integer.compare(SBOCOMConstants.BoObjectTypes_Document_oPaymentsDrafts, type) == 0) {
 			return true;
 		}
 		return false;

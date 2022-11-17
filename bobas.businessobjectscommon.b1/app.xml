@@ -5,7 +5,7 @@
         <!-- 配置项目-是否开启调试模式 -->
         <add key="DebugMode" value="true" />
         <!-- 配置项目-B1-服务地址 -->
-        <add key="B1Server" value="think-niuren" />
+        <add key="B1Server" value="sap-b1-93" />
         <!-- 配置项目-B1-数据库名称 -->
         <add key="B1Company" value="SBODemoCN" />
         <!-- 配置项目-B1-用户 -->
