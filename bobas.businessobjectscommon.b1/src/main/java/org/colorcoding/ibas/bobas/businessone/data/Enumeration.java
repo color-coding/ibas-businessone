@@ -17,7 +17,7 @@ public class Enumeration {
 
 	public static final String GROUP_BO_OBJECT_TYPES = "BoObjectTypes";
 	public static final String GROUP_SERVICE_TYPES = "ServiceTypes";
-	public static final String GROUP_SERVICE_DATA_INTERFACES = "sServiceDataInterfaces";
+	public static final String GROUP_SERVICE_DATA_INTERFACES = "ServiceDataInterfaces";
 
 	private volatile static Map<String, List<KeyValue>> valueMap;
 
@@ -128,8 +128,19 @@ public class Enumeration {
 		if (type != null && type.getName().startsWith("com.sap.smb.sbo.api.")) {
 			String name = type.getSimpleName();
 			if (!type.isInterface() && name.endsWith("sService")) {
-				name = name.substring(0, name.indexOf("sService"));
-				return valueOf(name + GROUP_SERVICE_DATA_INTERFACES, String.format("*%s", name));
+				name = name.substring(0, name.indexOf("Service"));
+				if (name.equalsIgnoreCase("Series") || name.equalsIgnoreCase("CertificateSeries")) {
+					// 复数没变化的
+					return valueOf(name + GROUP_SERVICE_DATA_INTERFACES, String.format("*%s", name));
+				} else if (name.endsWith("ies")) {
+					// y结尾的复数形式
+					return valueOf(name + GROUP_SERVICE_DATA_INTERFACES,
+							String.format("*%s", name.substring(0, name.length() - 3) + "y"));
+				} else {
+					// 一般复数，结尾加s
+					return valueOf(name + GROUP_SERVICE_DATA_INTERFACES,
+							String.format("*%s", name.substring(0, name.length() - 1)));
+				}
 			} else {
 				if (type.isInterface() && name.startsWith("I")) {
 					name = name.substring(1);

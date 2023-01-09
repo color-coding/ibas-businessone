@@ -201,7 +201,7 @@ public class B1CompanyPool {
 			return false;
 		}
 		if (this.wrappings == null) {
-			this.wrappings = new B1CompanyWrapping[POOL_SIZE];
+			this.wrappings = new B1CompanyWrapping[POOL_SIZE < 0 ? 0 : POOL_SIZE];
 		}
 		if (this.wrappings.length == 0) {
 			return false;

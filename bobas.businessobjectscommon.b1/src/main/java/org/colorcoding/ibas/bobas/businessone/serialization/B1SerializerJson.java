@@ -189,7 +189,18 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			} catch (NoSuchMethodException e) {
 				Method method = null;
 				try {
-					method = SBOCOMUtil.class.getMethod("new" + className + "sService", ICompanyService.class);
+					if (className.equalsIgnoreCase("Series") || className.equalsIgnoreCase("CertificateSeries")) {
+						// 复数没变化的
+						method = SBOCOMUtil.class.getMethod("new" + className + "Service", ICompanyService.class);
+					} else if (className.endsWith("y")) {
+						// y结尾的复数形式
+						method = SBOCOMUtil.class.getMethod(
+								"new" + className.substring(0, className.length() - 1) + "iesService",
+								ICompanyService.class);
+					} else {
+						// 一般复数，结尾加s
+						method = SBOCOMUtil.class.getMethod("new" + className + "sService", ICompanyService.class);
+					}
 				} catch (NoSuchMethodException e2) {
 					throw new SerializationException(I18N.prop("msg_unrecognized_type", className));
 				}
