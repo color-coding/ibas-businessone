@@ -17,7 +17,7 @@
         <!-- 配置项目-B1-架构服务 -->
         <add key="B1SLDServer" value="ibas-demo-b1:40000" />
         <!-- 配置项目-B1-数据库类型 -->
-        <add key="B1DbType" value="dst_MSSQL2014" />
+        <add key="B1DbType" value="dst_MSSQL2019" />
         <!-- 配置项目-B1-数据库用户 -->
         <add key="B1DbUser" value="sa" />
         <!-- 配置项目-B1-数据库密码 -->

@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 
+import org.colorcoding.ibas.bobas.common.DateTimes;
 import org.colorcoding.ibas.bobas.data.DataConvert;
 import org.colorcoding.ibas.bobas.data.DataTable;
 import org.colorcoding.ibas.bobas.data.DateTime;
@@ -79,7 +80,7 @@ public class B1DataConvert {
 	}
 
 	public static String toString(Date value) {
-		return toString(value, DateTime.FORMAT_DATE);
+		return toString(value, DateTimes.FORMAT_DATE);
 	}
 
 	public static String toString(Date value, String format) {
