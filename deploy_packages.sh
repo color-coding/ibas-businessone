@@ -46,86 +46,28 @@ fi
 while read line; do
   if [ -e ${WORK_FOLDER}/${line}/pom.xml ]; then
     for PACKAGE in $(find release -name "${line}-*.jar"); do
-      mvn deploy:deploy-file \
-        -Dfile=${PACKAGE} \
-        -DpomFile=${WORK_FOLDER}/${line}/pom.xml \
-        -Durl=${REPOSITORY_URL} \
-        -DrepositoryId=${REPOSITORY_ID} \
-        -Dpackaging=jar
+      case "$PACKAGE" in
+      *"-sources.jar")
+        mvn deploy:deploy-file \
+          -Dclassifier=sources \
+          -Dfile=${PACKAGE} \
+          -DpomFile=${WORK_FOLDER}/${line}/pom.xml \
+          -Durl=${REPOSITORY_URL} \
+          -DrepositoryId=${REPOSITORY_ID} \
+          -Dpackaging=jar
+        ;;
+      *)
+        mvn deploy:deploy-file \
+          -Dfile=${PACKAGE} \
+          -DpomFile=${WORK_FOLDER}/${line}/pom.xml \
+          -Durl=${REPOSITORY_URL} \
+          -DrepositoryId=${REPOSITORY_ID} \
+          -Dpackaging=jar
+        ;;
+      esac
     done
   fi
 done <${WORK_FOLDER}/compile_order.txt | sed 's/\r//g'
-
-# 发布父项
-if [ -e ${WORK_FOLDER}/btulz.transforms.b1/pom.xml ]; then
-  mvn deploy:deploy-file \
-    -Dfile=${WORK_FOLDER}/btulz.transforms.b1/pom.xml \
-    -DpomFile=${WORK_FOLDER}/btulz.transforms.b1/pom.xml \
-    -Durl=${REPOSITORY_URL} \
-    -DrepositoryId=${REPOSITORY_ID} \
-    -Dpackaging=pom
-fi
-# 发布子项
-FILE_POM=btulz.transforms.b1/pom.b188.xml
-FILE_JAR=btulz.transforms.b1-0.1.0-8.8.jar
-if [ -e ${WORK_FOLDER}/${FILE_POM} ]; then
-  if [ -e ${WORK_FOLDER}/release/${FILE_JAR} ]; then
-    mvn deploy:deploy-file \
-      -Dfile=${WORK_FOLDER}/release/${FILE_JAR} \
-      -DpomFile=${WORK_FOLDER}/${FILE_POM} \
-      -Durl=${REPOSITORY_URL} \
-      -DrepositoryId=${REPOSITORY_ID} \
-      -Dpackaging=jar
-  fi
-fi
-FILE_POM=btulz.transforms.b1/pom.b191.xml
-FILE_JAR=btulz.transforms.b1-0.1.0-9.1.jar
-if [ -e ${WORK_FOLDER}/${FILE_POM} ]; then
-  if [ -e ${WORK_FOLDER}/release/${FILE_JAR} ]; then
-    mvn deploy:deploy-file \
-      -Dfile=${WORK_FOLDER}/release/${FILE_JAR} \
-      -DpomFile=${WORK_FOLDER}/${FILE_POM} \
-      -Durl=${REPOSITORY_URL} \
-      -DrepositoryId=${REPOSITORY_ID} \
-      -Dpackaging=jar
-  fi
-fi
-FILE_POM=btulz.transforms.b1/pom.b192.xml
-FILE_JAR=btulz.transforms.b1-0.1.0-9.2.jar
-if [ -e ${WORK_FOLDER}/${FILE_POM} ]; then
-  if [ -e ${WORK_FOLDER}/release/${FILE_JAR} ]; then
-    mvn deploy:deploy-file \
-      -Dfile=${WORK_FOLDER}/release/${FILE_JAR} \
-      -DpomFile=${WORK_FOLDER}/${FILE_POM} \
-      -Durl=${REPOSITORY_URL} \
-      -DrepositoryId=${REPOSITORY_ID} \
-      -Dpackaging=jar
-  fi
-fi
-FILE_POM=btulz.transforms.b1/pom.b193.xml
-FILE_JAR=btulz.transforms.b1-0.1.0-9.3.jar
-if [ -e ${WORK_FOLDER}/${FILE_POM} ]; then
-  if [ -e ${WORK_FOLDER}/release/${FILE_JAR} ]; then
-    mvn deploy:deploy-file \
-      -Dfile=${WORK_FOLDER}/release/${FILE_JAR} \
-      -DpomFile=${WORK_FOLDER}/${FILE_POM} \
-      -Durl=${REPOSITORY_URL} \
-      -DrepositoryId=${REPOSITORY_ID} \
-      -Dpackaging=jar
-  fi
-fi
-FILE_POM=btulz.transforms.b1/pom.b110.xml
-FILE_JAR=btulz.transforms.b1-0.1.0-10.jar
-if [ -e ${WORK_FOLDER}/${FILE_POM} ]; then
-  if [ -e ${WORK_FOLDER}/release/${FILE_JAR} ]; then
-    mvn deploy:deploy-file \
-      -Dfile=${WORK_FOLDER}/release/${FILE_JAR} \
-      -DpomFile=${WORK_FOLDER}/${FILE_POM} \
-      -Durl=${REPOSITORY_URL} \
-      -DrepositoryId=${REPOSITORY_ID} \
-      -Dpackaging=jar
-  fi
-fi
 
 # 发布工具包集合
 if [ -e ${WORK_FOLDER}/release/btulz.transforms.tar ]; then
@@ -136,6 +78,6 @@ if [ -e ${WORK_FOLDER}/release/btulz.transforms.tar ]; then
     -DrepositoryId=${REPOSITORY_ID} \
     -Dfile=${WORK_FOLDER}/release/btulz.transforms.tar \
     -Dpackaging=tar \
-    -Dversion=b1-latest
+    -Dversion=b1-latest-v2
 fi
 echo --操作完成

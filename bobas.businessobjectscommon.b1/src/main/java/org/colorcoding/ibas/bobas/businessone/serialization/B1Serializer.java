@@ -5,6 +5,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,10 +21,11 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
-import org.colorcoding.ibas.bobas.data.DataConvertException;
-import org.colorcoding.ibas.bobas.message.Logger;
-import org.colorcoding.ibas.bobas.message.MessageLevel;
+import org.colorcoding.ibas.bobas.i18n.I18N;
+import org.colorcoding.ibas.bobas.logging.Logger;
+import org.colorcoding.ibas.bobas.logging.LoggingLevel;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
+import org.colorcoding.ibas.bobas.serialization.Serializer;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 import org.colorcoding.ibas.bobas.serialization.structure.Element;
 import org.colorcoding.ibas.bobas.serialization.structure.ElementMethod;
@@ -37,7 +41,7 @@ import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IUserTable;
 import com.sap.smb.sbo.api.SBOCOMUtil;
 
-public abstract class B1Serializer<S> implements IB1Serializer<S> {
+public abstract class B1Serializer extends Serializer implements IB1Serializer {
 
 	protected static final String MSG_B1_SERIALIZER_WRAPPING_DATA = "b1 serializer: wrapping data [%s].";
 
@@ -53,18 +57,14 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 		return element;
 	}
 
-	@Override
-	public void validate(Class<?> type, InputStream data) throws ValidateException {
-		this.validate(this.getSchema(type), data);
+	private ICompany company;
+
+	public ICompany getCompany() {
+		return company;
 	}
 
-	@Override
-	public void validate(S schema, String data) throws ValidateException {
-		try (InputStream stream = new ByteArrayInputStream(data.getBytes())) {
-			this.validate(schema, stream);
-		} catch (IOException e) {
-			throw new ValidateException(e);
-		}
+	public void setCompany(ICompany company) {
+		this.company = company;
 	}
 
 	@Override
@@ -105,7 +105,7 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 	public <T> DataWrapping wrap(T data, ElementRoot element) throws SerializationException {
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 			if (MyConfiguration.isDebugMode()) {
-				Logger.log(MessageLevel.DEBUG, MSG_B1_SERIALIZER_WRAPPING_DATA,
+				Logger.log(LoggingLevel.DEBUG, MSG_B1_SERIALIZER_WRAPPING_DATA,
 						data == null ? "Unknown" : data.getClass().getName());
 			}
 			this.serialize(data, outputStream, false, element);
@@ -116,7 +116,7 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 	}
 
 	@Override
-	public Object deserialize(String data, ICompany company) throws SerializationException {
+	public <T> T deserialize(String data, ICompany company) throws SerializationException {
 		try (InputStream stream = new ByteArrayInputStream(data.getBytes())) {
 			return this.deserialize(stream, company);
 		} catch (IOException e) {
@@ -125,8 +125,43 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 	}
 
 	@Override
-	public Object deserialize(InputSource inputSource, ICompany company) throws SerializationException {
+	public <T> T deserialize(InputSource inputSource, ICompany company) throws SerializationException {
 		return this.deserialize(inputSource.getByteStream(), company);
+	}
+
+	@Override
+	public <T> T deserialize(InputStream inputStream, Class<?>... types) throws SerializationException {
+		if (this.getCompany() == null || !this.getCompany().isConnected()) {
+			throw new SerializationException(I18N.prop("msg_b1_invalid_company"));
+		}
+		return this.deserialize(inputStream, this.getCompany());
+	}
+
+	@Override
+	public <T> T deserialize(InputSource inputSource, Class<?>... types) throws SerializationException {
+		if (this.getCompany() == null || !this.getCompany().isConnected()) {
+			throw new SerializationException(I18N.prop("msg_b1_invalid_company"));
+		}
+		return this.deserialize(inputSource, this.getCompany());
+	}
+
+	@Override
+	public <T> T deserialize(Reader reader, Class<?>... types) throws SerializationException {
+		if (this.getCompany() == null || !this.getCompany().isConnected()) {
+			throw new SerializationException(I18N.prop("msg_b1_invalid_company"));
+		}
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				Writer writer = new OutputStreamWriter(outputStream, "UTF-8")) {
+			int length;
+			char[] buffer = new char[1024];
+			while ((length = reader.read(buffer)) != -1) {
+				writer.write(buffer, 0, length);
+			}
+			writer.flush();
+			return this.deserialize(new ByteArrayInputStream(outputStream.toByteArray()), this.getCompany());
+		} catch (Exception e) {
+			throw new SerializationException(e);
+		}
 	}
 
 	private static Map<String, Element[]> ENTRY_KEYS = new HashMap<String, Element[]>();
@@ -142,43 +177,40 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 	public Element[] getEntityKeys(String className, ICompany company) {
 		try {
 			if (!ENTRY_KEYS.containsKey(className)) {
-				try {
-					if (Enumeration.isUserTable(className)) {
-						// 自定义表
-						Element eleTable = new ElementMethod();
-						eleTable.setName("TableName");
-						eleTable.setType(String.class);
-						Element eleCode = new ElementMethod();
-						eleCode.setName("Code");
-						eleCode.setType(String.class);
-						ENTRY_KEYS.put(className, new Element[] { eleTable, eleCode });
-					} else {
-						// 其他对象
-						Element[] keys = this.getEntityKeys(company.getBusinessObjectXmlSchema(
-								Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className)));
-						if (keys != null && keys.length > 0) {
-							if (Enumeration.isDocuments(className) || Enumeration.isPayments(className)) {
-								for (int i = 0; i < keys.length; i++) {
-									Element element = keys[i];
-									element.setType(Integer.class);
-								}
-								ENTRY_KEYS.put(className, keys);
-							} else {
-								for (Method method : SBOCOMUtil.class.getMethods()) {
-									if (method.getName().equalsIgnoreCase("get" + className)
-											&& keys.length + 1 == method.getParameterCount()) {
-										for (int i = 0; i < keys.length; i++) {
-											Element element = keys[i];
-											element.setType(method.getParameterTypes()[i + 1]);
-										}
-										break;
-									}
-								}
-								ENTRY_KEYS.put(className, keys);
+				if (Enumeration.isUserTable(className)) {
+					// 自定义表
+					Element eleTable = new ElementMethod();
+					eleTable.setName("TableName");
+					eleTable.setType(String.class);
+					Element eleCode = new ElementMethod();
+					eleCode.setName("Code");
+					eleCode.setType(String.class);
+					ENTRY_KEYS.put(className, new Element[] { eleTable, eleCode });
+				} else {
+					// 其他对象
+					Element[] keys = this.getEntityKeys(company.getBusinessObjectXmlSchema(
+							Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className)));
+					if (keys != null && keys.length > 0) {
+						if (Enumeration.isDocuments(className) || Enumeration.isPayments(className)) {
+							for (int i = 0; i < keys.length; i++) {
+								Element element = keys[i];
+								element.setType(Integer.class);
 							}
+							ENTRY_KEYS.put(className, keys);
+						} else {
+							for (Method method : SBOCOMUtil.class.getMethods()) {
+								if (method.getName().equalsIgnoreCase("get" + className)
+										&& keys.length + 1 == method.getParameterCount()) {
+									for (int i = 0; i < keys.length; i++) {
+										Element element = keys[i];
+										element.setType(method.getParameterTypes()[i + 1]);
+									}
+									break;
+								}
+							}
+							ENTRY_KEYS.put(className, keys);
 						}
 					}
-				} catch (DataConvertException e) {
 				}
 			}
 			return ENTRY_KEYS.get(className);
@@ -254,7 +286,8 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 	 * @return
 	 */
 	@Override
-	public Object getEntity(String className, Object[] keyValues, ICompany company) throws SerializationException {
+	@SuppressWarnings("unchecked")
+	public <T> T getEntity(String className, Object[] keyValues, ICompany company) throws SerializationException {
 		Element[] keys = this.getEntityKeys(className, company);
 		if (keys == null || keys.length == 0 || keys.length != keyValues.length) {
 			throw new IndexOutOfBoundsException("entity key values.");
@@ -279,47 +312,47 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 				Object data = SBOCOMUtil.getDocuments(company,
 						Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className), (Integer) keyValues[0]);
 				if (data != null) {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
 							builder.toString());
 				} else {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
 							builder.toString());
 				}
-				return data;
+				return (T) data;
 			} else if (Enumeration.isPayments(className)) {
 				Object data = SBOCOMUtil.getPayments(company,
 						Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className), (Integer) keyValues[0]);
 				if (data != null) {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
 							builder.toString());
 				} else {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
 							builder.toString());
 				}
-				return data;
+				return (T) data;
 			} else if (Enumeration.isUserTable(className)) {
-				IUserTable table = company.getUserTables().item(keyValues[0]);
+				IUserTable data = company.getUserTables().item(keyValues[0]);
 				if (keyValues[1] != null) {
-					if (table.getByKey(String.valueOf(keyValues[1]))) {
-						Logger.log(MessageLevel.DEBUG, "b1 serializer: got table [%s]'s data [%s].", keyValues[0],
+					if (data.getByKey(String.valueOf(keyValues[1]))) {
+						Logger.log(LoggingLevel.DEBUG, "b1 serializer: got table [%s]'s data [%s].", keyValues[0],
 								keyValues[1]);
 					} else {
-						Logger.log(MessageLevel.DEBUG, "b1 serializer: not found table [%s]'s data [%s].", keyValues[0],
+						Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found table [%s]'s data [%s].", keyValues[0],
 								keyValues[1]);
 					}
 				}
-				return table;
+				return (T) data;
 			} else {
 				Method method = SBOCOMUtil.class.getMethod("get" + className, types);
 				Object data = method.invoke(null, params);
 				if (data != null) {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
 							builder.toString());
 				} else {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
 							builder.toString());
 				}
-				return data;
+				return (T) data;
 			}
 
 		} catch (NoSuchMethodException e) {
@@ -330,7 +363,10 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 	}
 
 	@Override
-	public abstract Object deserialize(InputStream inputStream, ICompany company) throws SerializationException;
+	public abstract void validate(Class<?> type, InputStream data) throws ValidateException;
+
+	@Override
+	public abstract <T> T deserialize(InputStream inputStream, ICompany company) throws SerializationException;
 
 	protected abstract void serialize(Object data, OutputStream outputStream, boolean formated, ElementRoot element);
 

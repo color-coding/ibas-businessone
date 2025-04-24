@@ -4,9 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -16,13 +14,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
-import org.colorcoding.ibas.bobas.data.DataConvert;
+import org.colorcoding.ibas.bobas.common.Strings;
 import org.colorcoding.ibas.bobas.i18n.I18N;
-import org.colorcoding.ibas.bobas.message.Logger;
-import org.colorcoding.ibas.bobas.message.MessageLevel;
+import org.colorcoding.ibas.bobas.logging.Logger;
+import org.colorcoding.ibas.bobas.logging.LoggingLevel;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 import org.colorcoding.ibas.bobas.serialization.structure.Element;
@@ -33,11 +32,10 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.fge.jackson.JsonLoader;
-import com.github.fge.jsonschema.core.exceptions.ProcessingException;
-import com.github.fge.jsonschema.core.report.ProcessingReport;
-import com.github.fge.jsonschema.main.JsonSchema;
-import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.ICompanyService;
 import com.sap.smb.sbo.api.IField;
@@ -46,9 +44,7 @@ import com.sap.smb.sbo.api.IUserFields;
 import com.sap.smb.sbo.api.IValidValues;
 import com.sap.smb.sbo.api.SBOCOMUtil;
 
-public class B1SerializerJson extends B1Serializer<JsonSchema> {
-
-	public static final String SCHEMA_VERSION = "http://json-schema.org/schema#";
+public class B1SerializerJson extends B1Serializer {
 
 	protected String nameElement(String name) {
 		int index = 0;
@@ -71,45 +67,42 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 	}
 
 	@Override
+	public void validate(Class<?> type, InputStream data) throws ValidateException {
+		this.validate(this.schema(type), data);
+	}
+
 	public void validate(JsonSchema schema, InputStream data) throws ValidateException {
-		try (Reader reader = new InputStreamReader(data)) {
-			JsonNode jsonData = JsonLoader.fromReader(reader);
-			this.validate(schema, jsonData);
+		try {
+			this.validate(schema, new ObjectMapper().readTree(data));
 		} catch (IOException e) {
 			throw new ValidateException(e);
 		}
 	}
 
 	public void validate(JsonSchema schema, JsonNode data) throws ValidateException {
-		try {
-			ProcessingReport report = schema.validate(data);
-			if (!report.isSuccess()) {
-				throw new ValidateException(report.toString());
+		Set<ValidationMessage> errors = schema.validate(data);
+		if (!errors.isEmpty()) {
+			StringBuilder stringBuilder = new StringBuilder();
+			for (ValidationMessage error : errors) {
+				stringBuilder.append(error.getMessage());
 			}
-		} catch (ValidateException e) {
-			throw e;
-		} catch (ProcessingException e) {
-			throw new ValidateException(e);
+			throw new ValidateException(stringBuilder.toString());
 		}
 	}
 
-	@Override
-	public JsonSchema getSchema(Class<?> type) throws SerializationException {
+	public JsonSchema schema(Class<?> type) throws SerializationException {
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-			this.getSchema(type, outputStream);
+			this.schema(type, outputStream);
 			try (InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray())) {
-				try (Reader reader = new InputStreamReader(inputStream)) {
-					JsonNode jsonSchema = JsonLoader.fromReader(reader);
-					return JsonSchemaFactory.byDefault().getJsonSchema(jsonSchema);
-				}
+				return JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7).getSchema(inputStream);
 			}
-		} catch (IOException | ProcessingException e) {
+		} catch (IOException e) {
 			throw new SerializationException(e);
 		}
 	}
 
 	@Override
-	public void getSchema(Class<?> type, OutputStream outputStream) throws SerializationException {
+	public void schema(Class<?> type, OutputStream outputStream) throws SerializationException {
 		try {
 			JsonFactory jsonFactory = new JsonFactory();
 			JsonGenerator jsonGenerator = jsonFactory.createGenerator(outputStream);
@@ -134,7 +127,8 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 	}
 
 	@Override
-	public Object deserialize(InputStream inputStream, ICompany company) throws SerializationException {
+	@SuppressWarnings("unchecked")
+	public <T> T deserialize(InputStream inputStream, ICompany company) throws SerializationException {
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			JsonNode rootNode = mapper.readTree(inputStream);
@@ -162,7 +156,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 				Object data = this.getEntity(className, keyValues, company);
 				if (data != null) {
 					this.deserialize(data, rootNode, getElement(data.getClass()));
-					return data;
+					return (T) data;
 				}
 			}
 			ElementRoot element = null;
@@ -223,7 +217,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			}
 			element = getElement(data.getClass());
 			this.deserialize(data, rootNode, element);
-			return data;
+			return (T) data;
 		} catch (Exception e) {
 			throw new SerializationException(e);
 		}
@@ -238,7 +232,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			}
 			Element element = rootElement.getChilds().firstOrDefault(c -> c.getName().equalsIgnoreCase(node.getKey()));
 			if (element == null) {
-				Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].", rootElement.getName(),
+				Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].", rootElement.getName(),
 						node.getKey());
 				continue;
 			}
@@ -270,7 +264,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					if (fields.getCount() > 0 && !fieldsNode.isNull() && fieldsNode.isArray()) {
 						for (JsonNode jsonNode : fieldsNode) {
 							String name = jsonNode.get("name").textValue();
-							if (!DataConvert.isNullOrEmpty(name)) {
+							if (!Strings.isNullOrEmpty(name)) {
 								IField field = fields.item(name);
 								if (field != null) {
 									this.deserialize(field, jsonNode, fieldElement);
@@ -278,10 +272,10 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 							}
 						}
 					} else {
-						Logger.log(MessageLevel.DEBUG, "b1 serializer: not define user fields.");
+						Logger.log(LoggingLevel.DEBUG, "b1 serializer: not define user fields.");
 					}
 				} catch (NoSuchMethodException e) {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].",
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].",
 							rootElement.getName(), node.getKey());
 				} catch (Exception e) {
 					throw new SerializationException(e);
@@ -303,7 +297,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 							method.invoke(cData);
 						}
 					} else {
-						Logger.log(MessageLevel.WARN,
+						Logger.log(LoggingLevel.WARN,
 								"b1 serializer: element [%s] is collection, but node [%s] is not array.",
 								element.getName(), node.getKey());
 					}
@@ -315,7 +309,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					Method method = data.getClass().getMethod("set" + element.getName(), element.getType());
 					method.invoke(data, this.nodeValue(node.getValue(), element.getType()));
 				} catch (NoSuchMethodException e) {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].",
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].",
 							rootElement.getName(), node.getKey());
 				} catch (Exception e) {
 					throw new SerializationException(e);
@@ -342,7 +336,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 
 	private class SchemaWriter {
 
-		public static final String SCHEMA_VERSION = "http://json-schema.org/schema#";
+		public static final String SCHEMA_VERSION = "http://json-schema.org/draft-07/schema#";
 
 		public SchemaWriter() {
 			this.knownTypes = new HashMap<>();

@@ -4,11 +4,10 @@ import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.businessone.repository.BORepositoryBusinessOne;
 import org.colorcoding.ibas.bobas.common.ICriteria;
 import org.colorcoding.ibas.bobas.common.OperationResult;
-import org.colorcoding.ibas.bobas.core.RepositoryException;
 import org.colorcoding.ibas.bobas.data.ArrayList;
 import org.colorcoding.ibas.bobas.data.List;
-import org.colorcoding.ibas.bobas.db.ParsingException;
-import org.colorcoding.ibas.bobas.message.Logger;
+import org.colorcoding.ibas.bobas.logging.Logger;
+import org.colorcoding.ibas.bobas.repository.RepositoryException;
 
 import com.sap.smb.sbo.api.IBusinessPartners;
 import com.sap.smb.sbo.api.ICompany;
@@ -58,13 +57,13 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	 * @param criteria 查询
 	 * @return 查询结果
 	 */
-	public List<IItems> fetchItems(ICriteria criteria) throws SBOCOMException, ParsingException, RepositoryException {
+	public List<IItems> fetchItems(ICriteria criteria) throws SBOCOMException, RepositoryException {
 		IRecordset recordset = null;
 		boolean open = false;
 		try {
 			open = this.openRepository();
 			List<IItems> datas = new ArrayList<>();
-			recordset = this.query(this.getB1Adapter().parseSqlQuery(criteria, SBOCOMConstants.BoObjectTypes_oItems));
+			recordset = this.query(this.getB1Adapter().parsingSelect(com.sap.smb.sbo.api.Items.class, criteria));
 			while (!recordset.isEoF()) {
 				IItems data = SBOCOMUtil.getItems(this.getB1Company(),
 						String.valueOf(recordset.getFields().item(0).getValue()));
@@ -114,14 +113,14 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	 * @return 查询结果
 	 */
 	public List<IBusinessPartners> fetchBusinessPartners(ICriteria criteria)
-			throws SBOCOMException, ParsingException, RepositoryException {
+			throws SBOCOMException, RepositoryException {
 		IRecordset recordset = null;
 		boolean open = false;
 		try {
 			open = this.openRepository();
 			List<IBusinessPartners> datas = new ArrayList<>();
-			recordset = this.query(
-					this.getB1Adapter().parseSqlQuery(criteria, SBOCOMConstants.BoObjectTypes_oBusinessPartners));
+			recordset = this
+					.query(this.getB1Adapter().parsingSelect(com.sap.smb.sbo.api.BusinessPartners.class, criteria));
 			while (!recordset.isEoF()) {
 				IBusinessPartners data = SBOCOMUtil.getBusinessPartners(this.getB1Company(),
 						String.valueOf(recordset.getFields().item(0).getValue()));
@@ -170,15 +169,13 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	 * @param criteria 查询
 	 * @return 查询结果
 	 */
-	public List<IDocuments> fetchOrders(ICriteria criteria)
-			throws SBOCOMException, ParsingException, RepositoryException {
+	public List<IDocuments> fetchOrders(ICriteria criteria) throws SBOCOMException, RepositoryException {
 		IRecordset recordset = null;
 		boolean open = false;
 		try {
 			open = this.openRepository();
 			List<IDocuments> datas = new ArrayList<>();
-			recordset = this
-					.query(this.getB1Adapter().parseSqlQuery(criteria, SBOCOMConstants.BoObjectTypes_Document_oOrders));
+			recordset = this.query(this.getB1Adapter().parsingSelect(com.sap.smb.sbo.api.Documents.class, criteria));
 			while (!recordset.isEoF()) {
 				IDocuments data = SBOCOMUtil.getDocuments(this.getB1Company(),
 						SBOCOMConstants.BoObjectTypes_Document_oOrders,
@@ -228,15 +225,13 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	 * @param criteria 查询
 	 * @return 查询结果
 	 */
-	public List<IDocuments> fetchPurchaseOrders(ICriteria criteria)
-			throws SBOCOMException, ParsingException, RepositoryException {
+	public List<IDocuments> fetchPurchaseOrders(ICriteria criteria) throws SBOCOMException, RepositoryException {
 		IRecordset recordset = null;
 		boolean open = false;
 		try {
 			open = this.openRepository();
 			List<IDocuments> datas = new ArrayList<>();
-			recordset = this.query(this.getB1Adapter().parseSqlQuery(criteria,
-					SBOCOMConstants.BoObjectTypes_Document_oPurchaseOrders));
+			recordset = this.query(this.getB1Adapter().parsingSelect(com.sap.smb.sbo.api.Documents.class, criteria));
 			while (!recordset.isEoF()) {
 				IDocuments data = SBOCOMUtil.getDocuments(this.getB1Company(),
 						SBOCOMConstants.BoObjectTypes_Document_oPurchaseOrders,
@@ -287,14 +282,14 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	 * @return 查询结果
 	 */
 	public List<IProductionOrders> fetchProductionOrders(ICriteria criteria)
-			throws SBOCOMException, ParsingException, RepositoryException {
+			throws SBOCOMException, RepositoryException {
 		IRecordset recordset = null;
 		boolean open = false;
 		try {
 			open = this.openRepository();
 			List<IProductionOrders> datas = new ArrayList<>();
-			recordset = this.query(
-					this.getB1Adapter().parseSqlQuery(criteria, SBOCOMConstants.BoObjectTypes_oProductionOrders));
+			recordset = this
+					.query(this.getB1Adapter().parsingSelect(com.sap.smb.sbo.api.ProductionOrders.class, criteria));
 			while (!recordset.isEoF()) {
 				IProductionOrders data = SBOCOMUtil.getProductionOrders(this.getB1Company(),
 						(Integer) recordset.getFields().item("DocEntry").getValue());
@@ -347,7 +342,7 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 				// 解析查询条件
 				stringBuilder.append("WHERE");
 				stringBuilder.append(" ");
-				stringBuilder.append(this.getB1Adapter().parseSqlQuery(criteria.getConditions()));
+				stringBuilder.append(this.getB1Adapter().parsingWhere(criteria.getConditions()));
 			}
 			// 通过di运行sql
 			OperationResult<DataWrapping> operationResult = new OperationResult<>();
@@ -407,15 +402,14 @@ public class BORepositoryDemo extends BORepositoryBusinessOne {
 	 * @param criteria 查询
 	 * @return 查询结果
 	 */
-	public List<IJournalEntries> fetchJournalEntries(ICriteria criteria)
-			throws SBOCOMException, ParsingException, RepositoryException {
+	public List<IJournalEntries> fetchJournalEntries(ICriteria criteria) throws SBOCOMException, RepositoryException {
 		IRecordset recordset = null;
 		boolean open = false;
 		try {
 			open = this.openRepository();
 			List<IJournalEntries> datas = new ArrayList<>();
 			recordset = this
-					.query(this.getB1Adapter().parseSqlQuery(criteria, SBOCOMConstants.BoObjectTypes_oJournalEntries));
+					.query(this.getB1Adapter().parsingSelect(com.sap.smb.sbo.api.JournalEntries.class, criteria));
 			while (!recordset.isEoF()) {
 				IJournalEntries data = SBOCOMUtil.getJournalEntries(this.getB1Company(),
 						(Integer) recordset.getFields().item("TransId").getValue());

@@ -42,17 +42,16 @@ import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IFields;
 import com.sap.smb.sbo.api.IValidValues;
 
-public class B1SerializerXml extends B1Serializer<Schema> {
+public class B1SerializerXml extends B1Serializer {
 
 	public static final String XML_FILE_EXTENSION = ".xml";
 	public static final String XML_FILE_ENCODING = "utf-8";
 	public static final String XML_FILE_INDENT = "yes";
 	public static final String XML_FILE_NAMESPACE = "http://www.w3.org/2001/XMLSchema";
 
-	@Override
-	public Schema getSchema(Class<?> type) throws SerializationException {
+	public Schema schema(Class<?> type) throws SerializationException {
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-			this.getSchema(type, outputStream);
+			this.schema(type, outputStream);
 			SchemaFactory factory = SchemaFactory.newInstance(XML_FILE_NAMESPACE);
 			try (InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray())) {
 				Source xsdSource = new StreamSource(inputStream);
@@ -64,7 +63,7 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 	}
 
 	@Override
-	public void getSchema(Class<?> type, OutputStream outputStream) throws SerializationException {
+	public void schema(Class<?> type, OutputStream outputStream) throws SerializationException {
 		try {
 			DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			DOMImplementation domImpl = db.getDOMImplementation();
@@ -99,6 +98,10 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 	}
 
 	@Override
+	public void validate(Class<?> type, InputStream data) throws ValidateException {
+		this.validate(this.schema(type), data);
+	}
+
 	public void validate(Schema schema, InputStream data) throws ValidateException {
 		try {
 			Validator validator = schema.newValidator();
@@ -373,7 +376,7 @@ public class B1SerializerXml extends B1Serializer<Schema> {
 	}
 
 	@Override
-	public Object deserialize(InputStream inputStream, ICompany company) throws SerializationException {
+	public <T> T deserialize(InputStream inputStream, ICompany company) throws SerializationException {
 		throw new SerializationException(I18N.prop("msg_bobas_not_supported"));
 	}
 

@@ -5,7 +5,7 @@
         <!-- 配置项目-是否开启调试模式 -->
         <add key="DebugMode" value="true" />
         <!-- 配置项目-B1-服务地址 -->
-        <add key="B1Server" value="sap-b1-93" />
+        <add key="B1Server" value="ibas-db-mssql" />
         <!-- 配置项目-B1-数据库名称 -->
         <add key="B1Company" value="SBODemoCN" />
         <!-- 配置项目-B1-用户 -->
@@ -13,11 +13,11 @@
         <!-- 配置项目-B1-密码 -->
         <add key="B1Password" value="manager" />
         <!-- 配置项目-B1-许可服务 -->
-        <add key="B1LicenseServer" value="" />
+        <add key="B1LicenseServer" value="WKSP-WIN16:30000" />
         <!-- 配置项目-B1-架构服务 -->
-        <add key="B1SLDServer" value="" />
+        <add key="B1SLDServer" value="WKSP-WIN16:40000" />
         <!-- 配置项目-B1-数据库类型 -->
-        <add key="B1DbType" value="dst_MSSQL2014" />
+        <add key="B1DbType" value="dst_MSSQL2017" />
         <!-- 配置项目-B1-数据库用户 -->
         <add key="B1DbUser" value="sa" />
         <!-- 配置项目-B1-数据库密码 -->
@@ -25,7 +25,7 @@
         <!-- 配置项目-B1-数据库使用信任 -->
         <add key="B1DbUseTrusted" value="false" />
         <!-- 配置项目-B1-口令 -->
-        <add key="B1Token" value="1q2w3e" />
+        <add key="B1Token" value="" />
         <!-- 配置项目-是否格式化输出 -->
         <add key="FormattedOutput" value="true"  />
     </appSettings>

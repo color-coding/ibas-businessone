@@ -19,8 +19,8 @@ import org.colorcoding.ibas.bobas.common.ICriteria;
 import org.colorcoding.ibas.bobas.common.IOperationResult;
 import org.colorcoding.ibas.bobas.common.ISort;
 import org.colorcoding.ibas.bobas.common.SortType;
-import org.colorcoding.ibas.bobas.core.RepositoryException;
 import org.colorcoding.ibas.bobas.data.DataTable;
+import org.colorcoding.ibas.bobas.repository.RepositoryException;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 
@@ -91,21 +91,21 @@ public class TestBORepository extends TestCase {
 
 		// xml序列化测试
 		fileGroup = MyConfiguration.getWorkFolder() + File.separator + "items_";
-		IB1Serializer<?> serializerXml = new B1SerializerXml();
+		IB1Serializer serializerXml = new B1SerializerXml();
 		FileOutputStream outputStream = new FileOutputStream(fileGroup + "schema_xml.xml");
-		serializerXml.getSchema(IItems.class, outputStream);
+		serializerXml.schema(IItems.class, outputStream);
 		outputStream.close();
 		System.out.println("schema: " + fileGroup + "schema_xml.xml");
 		boRepository.closeRepository();
 		// json序列化测试
-		IB1Serializer<?> serializerJson = new B1SerializerJson();
+		IB1Serializer serializerJson = new B1SerializerJson();
 		outputStream = new FileOutputStream(fileGroup + "schema_json.json");
-		serializerJson.getSchema(IItems.class, outputStream);
+		serializerJson.schema(IItems.class, outputStream);
 		outputStream.close();
 		System.out.println("schema: " + fileGroup + "schema_json.json");
 		fileGroup = MyConfiguration.getWorkFolder() + File.separator + "documents_";
 		outputStream = new FileOutputStream(fileGroup + "schema_json.json");
-		serializerJson.getSchema(IDocuments.class, outputStream);
+		serializerJson.schema(IDocuments.class, outputStream);
 		outputStream.close();
 		System.out.println("schema: " + fileGroup + "schema_json.json");
 		IDocuments order = SBOCOMUtil.getDocuments(b1Company, SBOCOMConstants.BoObjectTypes_Document_oOrders, 1);
@@ -230,7 +230,7 @@ public class TestBORepository extends TestCase {
 		ICompany b1Company = boRepository.getCompany();
 		// json序列化测试
 		Object data;
-		IB1Serializer<?> serializerJson = new B1SerializerJson();
+		IB1Serializer serializerJson = new B1SerializerJson();
 		// json反序列化付款
 		data = serializerJson.deserialize(DATA_STRING_PAY, b1Company);
 		if (data instanceof IPayments) {
