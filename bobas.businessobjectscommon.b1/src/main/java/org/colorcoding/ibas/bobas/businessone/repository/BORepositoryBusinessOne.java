@@ -4,17 +4,16 @@ import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
 import org.colorcoding.ibas.bobas.businessone.db.B1Adapter;
 import org.colorcoding.ibas.bobas.businessone.db.B1CompanyPool;
-import org.colorcoding.ibas.bobas.businessone.db.IB1Adapter;
 import org.colorcoding.ibas.bobas.businessone.db.IB1Connection;
 import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerFactory;
 import org.colorcoding.ibas.bobas.businessone.serialization.IB1Serializer;
 import org.colorcoding.ibas.bobas.businessone.serialization.IB1SerializerManager;
-import org.colorcoding.ibas.bobas.common.ISqlQuery;
-import org.colorcoding.ibas.bobas.core.RepositoryException;
+import org.colorcoding.ibas.bobas.db.ISqlStatement;
 import org.colorcoding.ibas.bobas.i18n.I18N;
-import org.colorcoding.ibas.bobas.message.Logger;
-import org.colorcoding.ibas.bobas.message.MessageLevel;
-import org.colorcoding.ibas.bobas.repository.InvalidTokenException;
+import org.colorcoding.ibas.bobas.logging.Logger;
+import org.colorcoding.ibas.bobas.logging.LoggingLevel;
+import org.colorcoding.ibas.bobas.organization.InvalidAuthorizationException;
+import org.colorcoding.ibas.bobas.repository.RepositoryException;
 
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.IRecordset;
@@ -43,11 +42,11 @@ public class BORepositoryBusinessOne implements IB1Connection {
 		return userToken;
 	}
 
-	public final void setUserToken(String userToken) throws InvalidTokenException {
+	public final void setUserToken(String userToken) throws InvalidAuthorizationException {
 		String token = MyConfiguration.getConfigValue(MyConfiguration.CONFIG_ITEM_B1_TOKEN);
 		if (token != null && !token.isEmpty()) {
 			if (!token.equals(userToken)) {
-				throw new InvalidTokenException();
+				throw new InvalidAuthorizationException();
 			}
 		}
 		this.userToken = userToken;
@@ -251,9 +250,9 @@ public class BORepositoryBusinessOne implements IB1Connection {
 		this.getB1Company().endTransaction(SBOCOMConstants.BoWfTransOpt_wf_Commit);
 	}
 
-	private IB1Adapter b1Adapter;
+	private B1Adapter b1Adapter;
 
-	protected final IB1Adapter getB1Adapter() {
+	protected final B1Adapter getB1Adapter() {
 		return b1Adapter;
 	}
 
@@ -290,7 +289,7 @@ public class BORepositoryBusinessOne implements IB1Connection {
 			}
 			IRecordset recordset = SBOCOMUtil.newRecordset(this.getB1Company());
 			if (MyConfiguration.isDebugMode()) {
-				Logger.log(MessageLevel.DEBUG, MSG_SQL_SCRIPTS, sql);
+				Logger.log(LoggingLevel.DEBUG, MSG_SQL_SCRIPTS, sql);
 			}
 			recordset.doQuery(sql);
 			return recordset;
@@ -303,8 +302,8 @@ public class BORepositoryBusinessOne implements IB1Connection {
 		}
 	}
 
-	protected final IRecordset query(ISqlQuery sqlQuery) throws RepositoryException {
-		return this.query(sqlQuery.getQueryString());
+	protected final IRecordset query(ISqlStatement sqlQuery) throws RepositoryException {
+		return this.query(sqlQuery.getContent());
 	}
 
 }

@@ -13,14 +13,14 @@ echo             ^<username^>用户名^<^/username^>
 echo             ^<password^>密码^<^/password^>
 echo           ^<^/server^>
 echo ****************************************************************************
-REM 设置参数变量
-SET WORK_FOLDER=%~dp0
-REM 仓库根地址
-SET ROOT_URL=http://maven.colorcoding.org/repository/
-REM 仓库名称
-SET REPOSITORY=%1
-REM 设置默认仓库名称
-if "%REPOSITORY%"=="" SET REPOSITORY=maven-releases
+rem 设置参数变量
+set WORK_FOLDER=%~dp0
+rem 仓库根地址
+set ROOT_URL=http://maven.colorcoding.org/repository/
+rem 仓库名称
+set REPOSITORY=%1
+rem 设置默认仓库名称
+if "%REPOSITORY%"=="" set REPOSITORY=maven-releases
 set REPOSITORY_URL=%ROOT_URL%%REPOSITORY%
 set REPOSITORY_ID=ibas-maven
 
@@ -28,7 +28,7 @@ echo --检查maven运行环境
 call mvn -v >nul || goto :CHECK_MAVEN_FAILD
 
 echo --发布地址：%REPOSITORY_URL%
-REM 发布父项
+rem 发布父项
 if exist %WORK_FOLDER%\pom.xml (
   call mvn deploy:deploy-file ^
     -Dfile=%WORK_FOLDER%\pom.xml ^
@@ -37,7 +37,7 @@ if exist %WORK_FOLDER%\pom.xml (
     -DrepositoryId=%REPOSITORY_ID% ^
     -Dpackaging=pom
 )
-REM 发布子项
+rem 发布子项
 for /f %%m in (%WORKFOLDER%compile_order.txt) do (
   if exist %WORK_FOLDER%%%m\pom.xml (
     for /f %%l in ('dir /s /a /b %WORK_FOLDER%release\%%m-*.jar' ) do (
@@ -47,100 +47,13 @@ for /f %%m in (%WORKFOLDER%compile_order.txt) do (
         -Durl=%REPOSITORY_URL% ^
         -DrepositoryId=%REPOSITORY_ID% ^
         -Dpackaging=jar
-      )
     )
   )
-)
-REM 发布父项
-if exist %WORK_FOLDER%\btulz.transforms.b1\pom.xml (
-  call mvn deploy:deploy-file ^
-    -Dfile=%WORK_FOLDER%\btulz.transforms.b1\pom.xml ^
-    -DpomFile=%WORK_FOLDER%\btulz.transforms.b1\pom.xml ^
-    -Durl=%REPOSITORY_URL% ^
-    -DrepositoryId=%REPOSITORY_ID% ^
-    -Dpackaging=pom
-)
-REM 发布子项
-set FILE_POM=btulz.transforms.b1\pom.b188.xml
-set FILE_JAR=btulz.transforms.b1-0.1.0-8.8.jar
-if exist %WORK_FOLDER%%FILE_POM% (
-  if exist %WORK_FOLDER%release\%FILE_JAR% (
-    call mvn deploy:deploy-file ^
-      -Dfile=%WORK_FOLDER%release\%FILE_JAR% ^
-      -DpomFile=%WORK_FOLDER%%FILE_POM% ^
-      -Durl=%REPOSITORY_URL% ^
-      -DrepositoryId=%REPOSITORY_ID% ^
-      -Dpackaging=jar
-    )
-  )
-)
-set FILE_POM=btulz.transforms.b1\pom.b191.xml
-set FILE_JAR=btulz.transforms.b1-0.1.0-9.1.jar
-if exist %WORK_FOLDER%%FILE_POM% (
-  if exist %WORK_FOLDER%release\%FILE_JAR% (
-    call mvn deploy:deploy-file ^
-      -Dfile=%WORK_FOLDER%release\%FILE_JAR% ^
-      -DpomFile=%WORK_FOLDER%%FILE_POM% ^
-      -Durl=%REPOSITORY_URL% ^
-      -DrepositoryId=%REPOSITORY_ID% ^
-      -Dpackaging=jar
-    )
-  )
-)
-set FILE_POM=btulz.transforms.b1\pom.b192.xml
-set FILE_JAR=btulz.transforms.b1-0.1.0-9.2.jar
-if exist %WORK_FOLDER%%FILE_POM% (
-  if exist %WORK_FOLDER%release\%FILE_JAR% (
-    call mvn deploy:deploy-file ^
-      -Dfile=%WORK_FOLDER%release\%FILE_JAR% ^
-      -DpomFile=%WORK_FOLDER%%FILE_POM% ^
-      -Durl=%REPOSITORY_URL% ^
-      -DrepositoryId=%REPOSITORY_ID% ^
-      -Dpackaging=jar
-    )
-  )
-)
-set FILE_POM=btulz.transforms.b1\pom.b193.xml
-set FILE_JAR=btulz.transforms.b1-0.1.0-9.3.jar
-if exist %WORK_FOLDER%%FILE_POM% (
-  if exist %WORK_FOLDER%release\%FILE_JAR% (
-    call mvn deploy:deploy-file ^
-      -Dfile=%WORK_FOLDER%release\%FILE_JAR% ^
-      -DpomFile=%WORK_FOLDER%%FILE_POM% ^
-      -Durl=%REPOSITORY_URL% ^
-      -DrepositoryId=%REPOSITORY_ID% ^
-      -Dpackaging=jar
-    )
-  )
-)
-set FILE_POM=btulz.transforms.b1\pom.b110.xml
-set FILE_JAR=btulz.transforms.b1-0.1.0-10.jar
-if exist %WORK_FOLDER%%FILE_POM% (
-  if exist %WORK_FOLDER%release\%FILE_JAR% (
-    call mvn deploy:deploy-file ^
-      -Dfile=%WORK_FOLDER%release\%FILE_JAR% ^
-      -DpomFile=%WORK_FOLDER%%FILE_POM% ^
-      -Durl=%REPOSITORY_URL% ^
-      -DrepositoryId=%REPOSITORY_ID% ^
-      -Dpackaging=jar
-    )
-  )
-)
-REM 发布工具包集合
-if exist %WORK_FOLDER%\release\btulz.transforms.tar (
-  call mvn deploy:deploy-file ^
-    -DgroupId=org.colorcoding.tools ^
-    -DartifactId=btulz.transforms ^
-    -Durl=%REPOSITORY_URL% ^
-    -DrepositoryId=%REPOSITORY_ID% ^
-    -Dfile=%WORK_FOLDER%\release\btulz.transforms.tar ^
-    -Dpackaging=tar ^
-    -Dversion=b1-latest
 )
 echo --操作完成
 
 goto :EOF
-REM ********************************以下为函数************************************
+rem ********************************以下为函数************************************
 :CHECK_MAVEN_FAILD
 echo 没有检测到MAVEN，请按照以下步骤检查
 echo 1. 是否安装，下载地址：http://maven.apache.org/download.cgi

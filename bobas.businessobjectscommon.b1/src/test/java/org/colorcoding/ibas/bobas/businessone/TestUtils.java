@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
-import org.colorcoding.ibas.bobas.data.Decimal;
+import org.colorcoding.ibas.bobas.common.Decimals;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -34,7 +34,7 @@ public class TestUtils extends TestCase {
 		jsonGenerator.writeStartObject();
 		jsonGenerator.writeStringField("ItemCode", "4");
 		jsonGenerator.writeBooleanField("SellItem", true);
-		jsonGenerator.writeNumberField("OnHand", Decimal.ONE);
+		jsonGenerator.writeNumberField("OnHand", Decimals.VALUE_ONE);
 		jsonGenerator.writeEndObject();
 		jsonGenerator.writeEndArray();
 		jsonGenerator.writeEndObject();

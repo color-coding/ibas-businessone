@@ -11,8 +11,8 @@ import org.colorcoding.ibas.bobas.data.DataTable;
 import org.colorcoding.ibas.bobas.data.DateTime;
 import org.colorcoding.ibas.bobas.data.IDataTableColumn;
 import org.colorcoding.ibas.bobas.data.IDataTableRow;
-import org.colorcoding.ibas.bobas.message.Logger;
-import org.colorcoding.ibas.bobas.message.MessageLevel;
+import org.colorcoding.ibas.bobas.logging.Logger;
+import org.colorcoding.ibas.bobas.logging.LoggingLevel;
 
 import com.sap.smb.sbo.api.IField;
 import com.sap.smb.sbo.api.IRecordset;
@@ -186,7 +186,7 @@ public class B1DataConvert {
 									if (e.getCause() instanceof ComFailException) {
 										if (e.getCause().getMessage() != null && e.getCause().getMessage()
 												.contains("Description: Invalid row number")) {
-											Logger.log(MessageLevel.WARN, e);
+											Logger.log(LoggingLevel.WARN, e);
 											index++;
 											return null;
 										}
@@ -219,7 +219,7 @@ public class B1DataConvert {
 									if (e.getCause() instanceof ComFailException) {
 										if (e.getCause().getMessage() != null && e.getCause().getMessage()
 												.contains("Description: Invalid row number")) {
-											Logger.log(MessageLevel.WARN, e);
+											Logger.log(LoggingLevel.WARN, e);
 											index++;
 											return null;
 										}

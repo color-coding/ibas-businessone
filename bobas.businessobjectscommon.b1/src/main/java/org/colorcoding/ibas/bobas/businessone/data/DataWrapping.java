@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
-import org.colorcoding.ibas.bobas.serialization.Serializable;
+import org.colorcoding.ibas.bobas.core.Serializable;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType(name = "DataWrapping", namespace = MyConfiguration.NAMESPACE_B1_DATA)

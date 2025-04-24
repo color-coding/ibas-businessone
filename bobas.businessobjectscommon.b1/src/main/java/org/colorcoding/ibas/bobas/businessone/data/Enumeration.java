@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.colorcoding.ibas.bobas.data.DataConvertException;
 import org.colorcoding.ibas.bobas.data.KeyValue;
 import org.colorcoding.ibas.bobas.data.emYesNo;
 import org.colorcoding.ibas.bobas.i18n.I18N;
@@ -99,7 +98,7 @@ public class Enumeration {
 				}
 			}
 		}
-		throw new DataConvertException(I18N.prop("msg_bobas_value_can_not_be_resolved", type + " - " + value));
+		throw new RuntimeException(I18N.prop("msg_bobas_value_can_not_be_resolved", type + " - " + value));
 	}
 
 	public static Integer valueOf(emYesNo value) {
@@ -154,7 +153,7 @@ public class Enumeration {
 				}
 			}
 		}
-		throw new DataConvertException(
+		throw new RuntimeException(
 				I18N.prop("msg_bobas_data_type_not_support", type == null ? "UNKNOWN" : type.getName()));
 	}
 

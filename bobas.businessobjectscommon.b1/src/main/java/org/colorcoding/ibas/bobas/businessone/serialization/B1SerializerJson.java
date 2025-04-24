@@ -19,10 +19,10 @@ import java.util.Map.Entry;
 
 import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
-import org.colorcoding.ibas.bobas.data.DataConvert;
+import org.colorcoding.ibas.bobas.common.Strings;
 import org.colorcoding.ibas.bobas.i18n.I18N;
-import org.colorcoding.ibas.bobas.message.Logger;
-import org.colorcoding.ibas.bobas.message.MessageLevel;
+import org.colorcoding.ibas.bobas.logging.Logger;
+import org.colorcoding.ibas.bobas.logging.LoggingLevel;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 import org.colorcoding.ibas.bobas.serialization.structure.Element;
@@ -238,7 +238,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 			}
 			Element element = rootElement.getChilds().firstOrDefault(c -> c.getName().equalsIgnoreCase(node.getKey()));
 			if (element == null) {
-				Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].", rootElement.getName(),
+				Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].", rootElement.getName(),
 						node.getKey());
 				continue;
 			}
@@ -270,7 +270,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					if (fields.getCount() > 0 && !fieldsNode.isNull() && fieldsNode.isArray()) {
 						for (JsonNode jsonNode : fieldsNode) {
 							String name = jsonNode.get("name").textValue();
-							if (!DataConvert.isNullOrEmpty(name)) {
+							if (!Strings.isNullOrEmpty(name)) {
 								IField field = fields.item(name);
 								if (field != null) {
 									this.deserialize(field, jsonNode, fieldElement);
@@ -278,10 +278,10 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 							}
 						}
 					} else {
-						Logger.log(MessageLevel.DEBUG, "b1 serializer: not define user fields.");
+						Logger.log(LoggingLevel.DEBUG, "b1 serializer: not define user fields.");
 					}
 				} catch (NoSuchMethodException e) {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].",
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].",
 							rootElement.getName(), node.getKey());
 				} catch (Exception e) {
 					throw new SerializationException(e);
@@ -303,7 +303,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 							method.invoke(cData);
 						}
 					} else {
-						Logger.log(MessageLevel.WARN,
+						Logger.log(LoggingLevel.WARN,
 								"b1 serializer: element [%s] is collection, but node [%s] is not array.",
 								element.getName(), node.getKey());
 					}
@@ -315,7 +315,7 @@ public class B1SerializerJson extends B1Serializer<JsonSchema> {
 					Method method = data.getClass().getMethod("set" + element.getName(), element.getType());
 					method.invoke(data, this.nodeValue(node.getValue(), element.getType()));
 				} catch (NoSuchMethodException e) {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].",
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found [%s]'s property [%s].",
 							rootElement.getName(), node.getKey());
 				} catch (Exception e) {
 					throw new SerializationException(e);

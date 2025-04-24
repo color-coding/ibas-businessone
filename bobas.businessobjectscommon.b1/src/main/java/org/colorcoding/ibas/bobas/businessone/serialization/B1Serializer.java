@@ -18,9 +18,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.DataWrapping;
 import org.colorcoding.ibas.bobas.businessone.data.Enumeration;
-import org.colorcoding.ibas.bobas.data.DataConvertException;
-import org.colorcoding.ibas.bobas.message.Logger;
-import org.colorcoding.ibas.bobas.message.MessageLevel;
+import org.colorcoding.ibas.bobas.logging.Logger;
+import org.colorcoding.ibas.bobas.logging.LoggingLevel;
 import org.colorcoding.ibas.bobas.serialization.SerializationException;
 import org.colorcoding.ibas.bobas.serialization.ValidateException;
 import org.colorcoding.ibas.bobas.serialization.structure.Element;
@@ -105,7 +104,7 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 	public <T> DataWrapping wrap(T data, ElementRoot element) throws SerializationException {
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 			if (MyConfiguration.isDebugMode()) {
-				Logger.log(MessageLevel.DEBUG, MSG_B1_SERIALIZER_WRAPPING_DATA,
+				Logger.log(LoggingLevel.DEBUG, MSG_B1_SERIALIZER_WRAPPING_DATA,
 						data == null ? "Unknown" : data.getClass().getName());
 			}
 			this.serialize(data, outputStream, false, element);
@@ -142,43 +141,40 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 	public Element[] getEntityKeys(String className, ICompany company) {
 		try {
 			if (!ENTRY_KEYS.containsKey(className)) {
-				try {
-					if (Enumeration.isUserTable(className)) {
-						// 自定义表
-						Element eleTable = new ElementMethod();
-						eleTable.setName("TableName");
-						eleTable.setType(String.class);
-						Element eleCode = new ElementMethod();
-						eleCode.setName("Code");
-						eleCode.setType(String.class);
-						ENTRY_KEYS.put(className, new Element[] { eleTable, eleCode });
-					} else {
-						// 其他对象
-						Element[] keys = this.getEntityKeys(company.getBusinessObjectXmlSchema(
-								Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className)));
-						if (keys != null && keys.length > 0) {
-							if (Enumeration.isDocuments(className) || Enumeration.isPayments(className)) {
-								for (int i = 0; i < keys.length; i++) {
-									Element element = keys[i];
-									element.setType(Integer.class);
-								}
-								ENTRY_KEYS.put(className, keys);
-							} else {
-								for (Method method : SBOCOMUtil.class.getMethods()) {
-									if (method.getName().equalsIgnoreCase("get" + className)
-											&& keys.length + 1 == method.getParameterCount()) {
-										for (int i = 0; i < keys.length; i++) {
-											Element element = keys[i];
-											element.setType(method.getParameterTypes()[i + 1]);
-										}
-										break;
-									}
-								}
-								ENTRY_KEYS.put(className, keys);
+				if (Enumeration.isUserTable(className)) {
+					// 自定义表
+					Element eleTable = new ElementMethod();
+					eleTable.setName("TableName");
+					eleTable.setType(String.class);
+					Element eleCode = new ElementMethod();
+					eleCode.setName("Code");
+					eleCode.setType(String.class);
+					ENTRY_KEYS.put(className, new Element[] { eleTable, eleCode });
+				} else {
+					// 其他对象
+					Element[] keys = this.getEntityKeys(company.getBusinessObjectXmlSchema(
+							Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className)));
+					if (keys != null && keys.length > 0) {
+						if (Enumeration.isDocuments(className) || Enumeration.isPayments(className)) {
+							for (int i = 0; i < keys.length; i++) {
+								Element element = keys[i];
+								element.setType(Integer.class);
 							}
+							ENTRY_KEYS.put(className, keys);
+						} else {
+							for (Method method : SBOCOMUtil.class.getMethods()) {
+								if (method.getName().equalsIgnoreCase("get" + className)
+										&& keys.length + 1 == method.getParameterCount()) {
+									for (int i = 0; i < keys.length; i++) {
+										Element element = keys[i];
+										element.setType(method.getParameterTypes()[i + 1]);
+									}
+									break;
+								}
+							}
+							ENTRY_KEYS.put(className, keys);
 						}
 					}
-				} catch (DataConvertException e) {
 				}
 			}
 			return ENTRY_KEYS.get(className);
@@ -279,10 +275,10 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 				Object data = SBOCOMUtil.getDocuments(company,
 						Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className), (Integer) keyValues[0]);
 				if (data != null) {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
 							builder.toString());
 				} else {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
 							builder.toString());
 				}
 				return data;
@@ -290,10 +286,10 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 				Object data = SBOCOMUtil.getPayments(company,
 						Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className), (Integer) keyValues[0]);
 				if (data != null) {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
 							builder.toString());
 				} else {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
 							builder.toString());
 				}
 				return data;
@@ -301,10 +297,10 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 				IUserTable table = company.getUserTables().item(keyValues[0]);
 				if (keyValues[1] != null) {
 					if (table.getByKey(String.valueOf(keyValues[1]))) {
-						Logger.log(MessageLevel.DEBUG, "b1 serializer: got table [%s]'s data [%s].", keyValues[0],
+						Logger.log(LoggingLevel.DEBUG, "b1 serializer: got table [%s]'s data [%s].", keyValues[0],
 								keyValues[1]);
 					} else {
-						Logger.log(MessageLevel.DEBUG, "b1 serializer: not found table [%s]'s data [%s].", keyValues[0],
+						Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found table [%s]'s data [%s].", keyValues[0],
 								keyValues[1]);
 					}
 				}
@@ -313,10 +309,10 @@ public abstract class B1Serializer<S> implements IB1Serializer<S> {
 				Method method = SBOCOMUtil.class.getMethod("get" + className, types);
 				Object data = method.invoke(null, params);
 				if (data != null) {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: got [%s]'s data [%s].", className,
 							builder.toString());
 				} else {
-					Logger.log(MessageLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
+					Logger.log(LoggingLevel.DEBUG, "b1 serializer: not found [%s]'s data [%s].", className,
 							builder.toString());
 				}
 				return data;

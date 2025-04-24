@@ -5,8 +5,8 @@ import java.lang.reflect.Method;
 import org.colorcoding.ibas.bobas.businessone.MyConfiguration;
 import org.colorcoding.ibas.bobas.businessone.data.B1DataConvert;
 import org.colorcoding.ibas.bobas.businessone.data.B1Exception;
-import org.colorcoding.ibas.bobas.message.Logger;
-import org.colorcoding.ibas.bobas.message.MessageLevel;
+import org.colorcoding.ibas.bobas.logging.Logger;
+import org.colorcoding.ibas.bobas.logging.LoggingLevel;
 
 import com.sap.smb.sbo.api.ICompany;
 import com.sap.smb.sbo.api.SBOCOMConstants;
@@ -50,7 +50,7 @@ public class B1CompanyPool {
 			}
 		}
 		System.gc();
-		Logger.log(MessageLevel.INFO, message);
+		Logger.log(LoggingLevel.INFO, message);
 	}
 
 	private volatile static B1CompanyPool b1CompanyPool = null;
@@ -117,7 +117,7 @@ public class B1CompanyPool {
 			}
 		} catch (Throwable e) {
 		}
-		Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_CONNECTING, company.getServer(), company.getCompanyDB());
+		Logger.log(LoggingLevel.INFO, MSG_B1_COMPANY_CONNECTING, company.getServer(), company.getCompanyDB());
 		if (company.connect() != 0) {
 			int code = company.getLastErrorCode();
 			String description = company.getLastErrorDescription();
@@ -127,7 +127,7 @@ public class B1CompanyPool {
 			}
 			throw new B1Exception(String.format("%s - %s", code, description));
 		} else {
-			Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_CONNECTED, company.getServer(), company.getCompanyDB());
+			Logger.log(LoggingLevel.INFO, MSG_B1_COMPANY_CONNECTED, company.getServer(), company.getCompanyDB());
 		}
 		return company;
 	}
@@ -168,7 +168,7 @@ public class B1CompanyPool {
 						if (!company.getUserName().equalsIgnoreCase(connection.getUserName())) {
 							continue;
 						}
-						Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_DATATIME, connection.getServer(),
+						Logger.log(LoggingLevel.INFO, MSG_B1_COMPANY_DATATIME, connection.getServer(),
 								connection.getCompanyDB(), B1DataConvert.toString(company.getDBServerDate()),
 								company.getDBServerTime());
 						this.wrappings[i] = null;
@@ -178,12 +178,12 @@ public class B1CompanyPool {
 						try {
 							company.release();
 						} catch (Throwable ex) {
-							Logger.log(MessageLevel.ERROR, e.toString());
+							Logger.log(LoggingLevel.ERROR, e.toString());
 						}
-						Logger.log(MessageLevel.ERROR, e.toString());
+						Logger.log(LoggingLevel.ERROR, e.toString());
 					}
 				}
-				Logger.log(MessageLevel.DEBUG, MSG_B1_COMPANY_WAITING, connection.getServer(),
+				Logger.log(LoggingLevel.DEBUG, MSG_B1_COMPANY_WAITING, connection.getServer(),
 						connection.getCompanyDB());
 				try {
 					Thread.sleep(WAITING_TIME);
@@ -213,7 +213,7 @@ public class B1CompanyPool {
 					continue;
 				}
 				this.wrappings[i] = new B1CompanyWrapping(company);
-				Logger.log(MessageLevel.INFO, MSG_B1_COMPANY_RECYCLED, company.getServer(), company.getCompanyDB());
+				Logger.log(LoggingLevel.INFO, MSG_B1_COMPANY_RECYCLED, company.getServer(), company.getCompanyDB());
 				return true;
 			}
 		}
