@@ -16,8 +16,14 @@ import org.colorcoding.tools.btulz.transformer.TransformException;
 
 import junit.framework.TestCase;
 
+/**
+ * 测试XML模型转换功能
+ */
 public class TestXmlTransformer extends TestCase {
 
+	/**
+	 * 测试加载XML模型并序列化输出
+	 */
 	public void testLoad() throws ClassNotFoundException, TransformException, MultiTransformException, JAXBException {
 		XmlTransformer xmlTransformer = new XmlTransformer();
 		xmlTransformer.load(Environment.getWorkingFolder() + "/ds_tt_userobjects.xml".replace("/", File.separator),

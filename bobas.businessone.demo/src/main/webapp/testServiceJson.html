@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Services | JSON</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f7fa; color: #333; padding: 24px; line-height: 1.6;
+        }
+        h1 { font-size: 22px; color: #2c3e50; margin-bottom: 16px; }
+        h1 small { font-size: 13px; color: #999; font-weight: normal; margin-left: 8px; }
+        .header-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+        .token-row { display: flex; align-items: center; gap: 8px; }
+        .token-row label { font-size: 13px; color: #777; }
+        .token-row input {
+            padding: 4px 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; width: 120px;
+        }
+        .card {
+            background: #fff; border-radius: 8px; padding: 16px 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px;
+        }
+        .card h2 { font-size: 15px; color: #555; margin-bottom: 10px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { padding: 8px 12px; text-align: left; }
+        th { font-size: 12px; color: #999; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #eee; }
+        td { border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        tr:last-child td { border-bottom: none; }
+        .bo-name { font-weight: 500; color: #2c3e50; }
+        .btn {
+            display: inline-block; padding: 5px 14px; font-size: 13px; font-weight: 500;
+            color: #fff; background: #3498db; border: none; border-radius: 4px;
+            cursor: pointer; transition: background 0.2s; margin-right: 4px;
+        }
+        .btn:hover { background: #2980b9; }
+        .btn:active { background: #2471a3; }
+        .btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .btn-green { background: #27ae60; }
+        .btn-green:hover { background: #219a52; }
+        .result-card {
+            background: #fff; border-radius: 8px; padding: 16px 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .result-header { display: flex; gap: 24px; margin-bottom: 10px; flex-wrap: wrap; }
+        .result-item { font-size: 13px; }
+        .result-item label { color: #999; margin-right: 4px; }
+        .result-item span { font-weight: 500; color: #2c3e50; }
+        .result-item span.error { color: #c0392b; }
+        .result-item span.success { color: #27ae60; }
+        .result-url {
+            font-size: 12px; color: #888; margin-bottom: 8px; word-break: break-all;
+            padding: 6px 10px; background: #f8f9fa; border-radius: 4px; display: none;
+        }
+        .result-body {
+            padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0;
+            border-radius: 4px; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-all;
+            max-height: 400px; overflow-y: auto; min-height: 40px; color: #555;
+        }
+        .result-body:empty::before { content: "No data"; color: #ccc; }
+        .nav-links { margin-bottom: 16px; font-size: 13px; }
+        .nav-links a { color: #3498db; text-decoration: none; margin-right: 12px; }
+        .nav-links a:hover { text-decoration: underline; }
+    </style>
+    <script>
+        // ---- 工具方法 ----
+        var getRootUrl = function () {
+            var tmp = window.location.href;
+            return tmp.substring(0, tmp.indexOf('/test'));
+        };
+
+        var getToken = function () {
+            return document.getElementById('tokenInput').value || '1q2w3e';
+        };
+
+        var address = getRootUrl() + '/services/rest';
+
+        var $id = function (id) { return document.getElementById(id); };
+
+        // ---- 显示结果 ----
+        var showResult = function (opRslt, url) {
+            $id('rsltCode').textContent = '';
+            $id('rsltCode').className = '';
+            $id('rsltMsg').textContent = '';
+            $id('rsltMsg').className = '';
+            $id('rsltCount').textContent = '';
+            $id('rsltValues').textContent = '';
+            if (url) {
+                $id('rsltUrl').textContent = url;
+                $id('rsltUrl').style.display = 'block';
+            }
+            if (opRslt !== null && opRslt !== undefined) {
+                if (opRslt.ResultCode !== undefined) {
+                    $id('rsltCode').textContent = opRslt.ResultCode;
+                    $id('rsltCode').className = opRslt.ResultCode === 0 ? 'success' : 'error';
+                }
+                if (opRslt.Message) {
+                    $id('rsltMsg').textContent = opRslt.Message;
+                }
+                if (opRslt.ResultObjects) {
+                    $id('rsltCount').textContent = Array.isArray(opRslt.ResultObjects) ? opRslt.ResultObjects.length : 0;
+                }
+                $id('rsltValues').textContent = JSON.stringify(opRslt, null, 2);
+            } else {
+                $id('rsltCode').textContent = '-999';
+                $id('rsltCode').className = 'error';
+                $id('rsltMsg').textContent = 'Unknown error.';
+            }
+        };
+
+        var showError = function (status, statusText, responseText, url) {
+            $id('rsltCode').textContent = status || '-999';
+            $id('rsltCode').className = 'error';
+            $id('rsltMsg').textContent = statusText || 'Unknown error.';
+            $id('rsltCount').textContent = '';
+            $id('rsltValues').textContent = responseText || '';
+            if (url) {
+                $id('rsltUrl').textContent = url;
+                $id('rsltUrl').style.display = 'block';
+            }
+        };
+
+        // ---- 请求封装 ----
+        var ajaxPost = function (url, data) {
+            return fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(function (response) {
+                if (!response.ok) throw response;
+                return response.json();
+            });
+        };
+
+        var handleFetchError = function (err, url) {
+            if (err instanceof Response) {
+                err.text().then(function (text) {
+                    showError(err.status, err.statusText, text, url);
+                });
+            } else {
+                showError(-999, err.message || 'Network error', '', url);
+            }
+        };
+
+        // ---- 业务操作 ----
+        var testFetchItems = function () {
+            var url = address + '/fetchItems?token=' + getToken();
+            ajaxPost(url, { ResultCount: 1 }).then(function (data) {
+                showResult(data, url);
+            }).catch(function (err) { handleFetchError(err, url); });
+        };
+
+        var testFetchBusinessPartners = function () {
+            var url = address + '/fetchBusinessPartners?token=' + getToken();
+            ajaxPost(url, { ResultCount: 1 }).then(function (data) {
+                showResult(data, url);
+            }).catch(function (err) { handleFetchError(err, url); });
+        };
+
+        var testFetchOrders = function () {
+            var url = address + '/fetchOrders?token=' + getToken();
+            ajaxPost(url, { ResultCount: 1 }).then(function (data) {
+                showResult(data, url);
+            }).catch(function (err) { handleFetchError(err, url); });
+        };
+
+        var testFetchPurchaseOrders = function () {
+            var url = address + '/fetchPurchaseOrders?token=' + getToken();
+            ajaxPost(url, { ResultCount: 1 }).then(function (data) {
+                showResult(data, url);
+            }).catch(function (err) { handleFetchError(err, url); });
+        };
+
+        var testFetchProductionOrders = function () {
+            var url = address + '/fetchProductionOrders?token=' + getToken();
+            ajaxPost(url, { ResultCount: 1 }).then(function (data) {
+                showResult(data, url);
+            }).catch(function (err) { handleFetchError(err, url); });
+        };
+
+        var testFetchItemRecords = function () {
+            var url = address + '/fetchItemRecords?token=' + getToken();
+            ajaxPost(url, {
+                ResultCount: 999,
+                Conditions: [{
+                    Alias: "ItemName",
+                    Operation: 11
+                }]
+            }).then(function (data) {
+                showResult(data, url);
+            }).catch(function (err) { handleFetchError(err, url); });
+        };
+
+        var getWADL = function () {
+            var url = getRootUrl() + '/services/rest/application.wadl';
+            window.open(url);
+        };
+    </script>
+</head>
+
+<body>
+    <div class="header-row">
+        <h1>🔗 JSON Service Tester <small>application/json</small></h1>
+        <div class="token-row">
+            <label>Token:</label>
+            <input type="text" id="tokenInput" value="1q2w3e" />
+        </div>
+    </div>
+
+    <div class="nav-links">
+        <a href="testServiceXml.html">XML Service</a>
+        <a href="testServiceFile.html">File Service</a>
+        <a href="javascript:void(0)" onclick="getWADL()">WADL</a>
+    </div>
+
+    <div class="card">
+        <h2>Business Objects</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:40%">Object</th>
+                    <th style="width:60%">Fetch</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="bo-name">Items</td>
+                    <td><button class="btn btn-green" onclick="testFetchItems()">Fetch</button></td>
+                </tr>
+                <tr>
+                    <td class="bo-name">BusinessPartners</td>
+                    <td><button class="btn btn-green" onclick="testFetchBusinessPartners()">Fetch</button></td>
+                </tr>
+                <tr>
+                    <td class="bo-name">Orders (Sales)</td>
+                    <td><button class="btn btn-green" onclick="testFetchOrders()">Fetch</button></td>
+                </tr>
+                <tr>
+                    <td class="bo-name">PurchaseOrders</td>
+                    <td><button class="btn btn-green" onclick="testFetchPurchaseOrders()">Fetch</button></td>
+                </tr>
+                <tr>
+                    <td class="bo-name">ProductionOrders</td>
+                    <td><button class="btn btn-green" onclick="testFetchProductionOrders()">Fetch</button></td>
+                </tr>
+                <tr>
+                    <td class="bo-name">ItemRecords (Query)</td>
+                    <td><button class="btn btn-green" onclick="testFetchItemRecords()">Fetch</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="result-card">
+        <h2>Result</h2>
+        <div class="result-header">
+            <div class="result-item"><label>Code:</label><span id="rsltCode"></span></div>
+            <div class="result-item"><label>Message:</label><span id="rsltMsg"></span></div>
+            <div class="result-item"><label>Count:</label><span id="rsltCount"></span></div>
+        </div>
+        <div id="rsltUrl" class="result-url"></div>
+        <pre id="rsltValues" class="result-body"></pre>
+    </div>
+</body>
+
+</html>

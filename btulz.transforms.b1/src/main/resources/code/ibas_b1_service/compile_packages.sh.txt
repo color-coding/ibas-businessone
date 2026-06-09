@@ -31,7 +31,7 @@ if [ -e ${WORK_FOLDER}/pom.xml ]; then
 fi
 
 echo --开始编译[compile_order.txt]内容
-while read line; do
+LC_ALL=C sed 's/\r//g' "${WORK_FOLDER}/compile_order.txt" | while IFS= read -r line; do
   if [ -e ${WORK_FOLDER}/${line}/pom.xml ]; then
     isService=$(echo ${line} | grep '.service$' | wc -l)
     if [ ${isService} != 0 ]; then
@@ -58,6 +58,6 @@ while read line; do
       echo --编译[${line}]失败
     fi
   fi
-done <${WORK_FOLDER}/compile_order.txt | sed 's/\r//g'
+done
 
 echo --编译完成

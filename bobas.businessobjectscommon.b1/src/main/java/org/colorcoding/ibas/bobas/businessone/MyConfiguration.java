@@ -69,5 +69,9 @@ public class MyConfiguration extends org.colorcoding.ibas.bobas.MyConfiguration 
 	 * 配置项目-B1-链接池大小
 	 */
 	public final static String CONFIG_ITEM_B1_COMPANY_POOL_SIZE = "B1CompanyPoolSize";
+	/**
+	 * 配置项目-B1-链接池空闲连接超时（毫秒），默认30分钟
+	 */
+	public final static String CONFIG_ITEM_B1_COMPANY_IDLE_TIMEOUT = "B1CompanyIdleTimeout";
 
 }

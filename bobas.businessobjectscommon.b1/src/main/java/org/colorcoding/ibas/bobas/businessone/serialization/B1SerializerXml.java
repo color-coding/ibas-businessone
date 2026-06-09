@@ -49,6 +49,13 @@ public class B1SerializerXml extends B1Serializer {
 	public static final String XML_FILE_INDENT = "yes";
 	public static final String XML_FILE_NAMESPACE = "http://www.w3.org/2001/XMLSchema";
 
+	/**
+	 * 生成类型的XML Schema定义
+	 *
+	 * @param type 类型
+	 * @return XML Schema对象
+	 * @throws SerializationException 生成失败时抛出
+	 */
 	public Schema schema(Class<?> type) throws SerializationException {
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 			this.schema(type, outputStream);
@@ -62,6 +69,13 @@ public class B1SerializerXml extends B1Serializer {
 		}
 	}
 
+	/**
+	 * 生成类型的XML Schema并输出到流
+	 *
+	 * @param type         类型
+	 * @param outputStream 输出流
+	 * @throws SerializationException 生成失败时抛出
+	 */
 	@Override
 	public void schema(Class<?> type, OutputStream outputStream) throws SerializationException {
 		try {
@@ -87,21 +101,28 @@ public class B1SerializerXml extends B1Serializer {
 			transformer.transform(source, new StreamResult(outputStream));
 		} catch (ParserConfigurationException | TransformerException e) {
 			throw new SerializationException(e);
-		} finally {
-			if (outputStream != null) {
-				try {
-					outputStream.close();
-				} catch (IOException e) {
-				}
-			}
 		}
 	}
 
+	/**
+	 * 验证XML数据是否符合类型定义
+	 *
+	 * @param type 数据类型
+	 * @param data XML数据输入流
+	 * @throws ValidateException 验证失败时抛出
+	 */
 	@Override
 	public void validate(Class<?> type, InputStream data) throws ValidateException {
 		this.validate(this.schema(type), data);
 	}
 
+	/**
+	 * 使用XML Schema验证输入流中的XML数据
+	 *
+	 * @param schema XML Schema定义
+	 * @param data   XML数据输入流
+	 * @throws ValidateException 验证失败时抛出
+	 */
 	public void validate(Schema schema, InputStream data) throws ValidateException {
 		try {
 			Validator validator = schema.newValidator();
@@ -109,40 +130,45 @@ public class B1SerializerXml extends B1Serializer {
 			validator.validate(xmlSource);
 		} catch (SAXException | IOException e) {
 			throw new ValidateException(e);
-		} finally {
-			if (data != null) {
-				try {
-					data.close();
-				} catch (IOException e) {
-				}
-			}
 		}
+	}
+
+	private static final Map<String, String> XML_KNOWN_TYPES = new HashMap<>();
+	static {
+		XML_KNOWN_TYPES.put("integer", "xs:int");
+		XML_KNOWN_TYPES.put("long", "xs:long");
+		XML_KNOWN_TYPES.put("short", "xs:short");
+		XML_KNOWN_TYPES.put("float", "xs:float");
+		XML_KNOWN_TYPES.put("double", "xs:double");
+		XML_KNOWN_TYPES.put("boolean", "xs:boolean");
+		XML_KNOWN_TYPES.put("java.lang.Integer", "xs:int");
+		XML_KNOWN_TYPES.put("java.lang.Long", "xs:long");
+		XML_KNOWN_TYPES.put("java.lang.Short", "xs:short");
+		XML_KNOWN_TYPES.put("java.math.BigInteger", "xs:integer");
+		XML_KNOWN_TYPES.put("java.lang.Float", "xs:float");
+		XML_KNOWN_TYPES.put("java.lang.Double", "xs:double");
+		XML_KNOWN_TYPES.put("java.math.BigDecimal", "xs:decimal");
+		XML_KNOWN_TYPES.put("java.lang.String", "xs:string");
+		XML_KNOWN_TYPES.put("java.lang.Character", "xs:string");
+		XML_KNOWN_TYPES.put("java.lang.Boolean", "xs:boolean");
+	}
+
+	private static final List<Class<?>> XML_KNOWN_TYPE_CLASSES = new ArrayList<>();
+	static {
+		XML_KNOWN_TYPE_CLASSES.add(Integer.class);
+		XML_KNOWN_TYPE_CLASSES.add(Short.class);
+		XML_KNOWN_TYPE_CLASSES.add(Long.class);
+		XML_KNOWN_TYPE_CLASSES.add(Float.class);
+		XML_KNOWN_TYPE_CLASSES.add(Double.class);
+		XML_KNOWN_TYPE_CLASSES.add(String.class);
+		XML_KNOWN_TYPE_CLASSES.add(Character.class);
+		XML_KNOWN_TYPE_CLASSES.add(Boolean.class);
+		XML_KNOWN_TYPE_CLASSES.add(BigDecimal.class);
+		XML_KNOWN_TYPE_CLASSES.add(BigInteger.class);
 	}
 
 	private class SchemaWriter {
 
-		public SchemaWriter() {
-			this.knownTypes = new HashMap<>();
-			this.knownTypes.put("integer", "xs:int");
-			this.knownTypes.put("long", "xs:long");
-			this.knownTypes.put("short", "xs:short");
-			this.knownTypes.put("float", "xs:float");
-			this.knownTypes.put("double", "xs:double");
-			this.knownTypes.put("boolean", "xs:boolean");
-			this.knownTypes.put("java.lang.Integer", "xs:int");
-			this.knownTypes.put("java.lang.Long", "xs:long");
-			this.knownTypes.put("java.lang.Short", "xs:short");
-			this.knownTypes.put("java.math.BigInteger", "xs:integer");
-			this.knownTypes.put("java.lang.Float", "xs:float");
-			this.knownTypes.put("java.lang.Double", "xs:double");
-			this.knownTypes.put("java.math.BigDecimal", "xs:decimal");
-			this.knownTypes.put("java.lang.String", "xs:string");
-			this.knownTypes.put("java.lang.Character", "xs:string");
-			this.knownTypes.put("java.lang.Boolean", "xs:boolean");
-			// this.knownTypes.put("java.util.Date", "xs:dateTime");
-		}
-
-		private Map<String, String> knownTypes;
 		public Document document;
 		public ElementRoot element;
 
@@ -165,7 +191,7 @@ public class B1SerializerXml extends B1Serializer {
 		private void write(org.w3c.dom.Element domParent, Element element) {
 			org.w3c.dom.Element dom = this.document.createElement("xs:element");
 			// 获取元素类型
-			String typeName = this.knownTypes.get(element.getType().getName());
+			String typeName = XML_KNOWN_TYPES.get(element.getType().getName());
 			if (typeName != null) {
 				// 已知类型
 				// type="xs:string"
@@ -250,6 +276,14 @@ public class B1SerializerXml extends B1Serializer {
 		}
 	}
 
+	/**
+	 * 序列化对象为XML格式输出
+	 *
+	 * @param data         要序列化的对象
+	 * @param outputStream 输出流
+	 * @param formated     是否格式化输出
+	 * @param element      元素定义
+	 */
 	@Override
 	protected void serialize(Object data, OutputStream outputStream, boolean formated, ElementRoot element) {
 		try {
@@ -273,33 +307,11 @@ public class B1SerializerXml extends B1Serializer {
 			transformer.transform(source, new StreamResult(outputStream));
 		} catch (ParserConfigurationException | TransformerException e) {
 			throw new SerializationException(e);
-		} finally {
-			if (outputStream != null) {
-				try {
-					outputStream.close();
-				} catch (IOException e) {
-				}
-			}
 		}
 	}
 
 	private class DataWriter {
 
-		public DataWriter() {
-			this.knownTypes = new ArrayList<>();
-			this.knownTypes.add(Integer.class);
-			this.knownTypes.add(Short.class);
-			this.knownTypes.add(Long.class);
-			this.knownTypes.add(Float.class);
-			this.knownTypes.add(Double.class);
-			this.knownTypes.add(String.class);
-			this.knownTypes.add(Character.class);
-			this.knownTypes.add(Boolean.class);
-			this.knownTypes.add(BigDecimal.class);
-			this.knownTypes.add(BigInteger.class);
-		}
-
-		private List<Class<?>> knownTypes;
 		public Document document;
 		public ElementRoot element;
 		public Object source;
@@ -329,7 +341,7 @@ public class B1SerializerXml extends B1Serializer {
 					dom.setTextContent(tmp);
 					domParent.appendChild(dom);
 				}
-			} else if (this.knownTypes.contains(element.getType()) || this.knownTypes.contains(value.getClass())) {
+			} else if (XML_KNOWN_TYPE_CLASSES.contains(element.getType()) || XML_KNOWN_TYPE_CLASSES.contains(value.getClass())) {
 				org.w3c.dom.Element dom = this.document.createElement(element.getName());
 				dom.setTextContent(B1DataConvert.toString(value));
 				domParent.appendChild(dom);
@@ -375,6 +387,15 @@ public class B1SerializerXml extends B1Serializer {
 		}
 	}
 
+	/**
+	 * 从XML输入流反序列化为对象（不支持）
+	 *
+	 * @param <T>          返回类型
+	 * @param inputStream  XML输入流
+	 * @param company      B1公司连接
+	 * @return 不支持，始终抛出异常
+	 * @throws SerializationException 始终抛出不支持异常
+	 */
 	@Override
 	public <T> T deserialize(InputStream inputStream, ICompany company) throws SerializationException {
 		throw new SerializationException(I18N.prop("msg_bobas_not_supported"));

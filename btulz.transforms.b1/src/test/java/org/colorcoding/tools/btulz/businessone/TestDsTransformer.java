@@ -7,46 +7,18 @@ import org.colorcoding.tools.btulz.Environment;
 import org.colorcoding.tools.btulz.businessone.command.Command4Ds;
 import org.colorcoding.tools.btulz.businessone.transformer.DsTransformer;
 
-import com.sap.smb.sbo.api.ICompany;
-import com.sap.smb.sbo.api.IField;
-import com.sap.smb.sbo.api.IRecordset;
 import com.sap.smb.sbo.api.SBOCOMConstants;
-import com.sap.smb.sbo.api.SBOCOMUtil;
 
 import junit.framework.TestCase;
 
+/**
+ * 测试数据结构部署功能（需要B1服务环境）
+ */
 public class TestDsTransformer extends TestCase {
 
-	public void testB1() {
-		ICompany company = SBOCOMUtil.newCompany();
-		company.setDbServerType(SBOCOMConstants.BoDataServerTypes_dst_MSSQL2014);
-		company.setServer("ibas-demo-b1");
-		company.setCompanyDB("SBODemoCN");
-		company.setUserName("manager");
-		company.setPassword("manager");
-		company.setDbUserName("sa");
-		company.setDbPassword("1q2w3e");
-		company.setLicenseServer("ibas-demo-b1:30000");
-		company.setSLDServer("ibas-demo-b1:40000");
-		company.setLanguage(SBOCOMConstants.BoSuppLangs_ln_English);
-		IRecordset recordset = company.getCompanyList();
-		while (!recordset.isEoF()) {
-			for (int i = 0; i < recordset.getFields().getCount(); i++) {
-				IField field = recordset.getFields().item(i);
-				System.out.print(field.getValue());
-				System.out.print(" ");
-			}
-			System.out.println();
-			recordset.moveNext();
-		}
-		if (company.connect() != 0) {
-			System.err.println(String.format("company is not connected, [%s %s]", company.getLastErrorCode(),
-					company.getLastErrorDescription()));
-		} else {
-			System.out.println(String.format("company [%s] is connected.", company.getCompanyDB()));
-		}
-	}
-
+	/**
+	 * 测试DsTransformer转换部署
+	 */
 	public void testDs() throws Exception {
 		DsTransformer dsTransformer = new DsTransformer();
 		dsTransformer
@@ -61,6 +33,9 @@ public class TestDsTransformer extends TestCase {
 		dsTransformer.transform();
 	}
 
+	/**
+	 * 测试ds命令行
+	 */
 	public void testCmd() {
 		ArrayList<String> args = new ArrayList<>();
 		args.add(String.format(Command4Ds.COMMAND_PROMPT));
@@ -74,9 +49,6 @@ public class TestDsTransformer extends TestCase {
 		args.add(String.format("-LicenseServer=%s", ""));
 		args.add(String.format("-SLDServer=%s", ""));
 		args.add(String.format("-Language=%s", "15"));
-		System.out.println("显示帮助信息：");
-		Console.main(new String[] { Command4Ds.COMMAND_PROMPT, Command4Ds.ARGUMENT_NAME_HELP });
-		System.out.println("开始运行：");
 		Console.main(args.toArray(new String[] {}));
 	}
 }

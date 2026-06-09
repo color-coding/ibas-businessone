@@ -46,17 +46,25 @@ import com.sap.smb.sbo.api.SBOCOMUtil;
 
 public class B1SerializerJson extends B1Serializer {
 
+	/**
+	 * 转换元素名称为JSON格式
+	 * <p>
+	 * 将驼峰命名转换为小驼峰命名（首字母小写）
+	 *
+	 * @param name 原始名称
+	 * @return 转换后的名称
+	 */
 	protected String nameElement(String name) {
+		if (name == null || name.isEmpty()) {
+			return name;
+		}
 		int index = 0;
-		for (char item : name.toCharArray()) {
-			if (Character.isUpperCase(item)) {
-				index++;
-			} else {
-				break;
-			}
+		int len = name.length();
+		while (index < len && Character.isUpperCase(name.charAt(index))) {
+			index++;
 		}
 		if (index > 0) {
-			if (index == 1 || index == name.length()) {
+			if (index == 1 || index == len) {
 				name = name.substring(0, index).toLowerCase() + name.substring(index);
 			} else {
 				index -= 1;
@@ -66,11 +74,25 @@ public class B1SerializerJson extends B1Serializer {
 		return name;
 	}
 
+	/**
+	 * 验证JSON数据是否符合类型定义
+	 *
+	 * @param type 数据类型
+	 * @param data JSON数据输入流
+	 * @throws ValidateException 验证失败时抛出
+	 */
 	@Override
 	public void validate(Class<?> type, InputStream data) throws ValidateException {
 		this.validate(this.schema(type), data);
 	}
 
+	/**
+	 * 使用JSON Schema验证输入流中的JSON数据
+	 *
+	 * @param schema JSON Schema定义
+	 * @param data   JSON数据输入流
+	 * @throws ValidateException 验证失败时抛出
+	 */
 	public void validate(JsonSchema schema, InputStream data) throws ValidateException {
 		try {
 			this.validate(schema, new ObjectMapper().readTree(data));
@@ -79,6 +101,13 @@ public class B1SerializerJson extends B1Serializer {
 		}
 	}
 
+	/**
+	 * 使用JSON Schema验证JsonNode数据
+	 *
+	 * @param schema JSON Schema定义
+	 * @param data   JSON节点数据
+	 * @throws ValidateException 验证失败时抛出
+	 */
 	public void validate(JsonSchema schema, JsonNode data) throws ValidateException {
 		Set<ValidationMessage> errors = schema.validate(data);
 		if (!errors.isEmpty()) {
@@ -90,6 +119,13 @@ public class B1SerializerJson extends B1Serializer {
 		}
 	}
 
+	/**
+	 * 生成类型的JSON Schema定义
+	 *
+	 * @param type 类型
+	 * @return JSON Schema对象
+	 * @throws SerializationException 生成失败时抛出
+	 */
 	public JsonSchema schema(Class<?> type) throws SerializationException {
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 			this.schema(type, outputStream);
@@ -101,6 +137,13 @@ public class B1SerializerJson extends B1Serializer {
 		}
 	}
 
+	/**
+	 * 生成类型的JSON Schema并输出到流
+	 *
+	 * @param type         类型
+	 * @param outputStream 输出流
+	 * @throws SerializationException 生成失败时抛出
+	 */
 	@Override
 	public void schema(Class<?> type, OutputStream outputStream) throws SerializationException {
 		try {
@@ -116,16 +159,21 @@ public class B1SerializerJson extends B1Serializer {
 			jsonGenerator.close();
 		} catch (IOException e) {
 			throw new SerializationException(e);
-		} finally {
-			if (outputStream != null) {
-				try {
-					outputStream.close();
-				} catch (IOException e) {
-				}
-			}
 		}
 	}
 
+	/**
+	 * 从JSON输入流反序列化为B1业务对象
+	 * <p>
+	 * 支持更新已有对象（根据主键获取）或创建新对象。
+	 * 处理单据类型、付款类型、自定义表等不同业务对象类型。
+	 *
+	 * @param <T>         返回类型
+	 * @param inputStream JSON输入流
+	 * @param company     B1公司连接
+	 * @return 反序列化的B1业务对象
+	 * @throws SerializationException 反序列化失败时抛出
+	 */
 	@Override
 	@SuppressWarnings("unchecked")
 	public <T> T deserialize(InputStream inputStream, ICompany company) throws SerializationException {
@@ -141,6 +189,7 @@ public class B1SerializerJson extends B1Serializer {
 			if (classKeys != null && classKeys.length > 0) {
 				// 如果有主键值，则更新数据
 				Object[] keyValues = new Object[classKeys.length];
+				boolean hasKeyValue = false;
 				for (int i = 0; i < classKeys.length; i++) {
 					Element element = classKeys[i];
 					jsonNode = rootNode.path(this.nameElement(element.getName()));
@@ -152,11 +201,14 @@ public class B1SerializerJson extends B1Serializer {
 					}
 					keyValues[i] = this.nodeValue(rootNode.path(this.nameElement(classKeys[i].getName())),
 							element.getType());
+					hasKeyValue = true;
 				}
-				Object data = this.getEntity(className, keyValues, company);
-				if (data != null) {
-					this.deserialize(data, rootNode, getElement(data.getClass()));
-					return (T) data;
+				if (hasKeyValue) {
+					Object data = this.getEntity(className, keyValues, company);
+					if (data != null) {
+						this.deserialize(data, rootNode, getElement(data.getClass()));
+						return (T) data;
+					}
 				}
 			}
 			ElementRoot element = null;
@@ -172,9 +224,11 @@ public class B1SerializerJson extends B1Serializer {
 							Enumeration.valueOf(Enumeration.GROUP_BO_OBJECT_TYPES, className));
 				} else if (Enumeration.isUserTable(className)) {
 					// 自定义表
-					jsonNode = rootNode.path(this.nameElement(classKeys[0].getName()));
-					if (!jsonNode.isMissingNode() && !B1DataConvert.isNullOrEmpty(jsonNode.asText())) {
-						data = company.getUserTables().item(jsonNode.asText());
+					if (classKeys != null && classKeys.length > 0) {
+						jsonNode = rootNode.path(this.nameElement(classKeys[0].getName()));
+						if (!jsonNode.isMissingNode() && !B1DataConvert.isNullOrEmpty(jsonNode.asText())) {
+							data = company.getUserTables().item(jsonNode.asText());
+						}
 					}
 				} else {
 					Method method = SBOCOMUtil.class.getMethod("new" + className, ICompany.class);
@@ -206,9 +260,6 @@ public class B1SerializerJson extends B1Serializer {
 				data = method.invoke(data, Enumeration.valueOf(data.getClass()));
 				// com组件代理对象转为一般类
 				Class<?> clazz = Class.forName(String.format("com.sap.smb.sbo.api.%s", className));
-				if (clazz == null) {
-					throw new SerializationException(I18N.prop("msg_unrecognized_data", className));
-				}
 				Constructor<?> constructor = clazz.getConstructor(Object.class);
 				data = constructor.newInstance(data);
 			}
@@ -223,6 +274,16 @@ public class B1SerializerJson extends B1Serializer {
 		}
 	}
 
+	/**
+	 * 反序列化JSON节点到目标对象
+	 * <p>
+	 * 处理普通属性、自定义字段、集合等不同类型的属性赋值
+	 *
+	 * @param data        目标对象
+	 * @param rootNode    JSON根节点
+	 * @param rootElement 元素定义
+	 * @throws SerializationException 反序列化失败时抛出
+	 */
 	protected void deserialize(Object data, JsonNode rootNode, Element rootElement) throws SerializationException {
 		Iterator<Entry<String, JsonNode>> nodes = rootNode.fields();
 		while (nodes.hasNext()) {
@@ -318,15 +379,33 @@ public class B1SerializerJson extends B1Serializer {
 		}
 	}
 
+	/**
+	 * 将JSON节点值转换为指定类型的Java对象
+	 *
+	 * @param node JSON节点
+	 * @param type 目标类型
+	 * @return 转换后的Java对象
+	 */
 	protected Object nodeValue(JsonNode node, Class<?> type) {
+		if (node == null || node.isNull()) {
+			return null;
+		}
 		if (type == Boolean.class) {
 			return node.asBoolean();
-		} else if (type == Double.class) {
-			return node.asDouble();
 		} else if (type == Integer.class) {
 			return node.asInt();
 		} else if (type == Long.class) {
 			return node.asLong();
+		} else if (type == Short.class) {
+			return (short) node.asInt();
+		} else if (type == Double.class) {
+			return node.asDouble();
+		} else if (type == Float.class) {
+			return (float) node.asDouble();
+		} else if (type == BigDecimal.class) {
+			return node.decimalValue();
+		} else if (type == BigInteger.class) {
+			return node.bigIntegerValue();
 		} else if (type == Date.class) {
 			return B1DataConvert.convert(Date.class, node.asText());
 		} else {
@@ -334,33 +413,32 @@ public class B1SerializerJson extends B1Serializer {
 		}
 	}
 
+	private static final Map<String, String> JSON_KNOWN_TYPES = new HashMap<>();
+	static {
+		JSON_KNOWN_TYPES.put("integer", "integer");
+		JSON_KNOWN_TYPES.put("long", "integer");
+		JSON_KNOWN_TYPES.put("short", "integer");
+		JSON_KNOWN_TYPES.put("float", "number");
+		JSON_KNOWN_TYPES.put("double", "number");
+		JSON_KNOWN_TYPES.put("boolean", "boolean");
+		JSON_KNOWN_TYPES.put("java.lang.Integer", "integer");
+		JSON_KNOWN_TYPES.put("java.lang.Long", "integer");
+		JSON_KNOWN_TYPES.put("java.lang.Short", "integer");
+		JSON_KNOWN_TYPES.put("java.math.BigInteger", "integer");
+		JSON_KNOWN_TYPES.put("java.lang.Float", "number");
+		JSON_KNOWN_TYPES.put("java.lang.Double", "number");
+		JSON_KNOWN_TYPES.put("java.math.BigDecimal", "number");
+		JSON_KNOWN_TYPES.put("java.lang.Boolean", "boolean");
+		JSON_KNOWN_TYPES.put("java.lang.String", "string");
+		JSON_KNOWN_TYPES.put("java.lang.Character", "string");
+	}
+
 	private class SchemaWriter {
 
 		public static final String SCHEMA_VERSION = "http://json-schema.org/draft-07/schema#";
 
-		public SchemaWriter() {
-			this.knownTypes = new HashMap<>();
-			this.knownTypes.put("integer", "integer");
-			this.knownTypes.put("long", "integer");
-			this.knownTypes.put("short", "integer");
-			this.knownTypes.put("float", "number");
-			this.knownTypes.put("double", "number");
-			this.knownTypes.put("boolean", "boolean");
-			this.knownTypes.put("java.lang.Integer", "integer");
-			this.knownTypes.put("java.lang.Long", "integer");
-			this.knownTypes.put("java.lang.Short", "integer");
-			this.knownTypes.put("java.math.BigInteger", "integer");
-			this.knownTypes.put("java.lang.Float", "number");
-			this.knownTypes.put("java.lang.Double", "number");
-			this.knownTypes.put("java.math.BigDecimal", "number");
-			this.knownTypes.put("java.lang.Boolean", "boolean");
-			this.knownTypes.put("java.lang.String", "string");
-			this.knownTypes.put("java.lang.Character", "string");
-		}
-
 		public JsonGenerator jsonGenerator;
 		public ElementRoot element;
-		protected Map<String, String> knownTypes;
 
 		public void write() throws JsonGenerationException, IOException {
 			this.jsonGenerator.writeStartObject();
@@ -399,7 +477,7 @@ public class B1SerializerJson extends B1Serializer {
 			} else {
 				jsonGenerator.writeFieldName(B1SerializerJson.this.nameElement(element.getName()));
 				jsonGenerator.writeStartObject();
-				String typeName = this.knownTypes.get(element.getType().getName());
+				String typeName = JSON_KNOWN_TYPES.get(element.getType().getName());
 				if (typeName != null) {
 					// 已知类型
 					jsonGenerator.writeStringField("type", typeName);
@@ -435,6 +513,14 @@ public class B1SerializerJson extends B1Serializer {
 		}
 	}
 
+	/**
+	 * 序列化对象为JSON格式输出
+	 *
+	 * @param data         要序列化的对象
+	 * @param outputStream 输出流
+	 * @param formated     是否格式化（未使用）
+	 * @param element      元素定义
+	 */
 	@Override
 	protected void serialize(Object data, OutputStream outputStream, boolean formated, ElementRoot element) {
 		try {
@@ -451,13 +537,6 @@ public class B1SerializerJson extends B1Serializer {
 			jsonGenerator.close();
 		} catch (IOException e) {
 			throw new SerializationException(e);
-		} finally {
-			if (outputStream != null) {
-				try {
-					outputStream.close();
-				} catch (IOException e) {
-				}
-			}
 		}
 	}
 
@@ -510,7 +589,8 @@ public class B1SerializerJson extends B1Serializer {
 			} else if (element.getType() == BigDecimal.class || value instanceof BigDecimal) {
 				this.jsonGenerator.writeNumberField(name, (BigDecimal) value);
 			} else if (element.getType() == BigInteger.class || value instanceof BigInteger) {
-				this.jsonGenerator.writeNumberField(name, ((BigInteger) value).longValue());
+				this.jsonGenerator.writeFieldName(name);
+				this.jsonGenerator.writeNumber((BigInteger) value);
 			} else if (element.isCollection()) {
 				this.jsonGenerator.writeFieldName(B1SerializerJson.this.nameElement(element.getWrapper()));
 				this.jsonGenerator.writeStartArray();

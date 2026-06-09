@@ -5,7 +5,7 @@ echo            compile_packages.bat
 echo                     by niuren.zhu
 echo                           2016.06.19
 echo  说明：
-echo     1. 下载apache-maven，地址http://maven.apache.org/download.cgi。
+echo     1. 下载apache-maven，地址https://maven.apache.org/download.cgi。
 echo     2. 解压apache-maven，并设置系统变量MAVEN_HOME为解压的程序目录。
 echo     3. 添加PATH变量到%%MAVEN_HOME%%\bin，并检查JAVA_HOME配置是否正确。
 echo     4. 运行提示符运行mvn -v 检查安装是否成功。
@@ -24,8 +24,8 @@ if "%MAVEN_HOME%" neq "" (
 )
 
 echo --清除项目缓存
-if exist %WORK_FOLDER%release\ rd /s /q %WORK_FOLDER%release\ >nul
-if not exist %WORK_FOLDER%release md %WORK_FOLDER%release >nul
+if exist %WORK_FOLDER%release\ rd /s /q %WORK_FOLDER%release\ >NUL
+if not exist %WORK_FOLDER%release md %WORK_FOLDER%release >NUL
 if exist %WORK_FOLDER%pom.xml (
   call %MVN_BIN% -q clean install -f %WORK_FOLDER%pom.xml
 )
@@ -37,15 +37,15 @@ for /f %%m in (%WORK_FOLDER%compile_order.txt) do (
     if !MY_PACKAGES_FOLDER:~-8!==.service (
       rem 网站，编译war包
       echo --开始编译[%%m]
-      call %MVN_BIN% -q clean package -Dmaven.test.skip=true -f %WORK_FOLDER%%%m\pom.xml
-      if exist %WORK_FOLDER%%%m\target\%%m*.war copy /y %WORK_FOLDER%%%m\target\%%m*.war %WORK_FOLDER%release >nul
+      call %MVN_BIN% -q clean package %MAVEN_PACKAGE_ARGUMENTS% -Dmaven.test.skip=true -f %WORK_FOLDER%%%m\pom.xml
+      if exist %WORK_FOLDER%%%m\target\%%m*.war copy /y %WORK_FOLDER%%%m\target\%%m*.war %WORK_FOLDER%release >NUL
     ) else (
       rem 非网站，编译jar包并安装到本地
       echo --开始编译[%%m]+安装
-      call %MVN_BIN% -q clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%%%m\pom.xml
-      if exist %WORK_FOLDER%%%m\target\%%m*.jar copy /y %WORK_FOLDER%%%m\target\%%m*.jar %WORK_FOLDER%release >nul
+      call %MVN_BIN% -q clean package install %MAVEN_PACKAGE_ARGUMENTS% -Dmaven.test.skip=true -f %WORK_FOLDER%%%m\pom.xml
+      if exist %WORK_FOLDER%%%m\target\%%m*.jar copy /y %WORK_FOLDER%%%m\target\%%m*.jar %WORK_FOLDER%release >NUL
     )
-    rem 检查并复制编译结果
+    rem 检查编译结果
     if exist %WORK_FOLDER%release\%%m*.* (
       echo --编译[%%m]成功
     ) else (
@@ -55,35 +55,28 @@ for /f %%m in (%WORK_FOLDER%compile_order.txt) do (
 )
 echo --开始编译额外内容
 call %MVN_BIN% -q clean install -f %WORK_FOLDER%btulz.transforms.b1\pom.xml
-REM compile b1 8.8
 call %MVN_BIN% -q clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b188.xml
-if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >nul
-if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release >nul
-REM compile b1 9.1
+if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >NUL
+if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.* copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.* %WORK_FOLDER%release\ >NUL
 call %MVN_BIN% -q clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b191.xml
-if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >nul
-if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release >nul
-REM compile b1 9.2
+if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >NUL
+if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.* copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.* %WORK_FOLDER%release\ >NUL
 call %MVN_BIN% -q clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b192.xml
-if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >nul
-if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release >nul
-REM compile b1 9.3
+if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >NUL
+if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.* copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.* %WORK_FOLDER%release\ >NUL
 call %MVN_BIN% -q clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b193.xml
-if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >nul
-if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release >nul
-REM compile b1 10
+if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >NUL
+if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.* copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.* %WORK_FOLDER%release\ >NUL
 call %MVN_BIN% -q clean package install -Dmaven.test.skip=true -f %WORK_FOLDER%btulz.transforms.b1\pom.b110.xml
-if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >nul
-if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.jar %WORK_FOLDER%release >nul
-
+if exist %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar copy /y %WORK_FOLDER%btulz.transforms.b1\target\btulz.transforms.b1-*.jar %WORK_FOLDER%release >NUL
+if exist %WORK_FOLDER%btulz.transforms.b1\target\lib\*.* copy /y %WORK_FOLDER%btulz.transforms.b1\target\lib\*.* %WORK_FOLDER%release\ >NUL
 echo --输出直接调用shell脚本
-copy /y %WORK_FOLDER%btulz.transforms.b1\src\main\commands\btulz.shell.bat.txt %WORK_FOLDER%release\btulz.shell.bat >nul
-copy /y %WORK_FOLDER%btulz.transforms.b1\src\main\commands\btulz.shell.sh.txt %WORK_FOLDER%release\btulz.shell.sh >nul
+copy /y %WORK_FOLDER%btulz.transforms.b1\src\main\commands\btulz.shell.bat.txt %WORK_FOLDER%release\btulz.shell.bat
+copy /y %WORK_FOLDER%btulz.transforms.b1\src\main\commands\btulz.shell.sh.txt %WORK_FOLDER%release\btulz.shell.sh
 echo --压缩编译文件为tar包
 if exist %WORK_FOLDER%release\*.* (
-  cd /d %WORK_FOLDER%release\ >nul
+  cd /d %WORK_FOLDER%release\ >NUL
   7z a -ttar btulz.transforms.tar *.jar btulz.shell.*
 )
 cd /d %WORK_FOLDER%
-
 echo --编译完成

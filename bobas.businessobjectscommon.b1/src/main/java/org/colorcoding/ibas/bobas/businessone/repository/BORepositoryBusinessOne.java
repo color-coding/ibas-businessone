@@ -7,7 +7,7 @@ import org.colorcoding.ibas.bobas.businessone.db.B1CompanyPool;
 import org.colorcoding.ibas.bobas.businessone.db.IB1Connection;
 import org.colorcoding.ibas.bobas.businessone.serialization.B1SerializerFactory;
 import org.colorcoding.ibas.bobas.businessone.serialization.IB1Serializer;
-import org.colorcoding.ibas.bobas.db.ISqlStatement;
+import org.colorcoding.ibas.bobas.db.SqlStatement;
 import org.colorcoding.ibas.bobas.i18n.I18N;
 import org.colorcoding.ibas.bobas.message.Logger;
 import org.colorcoding.ibas.bobas.message.MessageLevel;
@@ -301,7 +301,7 @@ public class BORepositoryBusinessOne implements IB1Connection {
 		}
 	}
 
-	protected final IRecordset query(ISqlStatement sqlQuery) throws RepositoryException {
+	protected final IRecordset query(SqlStatement sqlQuery) throws RepositoryException {
 		return this.query(this.getB1Adapter().parsing(sqlQuery));
 	}
 

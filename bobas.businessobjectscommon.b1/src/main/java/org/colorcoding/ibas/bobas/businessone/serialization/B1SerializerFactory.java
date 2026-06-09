@@ -19,7 +19,14 @@ public class B1SerializerFactory {
 
 	private volatile static SerializerManager instance;
 
-	public synchronized static SerializerManager createManager() {
+	/**
+	 * 创建序列化管理器实例（单例模式）
+	 * <p>
+	 * 使用双重检查锁定确保线程安全
+	 *
+	 * @return 序列化管理器实例
+	 */
+	public static SerializerManager createManager() {
 		if (instance == null) {
 			synchronized (B1SerializerFactory.class) {
 				if (instance == null) {
