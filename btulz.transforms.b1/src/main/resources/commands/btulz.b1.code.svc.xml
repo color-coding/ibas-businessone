@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!DOCTYPE CommandBuilder>
-<ns2:CommandBuilder Description="生成代码" 
+<ns2:CommandBuilder Description="生成代码"
     xmlns:ns2="http://colorcoding.org/btulz/shell/commands">
     <Item Content="java" Editable="false" />
     <Item Content="-Dfile.encoding=utf-8" Description="使用utf-8编码方式" Editable="false" />
     <Item Content="-jar" Description="执行jar包" Editable="false" />
-    <Item Content="btulz.transforms.b1-0.1.0-${VALUE}.jar" Description="包名称" Value="9.3">
+    <Item Content="btulz.transforms.b1-0.2.0-${VALUE}.jar" Description="包名称" Value="10">
         <ValidValues>
-          <ValidValue Description="DI-API-10" Value="10" />
-          <ValidValue Description="DI-API-9.3" Value="9.3" />
-          <ValidValue Description="DI-API-9.2" Value="9.2" />
-          <ValidValue Description="DI-API-9.1" Value="9.1" />
-          <ValidValue Description="DI-API-8.8" Value="8.8" />
+            <ValidValue Description="DI-API-10" Value="10" />
+            <ValidValue Description="DI-API-9.3" Value="9.3" />
+            <ValidValue Description="DI-API-9.2" Value="9.2" />
+            <ValidValue Description="DI-API-9.1" Value="9.1" />
+            <ValidValue Description="DI-API-8.8" Value="8.8" />
         </ValidValues>
     </Item>
     <Item Content="code" Description="子命令" Editable="false" />
     <Item Content="-TemplateFolder=${VALUE}" Description="使用的模板" Value="ibas_b1_service">
         <ValidValues>
-          <ValidValue Description="数据接口服务" Value="ibas_b1_service" />
+            <ValidValue Description="数据接口服务" Value="ibas_b1_service" />
         </ValidValues>
     </Item>
     <Item Content="-OutputFolder=${VALUE}" Description="输出目录" Value="${WORK_FOLDER}temp">
@@ -31,8 +31,8 @@
     <Item Content="-BusinessObjects=${VALUE}" Description="使用的业务对象（;分隔多个）,单据类型需要明确子类型" Value="Items;BusinessPartners;Document_Orders;Document_PurchaseOrders;" />
     <Item Content="-Parameters=[${VALUE}]" Description="其他参数">
         <Items>
-            <Item Content=",{&quot;name&quot;:&quot;ibasVersion&quot;,&quot;value&quot;:&quot;${VALUE}&quot;}" Description="ibas版本" Value="0.1.2" />
-            <Item Content=",{&quot;name&quot;:&quot;b1Version&quot;,&quot;value&quot;:&quot;${VALUE}&quot;}" Description="b1版本" Value="0.1.0" />
+            <Item Content=",{&quot;name&quot;:&quot;ibasVersion&quot;,&quot;value&quot;:&quot;${VALUE}&quot;}" Description="ibas版本" Value="0.2.0" />
+            <Item Content=",{&quot;name&quot;:&quot;b1Version&quot;,&quot;value&quot;:&quot;${VALUE}&quot;}" Description="b1版本" Value="0.2.0" />
             <Item Content=",{&quot;name&quot;:&quot;ProjectId&quot;,&quot;value&quot;:&quot;${VALUE}&quot;}" Description="项目标识">
                 <ValidValues ClassName="java.util.UUID"/>
             </Item>

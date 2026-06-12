@@ -28,9 +28,9 @@ import org.colorcoding.ibas.bobas.core.IFieldedObject;
 import org.colorcoding.ibas.bobas.core.IPropertyInfo;
 import org.colorcoding.ibas.bobas.data.IDataTable;
 import org.colorcoding.ibas.bobas.data.List;
+import org.colorcoding.ibas.bobas.db.DataType;
 import org.colorcoding.ibas.bobas.db.DbAdapter;
 import org.colorcoding.ibas.bobas.db.DbFactory;
-import org.colorcoding.ibas.bobas.db.DbFieldType;
 import org.colorcoding.ibas.bobas.db.DbTable;
 import org.colorcoding.ibas.bobas.db.MaxValue;
 import org.colorcoding.ibas.bobas.i18n.I18N;
@@ -91,7 +91,7 @@ public class B1Adapter extends DbAdapter {
 	}
 
 	@Override
-	public int sqlTypeOf(DbFieldType type) {
+	public int sqlTypeOf(DataType type) {
 		return this.dbAdapter.sqlTypeOf(type);
 	}
 
@@ -121,7 +121,7 @@ public class B1Adapter extends DbAdapter {
 	}
 
 	@Override
-	public String castAs(DbFieldType type, String alias) {
+	public String castAs(DataType type, String alias) {
 		return this.dbAdapter.castAs(type, alias);
 	}
 
