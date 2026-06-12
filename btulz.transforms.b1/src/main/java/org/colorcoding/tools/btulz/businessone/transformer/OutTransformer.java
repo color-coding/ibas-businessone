@@ -206,7 +206,7 @@ public class OutTransformer extends Transformer implements IB1Connection {
 			Environment.getLogger().info(String.format("begin output system fields."));
 			// 获取B1系统表
 			IRecordset rsField = SBOCOMUtil.newRecordset(b1Company);
-			IRecordset rsVaildValue = SBOCOMUtil.newRecordset(b1Company);
+			IRecordset rsValidValue = SBOCOMUtil.newRecordset(b1Company);
 			rsField.doQuery("SELECT * FROM \"CUFD\" WHERE \"TableID\" NOT LIKE '@%'");
 			while (!rsField.isEoF()) {
 				model = (Model) domain.getModels().firstOrDefault(c -> c.getName()
@@ -229,16 +229,16 @@ public class OutTransformer extends Transformer implements IB1Connection {
 				property.setEditSize(rsField.getFields().item("EditSize").getValueInteger());
 				property.setDefaultValue(rsField.getFields().item("Dflt").getValueString());
 				// 获取字段可选值
-				rsVaildValue.doQuery(String.format(
+				rsValidValue.doQuery(String.format(
 						"SELECT * FROM \"UFD1\" WHERE \"TableID\" = '%s' AND \"FieldID\" = '%s' ORDER BY \"IndexID\"",
 						rsField.getFields().item("TableID").getValue(),
 						rsField.getFields().item("FieldID").getValue()));
-				while (!rsVaildValue.isEoF()) {
+				while (!rsValidValue.isEoF()) {
 					validValue = new ValidValue();
-					validValue.setValue(rsVaildValue.getFields().item("FldValue").getValueString());
-					validValue.setDescription(rsVaildValue.getFields().item("Descr").getValueString());
+					validValue.setValue(rsValidValue.getFields().item("FldValue").getValueString());
+					validValue.setDescription(rsValidValue.getFields().item("Descr").getValueString());
 					property.getValidValues().add(validValue);
-					rsVaildValue.moveNext();
+					rsValidValue.moveNext();
 				}
 				model.getProperties().add(property);
 				rsField.moveNext();

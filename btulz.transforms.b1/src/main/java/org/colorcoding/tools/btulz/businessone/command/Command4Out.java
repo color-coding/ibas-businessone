@@ -76,7 +76,7 @@ public class Command4Out extends Command<Command4Out> {
 			return RETURN_VALUE_SUCCESS;
 		} catch (Exception e) {
 			this.print(e);
-			return RETURN_VALUE_COMMAND_EXECUTION_FAILD;
+			return RETURN_VALUE_COMMAND_EXECUTION_FAILED;
 		}
 	}
 

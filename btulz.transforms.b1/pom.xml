@@ -21,8 +21,7 @@
 	</developers>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-			<ibas.version>0.2.0</ibas.version>
-			<btulz.version>0.1.1</btulz.version>
+		<ibas.version>0.2.0</ibas.version>
 	</properties>
 	<build>
 		<plugins>
@@ -92,12 +91,12 @@
 		<dependency>
 			<groupId>org.colorcoding.tools</groupId>
 			<artifactId>btulz.transforms.core</artifactId>
-			<version>${btulz.version}</version>
+			<version>0.2.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.colorcoding.tools</groupId>
 			<artifactId>btulz.transforms.shell</artifactId>
-			<version>${btulz.version}</version>
+			<version>0.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.colorcoding.ibas</groupId>

@@ -235,7 +235,7 @@ public class DsTransformer extends Transformer implements IB1Connection {
 						}
 						Environment.getLogger().info(String.format("transform property [%s - %s]", property.getMapped(),
 								property.getDescription()));
-						int fieldId = this.getUserFiledId(b1Company, tableName, property.getMapped());
+						int fieldId = this.getUserFieldId(b1Company, tableName, property.getMapped());
 						if (fieldId < 0) {
 							// 字段不存在
 							IUserFieldsMD userField = SBOCOMUtil.newUserFieldsMD(b1Company);
@@ -503,7 +503,7 @@ public class DsTransformer extends Transformer implements IB1Connection {
 
 	public static final String SQL_GET_USER_FIELD_ID = "SELECT \"FieldID\" FROM \"CUFD\" WHERE \"TableID\" = '%s' AND \"AliasID\" = '%s'";
 
-	protected int getUserFiledId(ICompany b1Company, String table, String field) throws SBOCOMException {
+	protected int getUserFieldId(ICompany b1Company, String table, String field) throws SBOCOMException {
 		IRecordset recordset = null;
 		try {
 			recordset = SBOCOMUtil.newRecordset(b1Company);
