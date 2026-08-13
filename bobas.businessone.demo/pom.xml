@@ -21,18 +21,19 @@
 	</developers>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<ibas.version>0.2.0</ibas.version>
+		<maven.compiler.version>3.15.0</maven.compiler.version>
 		<b1.version>0.2.0</b1.version>
+		<ibas.version>0.2.0</ibas.version>
+		<junit.version>4.13.2</junit.version>
 	</properties>
 	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.14.0</version>
+				<version>${maven.compiler.version}</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<release>21</release>
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
@@ -53,7 +54,7 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.13.2</version>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

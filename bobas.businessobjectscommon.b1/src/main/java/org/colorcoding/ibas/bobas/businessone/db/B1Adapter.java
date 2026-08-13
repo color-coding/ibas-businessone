@@ -314,7 +314,10 @@ public class B1Adapter extends DbAdapter {
 	}
 
 	@DbTable(name = TableProxy$999.DB_TABLE_NAME)
-	private class TableProxy$999 extends BusinessObject<TableProxy$999> {
+	private static class TableProxy$999 extends BusinessObject<TableProxy$999> {
+
+		protected TableProxy$999() {
+		}
 
 		private static final long serialVersionUID = 1L;
 
